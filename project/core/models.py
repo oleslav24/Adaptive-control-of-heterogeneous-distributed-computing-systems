@@ -73,4 +73,6 @@ class SystemState:
     pending_tasks: int = 0
     completed_tasks: int = 0
     deadline_violations: int = 0
+    mas_messages: int = 0
+    mas_assignments: int = 0
     history: list[dict[str, object]] = field(default_factory=list)

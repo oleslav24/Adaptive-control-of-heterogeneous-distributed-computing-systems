@@ -1,2 +1,8 @@
-"""Agent implementations live here (Sprint 1+)."""
+"""Agent implementations."""
 
+from .compute import ComputeAgent
+from .monitoring import MonitoringAgent
+from .network import NetworkAgent
+from .qos import QoSAgent
+
+__all__ = ["MonitoringAgent", "ComputeAgent", "NetworkAgent", "QoSAgent"]

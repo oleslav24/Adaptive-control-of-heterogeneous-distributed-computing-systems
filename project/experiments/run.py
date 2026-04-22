@@ -27,6 +27,8 @@ def main() -> None:
     print(f"Completed tasks: {final_state.completed_tasks}")
     print(f"Pending tasks: {final_state.pending_tasks}")
     print(f"Queue size: {final_state.queue_lengths.get('global', 0)}")
+    print(f"MAS messages: {final_state.mas_messages}")
+    print(f"MAS assignments: {final_state.mas_assignments}")
     print(f"State updates: {len(final_state.history)}")
     print(f"Final node loads: {final_state.node_loads}")
 

@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from project.agents import ComputeAgent, MonitoringAgent, NetworkAgent, QoSAgent
+from project.core.agent import Agent
 from project.core.config import ExperimentConfig
 from project.core.models import Node, SystemState, Task
+from project.simulation.context import SimulationContext
+from project.simulation.mas import MultiAgentSystem
 from project.simulation.network import NetworkModel
 from project.simulation.task_queue import TaskQueue
 
@@ -11,12 +15,15 @@ from project.simulation.task_queue import TaskQueue
 @dataclass
 class SimulationLoop:
     config: ExperimentConfig
+    agents: list[Agent] = field(default_factory=list)
     nodes: dict[str, Node] = field(default_factory=dict)
     future_tasks: list[Task] = field(default_factory=list)
     queue: TaskQueue = field(default_factory=TaskQueue)
     running_tasks: dict[str, list[Task]] = field(default_factory=dict)
     completed_tasks: list[Task] = field(default_factory=list)
     network: NetworkModel = field(default_factory=NetworkModel)
+    context: SimulationContext | None = None
+    mas: MultiAgentSystem | None = None
     state: SystemState = field(default_factory=SystemState)
 
     def init_system(self) -> None:
@@ -50,6 +57,23 @@ class SimulationLoop:
         self.queue = TaskQueue()
         self.running_tasks = {node_id: [] for node_id in self.nodes}
         self.completed_tasks = []
+        self.context = SimulationContext(
+            nodes=self.nodes,
+            queue=self.queue,
+            running_tasks=self.running_tasks,
+            completed_tasks=self.completed_tasks,
+            future_tasks=self.future_tasks,
+            network=self.network,
+            current_time=0,
+        )
+        if not self.agents:
+            self.agents = [
+                MonitoringAgent(),
+                NetworkAgent(),
+                QoSAgent(),
+                ComputeAgent(),
+            ]
+        self.mas = MultiAgentSystem(agents=self.agents, context=self.context)
         self._sync_state(0)
 
     def generate_tasks(self, t: int) -> None:
@@ -59,21 +83,6 @@ class SimulationLoop:
             task.status = "queued"
             released.append(task)
         self.queue.extend(released)
-
-    def assign_tasks(self) -> None:
-        not_assigned: list[Task] = []
-        for task in self.queue.pop_all():
-            selected = self._select_node(task)
-            if selected is None:
-                not_assigned.append(task)
-                continue
-            selected.assign(task)
-            task.status = "running"
-            task.assigned_node = selected.id
-            if task.start_time is None:
-                task.start_time = self.state.current_time
-            self.running_tasks[selected.id].append(task)
-        self.queue.extend(not_assigned)
 
     def update_state(self, t: int) -> None:
         for node_id, tasks in self.running_tasks.items():
@@ -94,18 +103,17 @@ class SimulationLoop:
     def run(self) -> SystemState:
         self.init_system()
         for t in range(self.config.simulation.time_horizon):
+            if self.context is None or self.mas is None:
+                raise RuntimeError("Simulation context is not initialized.")
+            self.context.current_time = t
             self.generate_tasks(t)
-            self.assign_tasks()
+            self.mas.step(self.state)
             self.update_state(t)
         return self.state
 
-    def _select_node(self, task: Task) -> Node | None:
-        candidates = [node for node in self.nodes.values() if node.can_run(task)]
-        if not candidates:
-            return None
-        return min(candidates, key=lambda node: (node.load, -node.cpu))
-
     def _sync_state(self, current_time: int) -> None:
+        if self.context is not None:
+            self.context.current_time = current_time
         self.state.current_time = current_time
         self.state.node_loads = {node_id: node.load for node_id, node in self.nodes.items()}
         self.state.queue_lengths = {"global": len(self.queue)}
@@ -125,6 +133,11 @@ class SimulationLoop:
             for task in self.completed_tasks
             if task.finish_time is not None and task.finish_time > task.deadline
         )
+        self.state.mas_messages = len(self.mas.message_log) if self.mas is not None else 0
+        if self.context is not None:
+            self.state.mas_assignments = len(self.context.assignment_log)
+        else:
+            self.state.mas_assignments = 0
         self.state.history.append(
             {
                 "time": self.state.current_time,
@@ -132,5 +145,7 @@ class SimulationLoop:
                 "queue_size": self.state.queue_lengths["global"],
                 "pending_tasks": self.state.pending_tasks,
                 "completed_tasks": self.state.completed_tasks,
+                "mas_messages": self.state.mas_messages,
+                "mas_assignments": self.state.mas_assignments,
             }
         )

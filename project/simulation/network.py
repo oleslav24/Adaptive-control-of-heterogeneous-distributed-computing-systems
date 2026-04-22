@@ -32,3 +32,17 @@ class NetworkModel:
             }
         return data
 
+    def node_bandwidth_map(self, node_ids: list[str]) -> dict[str, float]:
+        """Returns average incident link bandwidth for each node."""
+        bandwidths: dict[str, float] = {}
+        for node_id in node_ids:
+            values: list[float] = []
+            for _, _, attr in self.graph.in_edges(node_id, data=True):
+                values.append(float(attr.get("bandwidth", 0.0)))
+            for _, _, attr in self.graph.out_edges(node_id, data=True):
+                values.append(float(attr.get("bandwidth", 0.0)))
+            if not values:
+                bandwidths[node_id] = float("inf")
+                continue
+            bandwidths[node_id] = sum(values) / len(values)
+        return bandwidths

@@ -22,6 +22,8 @@ class TaskQueue:
         self._queue.clear()
         return items
 
+    def peek_all(self) -> list[Task]:
+        return list(self._queue)
+
     def __len__(self) -> int:
         return len(self._queue)
-
