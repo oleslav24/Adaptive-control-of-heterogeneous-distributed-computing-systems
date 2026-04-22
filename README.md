@@ -1,6 +1,6 @@
 # Experimental Multi-Agent Testbed
 
-Sprint 0 skeleton for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
+Sprint 1 simulation core for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
 
 ## Quick start
 
@@ -13,9 +13,9 @@ set MPLCONFIGDIR=.mplconfig  # cmd.exe
 python -m project.experiments.run --config config.yaml
 ```
 
-## Current scope (Sprint 0)
+## Current scope (Sprint 1)
 
-- Base project structure
-- Core interfaces and domain models
-- Empty simulation loop
-- Config-based experiment startup
+- Core system model (`Node`, `Task`, `Network`, `SystemState`)
+- Task queue and time-based task release
+- Baseline scheduling without agents
+- Simulation loop: `generate_tasks -> assign_tasks -> update_state`

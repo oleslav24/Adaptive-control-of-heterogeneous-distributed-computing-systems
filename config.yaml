@@ -1,8 +1,8 @@
-name: sprint0-smoke
+name: sprint1-simulation-core
 scenario: static
 
 simulation:
-  time_horizon: 5
+  time_horizon: 8
   seed: 42
   step_seconds: 1.0
 
@@ -33,5 +33,20 @@ initial_tasks:
     cpu_required: 2
     memory_required: 4
     data_size: 128
-    deadline: 10
-
+    deadline: 6
+    arrival_time: 0
+    duration: 2
+  - id: task-2
+    cpu_required: 6
+    memory_required: 8
+    data_size: 256
+    deadline: 7
+    arrival_time: 1
+    duration: 3
+  - id: task-3
+    cpu_required: 4
+    memory_required: 6
+    data_size: 180
+    deadline: 5
+    arrival_time: 2
+    duration: 2

@@ -38,13 +38,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
     )
 
     nodes = [
-        Node(
-            id=item["id"],
-            cpu=float(item["cpu"]),
-            memory=float(item["memory"]),
-            gpu=float(item.get("gpu", 0.0)),
-            load=float(item.get("load", 0.0)),
-        )
+        _build_node(item)
         for item in raw.get("nodes", [])
     ]
     edges = [
@@ -63,6 +57,8 @@ def load_config(path: str | Path) -> ExperimentConfig:
             memory_required=float(item["memory_required"]),
             data_size=float(item["data_size"]),
             deadline=float(item["deadline"]),
+            arrival_time=int(item.get("arrival_time", 0)),
+            duration=int(item.get("duration", 1)),
         )
         for item in raw.get("initial_tasks", [])
     ]
@@ -76,3 +72,16 @@ def load_config(path: str | Path) -> ExperimentConfig:
         initial_tasks=tasks,
     )
 
+
+def _build_node(item: dict[str, object]) -> Node:
+    cpu = float(item["cpu"])
+    load = float(item.get("load", 0.0))
+    used_cpu = max(0.0, min(cpu, cpu * load))
+    return Node(
+        id=str(item["id"]),
+        cpu=cpu,
+        memory=float(item["memory"]),
+        gpu=float(item.get("gpu", 0.0)),
+        used_cpu=used_cpu,
+        used_memory=0.0,
+    )
