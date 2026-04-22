@@ -1,10 +1,17 @@
-name: sprint2-basic-mas
+name: sprint3-control-algorithms
 scenario: static
 
 simulation:
   time_horizon: 8
   seed: 42
   step_seconds: 1.0
+
+optimization:
+  algorithm: min-load
+  compare_algorithms:
+    - round-robin
+    - min-load
+    - greedy
 
 nodes:
   - id: node-a

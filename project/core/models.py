@@ -66,6 +66,7 @@ class NetworkEdge:
 @dataclass(slots=True)
 class SystemState:
     current_time: int = 0
+    selected_algorithm: str = "min-load"
     node_loads: dict[str, float] = field(default_factory=dict)
     queue_lengths: dict[str, int] = field(default_factory=dict)
     network_state: dict[tuple[str, str], dict[str, float]] = field(default_factory=dict)

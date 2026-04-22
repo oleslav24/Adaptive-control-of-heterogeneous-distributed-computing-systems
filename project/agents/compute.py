@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from project.algorithms import choose_node, normalize_algorithm
 from project.core.agent import Agent, AgentMessage
 from project.core.models import Node, Task
 
@@ -11,6 +12,8 @@ class ComputeAgent(Agent):
         self._node_bandwidth: dict[str, float] = {}
         self._blocked_nodes: set[str] = set()
         self._urgent_task_ids: set[str] = set()
+        self._algorithm = "min-load"
+        self._rr_cursor = 0
 
     def decide(self) -> None:
         if self.context is None:
@@ -46,6 +49,7 @@ class ComputeAgent(Agent):
                 recipient="monitoring",
                 topic="compute_plan",
                 payload={
+                    "algorithm": self._algorithm,
                     "planned_assignments": len(self._plan),
                     "unassigned_tasks": [task.id for task in unassigned],
                 },
@@ -83,6 +87,10 @@ class ComputeAgent(Agent):
         self._blocked_nodes = set()
         self._urgent_task_ids = set()
         for message in self.read_messages():
+            if message.topic == "optimization_policy":
+                algorithm = message.payload.get("algorithm", "min-load")
+                self._algorithm = normalize_algorithm(str(algorithm))
+                self.context.active_algorithm = self._algorithm
             if message.topic == "bandwidth_policy":
                 node_bandwidth = message.payload.get("node_bandwidth", {})
                 blocked_nodes = message.payload.get("blocked_nodes", [])
@@ -107,14 +115,13 @@ class ComputeAgent(Agent):
             for node in self.context.nodes.values()
             if node.id not in self._blocked_nodes and node.can_run(task)
         ]
-        if not candidates:
-            return None
-        return min(
-            candidates,
-            key=lambda node: (
-                node.load,
-                -self._node_bandwidth.get(node.id, float("inf")),
-                -node.cpu,
-            ),
+        selected, next_cursor = choose_node(
+            algorithm=self._algorithm,
+            task=task,
+            candidates=candidates,
+            all_node_ids=list(self.context.nodes.keys()),
+            node_bandwidth=self._node_bandwidth,
+            rr_cursor=self._rr_cursor,
         )
-
+        self._rr_cursor = next_cursor
+        return selected

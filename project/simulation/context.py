@@ -16,6 +16,7 @@ class SimulationContext:
     future_tasks: list[Task]
     network: NetworkModel
     current_time: int = 0
+    active_algorithm: str = "min-load"
     assignment_log: list[dict[str, object]] = field(default_factory=list)
 
     def pop_queued_tasks(self) -> list[Task]:
@@ -48,7 +49,7 @@ class SimulationContext:
                 "time": self.current_time,
                 "task_id": task.id,
                 "node_id": node_id,
+                "algorithm": self.active_algorithm,
             }
         )
         return True
-

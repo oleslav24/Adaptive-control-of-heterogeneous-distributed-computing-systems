@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from project.agents import ComputeAgent, MonitoringAgent, NetworkAgent, QoSAgent
+from project.agents import ComputeAgent, MonitoringAgent, NetworkAgent, OptimizationAgent, QoSAgent
 from project.core.agent import Agent
 from project.core.config import ExperimentConfig
 from project.core.models import Node, SystemState, Task
@@ -65,12 +65,14 @@ class SimulationLoop:
             future_tasks=self.future_tasks,
             network=self.network,
             current_time=0,
+            active_algorithm=self.config.optimization.algorithm,
         )
         if not self.agents:
             self.agents = [
                 MonitoringAgent(),
                 NetworkAgent(),
                 QoSAgent(),
+                OptimizationAgent(algorithm=self.config.optimization.algorithm),
                 ComputeAgent(),
             ]
         self.mas = MultiAgentSystem(agents=self.agents, context=self.context)
@@ -115,6 +117,8 @@ class SimulationLoop:
         if self.context is not None:
             self.context.current_time = current_time
         self.state.current_time = current_time
+        if self.context is not None:
+            self.state.selected_algorithm = self.context.active_algorithm
         self.state.node_loads = {node_id: node.load for node_id, node in self.nodes.items()}
         self.state.queue_lengths = {"global": len(self.queue)}
         self.state.network_state = self.network.snapshot()
@@ -141,6 +145,7 @@ class SimulationLoop:
         self.state.history.append(
             {
                 "time": self.state.current_time,
+                "algorithm": self.state.selected_algorithm,
                 "node_loads": dict(self.state.node_loads),
                 "queue_size": self.state.queue_lengths["global"],
                 "pending_tasks": self.state.pending_tasks,

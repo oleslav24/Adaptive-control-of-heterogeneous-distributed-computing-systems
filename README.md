@@ -1,6 +1,6 @@
 # Experimental Multi-Agent Testbed
 
-Sprint 2 baseline multi-agent system for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
+Sprint 3 control algorithms for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
 
 ## Quick start
 
@@ -11,12 +11,17 @@ pip install -r requirements.txt --index-url https://pypi.org/simple
 set MPLCONFIGDIR=.mplconfig  # cmd.exe
 # or in PowerShell: $env:MPLCONFIGDIR=".mplconfig"
 python -m project.experiments.run --config config.yaml
+python -m project.experiments.run --config config.yaml --algorithm greedy
+python -m project.experiments.run --config config.yaml --compare
 ```
 
-## Current scope (Sprint 2)
+## Current scope (Sprint 3)
 
 - Core system model (`Node`, `Task`, `Network`, `SystemState`)
 - Task queue and time-based task release
-- Baseline MAS with communication: `Monitoring`, `Compute`, `Network`, `QoS`
+- Baseline MAS with communication: `Monitoring`, `Compute`, `Network`, `QoS`, `Optimization`
 - Agent messaging primitive: `agent.send(message)`
+- Optimization agent and algorithm policy delivery to compute
+- Algorithms: `round-robin`, `min-load`, `greedy`
+- Config-driven algorithm switching and CLI comparison mode
 - Simulation loop: `generate_tasks -> agents.step(state) -> update_state`

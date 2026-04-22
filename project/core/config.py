@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from project.algorithms import SUPPORTED_ALGORITHMS, normalize_algorithm
 import yaml
 
 from .models import NetworkEdge, Node, Task
@@ -16,10 +17,19 @@ class SimulationConfig:
 
 
 @dataclass(slots=True)
+class OptimizationConfig:
+    algorithm: str = "min-load"
+    compare_algorithms: list[str] = field(
+        default_factory=lambda: ["round-robin", "min-load", "greedy"]
+    )
+
+
+@dataclass(slots=True)
 class ExperimentConfig:
     name: str = "sprint0-smoke"
     scenario: str = "static"
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
+    optimization: OptimizationConfig = field(default_factory=OptimizationConfig)
     nodes: list[Node] = field(default_factory=list)
     network_edges: list[NetworkEdge] = field(default_factory=list)
     initial_tasks: list[Task] = field(default_factory=list)
@@ -35,6 +45,13 @@ def load_config(path: str | Path) -> ExperimentConfig:
         time_horizon=int(simulation_raw.get("time_horizon", 10)),
         seed=int(simulation_raw.get("seed", 42)),
         step_seconds=float(simulation_raw.get("step_seconds", 1.0)),
+    )
+    optimization_raw = raw.get("optimization", {})
+    raw_compare = optimization_raw.get("compare_algorithms", list(SUPPORTED_ALGORITHMS))
+    compare_algorithms = _normalize_algorithm_list(raw_compare)
+    optimization = OptimizationConfig(
+        algorithm=normalize_algorithm(str(optimization_raw.get("algorithm", "min-load"))),
+        compare_algorithms=compare_algorithms or list(SUPPORTED_ALGORITHMS),
     )
 
     nodes = [
@@ -67,6 +84,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
         name=str(raw.get("name", "sprint0-smoke")),
         scenario=str(raw.get("scenario", "static")),
         simulation=simulation,
+        optimization=optimization,
         nodes=nodes,
         network_edges=edges,
         initial_tasks=tasks,
@@ -85,3 +103,14 @@ def _build_node(item: dict[str, object]) -> Node:
         used_cpu=used_cpu,
         used_memory=0.0,
     )
+
+
+def _normalize_algorithm_list(raw: object) -> list[str]:
+    if not isinstance(raw, list):
+        return []
+    normalized: list[str] = []
+    for item in raw:
+        name = normalize_algorithm(str(item))
+        if name not in normalized:
+            normalized.append(name)
+    return normalized
