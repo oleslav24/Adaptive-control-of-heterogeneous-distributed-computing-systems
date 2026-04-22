@@ -25,11 +25,20 @@ class OptimizationConfig:
 
 
 @dataclass(slots=True)
+class ObservabilityConfig:
+    output_dir: str = "outputs"
+    log_level: str = "INFO"
+    save_csv: bool = True
+    save_plots: bool = True
+
+
+@dataclass(slots=True)
 class ExperimentConfig:
     name: str = "sprint0-smoke"
     scenario: str = "static"
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
     optimization: OptimizationConfig = field(default_factory=OptimizationConfig)
+    observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
     nodes: list[Node] = field(default_factory=list)
     network_edges: list[NetworkEdge] = field(default_factory=list)
     initial_tasks: list[Task] = field(default_factory=list)
@@ -52,6 +61,13 @@ def load_config(path: str | Path) -> ExperimentConfig:
     optimization = OptimizationConfig(
         algorithm=normalize_algorithm(str(optimization_raw.get("algorithm", "min-load"))),
         compare_algorithms=compare_algorithms or list(SUPPORTED_ALGORITHMS),
+    )
+    observability_raw = raw.get("observability", {})
+    observability = ObservabilityConfig(
+        output_dir=str(observability_raw.get("output_dir", "outputs")),
+        log_level=str(observability_raw.get("log_level", "INFO")),
+        save_csv=_as_bool(observability_raw.get("save_csv", True)),
+        save_plots=_as_bool(observability_raw.get("save_plots", True)),
     )
 
     nodes = [
@@ -85,6 +101,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
         scenario=str(raw.get("scenario", "static")),
         simulation=simulation,
         optimization=optimization,
+        observability=observability,
         nodes=nodes,
         network_edges=edges,
         initial_tasks=tasks,
@@ -114,3 +131,13 @@ def _normalize_algorithm_list(raw: object) -> list[str]:
         if name not in normalized:
             normalized.append(name)
     return normalized
+
+
+def _as_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return False

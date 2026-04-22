@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import logging
 
 from project.agents import ComputeAgent, MonitoringAgent, NetworkAgent, OptimizationAgent, QoSAgent
 from project.core.agent import Agent
@@ -10,6 +11,8 @@ from project.simulation.context import SimulationContext
 from project.simulation.mas import MultiAgentSystem
 from project.simulation.network import NetworkModel
 from project.simulation.task_queue import TaskQueue
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -77,6 +80,13 @@ class SimulationLoop:
             ]
         self.mas = MultiAgentSystem(agents=self.agents, context=self.context)
         self._sync_state(0)
+        LOGGER.info(
+            "Simulation initialized: algorithm=%s nodes=%d tasks=%d horizon=%d",
+            self.config.optimization.algorithm,
+            len(self.nodes),
+            len(self.future_tasks),
+            self.config.simulation.time_horizon,
+        )
 
     def generate_tasks(self, t: int) -> None:
         released: list[Task] = []
@@ -111,6 +121,14 @@ class SimulationLoop:
             self.generate_tasks(t)
             self.mas.step(self.state)
             self.update_state(t)
+        LOGGER.info(
+            "Simulation finished: completed=%d pending=%d latency=%.3f throughput=%.3f avg_load=%.3f",
+            self.state.completed_tasks,
+            self.state.pending_tasks,
+            self.state.avg_latency,
+            self.state.throughput,
+            self.state.avg_load,
+        )
         return self.state
 
     def _sync_state(self, current_time: int) -> None:
@@ -137,11 +155,45 @@ class SimulationLoop:
             for task in self.completed_tasks
             if task.finish_time is not None and task.finish_time > task.deadline
         )
+        latencies = [
+            float(task.finish_time - task.arrival_time)
+            for task in self.completed_tasks
+            if task.finish_time is not None
+        ]
+        self.state.avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+        self.state.throughput = (
+            float(self.state.completed_tasks) / float(current_time)
+            if current_time > 0
+            else 0.0
+        )
+        self.state.avg_load = (
+            sum(self.state.node_loads.values()) / len(self.state.node_loads)
+            if self.state.node_loads
+            else 0.0
+        )
         self.state.mas_messages = len(self.mas.message_log) if self.mas is not None else 0
         if self.context is not None:
             self.state.mas_assignments = len(self.context.assignment_log)
         else:
             self.state.mas_assignments = 0
+        self.state.completed_task_records = [
+            {
+                "task_id": task.id,
+                "arrival_time": task.arrival_time,
+                "start_time": task.start_time,
+                "finish_time": task.finish_time,
+                "deadline": task.deadline,
+                "latency": (
+                    float(task.finish_time - task.arrival_time)
+                    if task.finish_time is not None
+                    else None
+                ),
+                "duration": task.duration,
+                "assigned_node": task.assigned_node,
+                "algorithm": self.state.selected_algorithm,
+            }
+            for task in self.completed_tasks
+        ]
         self.state.history.append(
             {
                 "time": self.state.current_time,
@@ -150,7 +202,19 @@ class SimulationLoop:
                 "queue_size": self.state.queue_lengths["global"],
                 "pending_tasks": self.state.pending_tasks,
                 "completed_tasks": self.state.completed_tasks,
+                "avg_latency": self.state.avg_latency,
+                "throughput": self.state.throughput,
+                "avg_load": self.state.avg_load,
                 "mas_messages": self.state.mas_messages,
                 "mas_assignments": self.state.mas_assignments,
             }
+        )
+        LOGGER.info(
+            "t=%d queue=%d completed=%d latency=%.3f throughput=%.3f avg_load=%.3f",
+            self.state.current_time,
+            self.state.queue_lengths["global"],
+            self.state.completed_tasks,
+            self.state.avg_latency,
+            self.state.throughput,
+            self.state.avg_load,
         )

@@ -1,4 +1,4 @@
-name: sprint3-control-algorithms
+name: sprint4-metrics-observability
 scenario: static
 
 simulation:
@@ -12,6 +12,12 @@ optimization:
     - round-robin
     - min-load
     - greedy
+
+observability:
+  output_dir: outputs
+  log_level: INFO
+  save_csv: true
+  save_plots: true
 
 nodes:
   - id: node-a

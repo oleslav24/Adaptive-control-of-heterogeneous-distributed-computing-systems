@@ -1,6 +1,6 @@
 # Experimental Multi-Agent Testbed
 
-Sprint 3 control algorithms for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
+Sprint 4 metrics and observability for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
 
 ## Quick start
 
@@ -15,7 +15,16 @@ python -m project.experiments.run --config config.yaml --algorithm greedy
 python -m project.experiments.run --config config.yaml --compare
 ```
 
-## Current scope (Sprint 3)
+Artifacts are saved under `outputs/<experiment>/<algorithm>/`:
+
+- `summary.csv`
+- `history.csv`
+- `completed_tasks.csv`
+- `metrics_timeseries.png`
+- `node_loads.png`
+- `outputs/<experiment>/run.log`
+
+## Current scope (Sprint 4)
 
 - Core system model (`Node`, `Task`, `Network`, `SystemState`)
 - Task queue and time-based task release
@@ -24,4 +33,6 @@ python -m project.experiments.run --config config.yaml --compare
 - Optimization agent and algorithm policy delivery to compute
 - Algorithms: `round-robin`, `min-load`, `greedy`
 - Config-driven algorithm switching and CLI comparison mode
+- Metrics: `latency`, `throughput`, `load`
+- Observability: logging, CSV export, matplotlib plots
 - Simulation loop: `generate_tasks -> agents.step(state) -> update_state`
