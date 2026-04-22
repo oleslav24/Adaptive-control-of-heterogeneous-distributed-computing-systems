@@ -1,0 +1,37 @@
+name: sprint0-smoke
+scenario: static
+
+simulation:
+  time_horizon: 5
+  seed: 42
+  step_seconds: 1.0
+
+nodes:
+  - id: node-a
+    cpu: 16
+    memory: 64
+    gpu: 1
+    load: 0.10
+  - id: node-b
+    cpu: 12
+    memory: 32
+    gpu: 0
+    load: 0.15
+
+network_edges:
+  - source: node-a
+    target: node-b
+    bandwidth: 1000
+    latency: 4
+  - source: node-b
+    target: node-a
+    bandwidth: 1000
+    latency: 4
+
+initial_tasks:
+  - id: task-1
+    cpu_required: 2
+    memory_required: 4
+    data_size: 128
+    deadline: 10
+
