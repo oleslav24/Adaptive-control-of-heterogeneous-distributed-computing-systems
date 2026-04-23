@@ -1,6 +1,6 @@
 # Experimental Multi-Agent Testbed
 
-Sprint 7 LLM-agent layer for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
+Sprint 8 experimental module for an adaptive control platform targeting heterogeneous distributed computing systems.
 
 ## Quick start
 
@@ -21,6 +21,9 @@ python -m project.experiments.run --config config.yaml --disable-intelligence
 python -m project.experiments.run --config config.yaml --ab-llm
 python -m project.experiments.run --config config.yaml --disable-llm
 python -m project.experiments.run --config config.yaml --llm-provider mock
+python -m project.experiments.run --config config.yaml --batch
+python -m project.experiments.run --config config.yaml --batch --batch-runs 5
+python -m project.experiments.run --config config.yaml --batch --batch-scenarios static,peak-load --batch-algorithms round-robin,min-load,greedy
 ```
 
 Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
@@ -31,11 +34,15 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - `scenario_events.csv`
 - `intelligence_ab.csv` (for `--ab-intelligence`)
 - `llm_ab.csv` (for `--ab-llm`)
+- `batch/batch_runs.csv` (for `--batch`)
+- `batch/batch_summary.csv` (for `--batch`)
+- `batch/batch_ranking.csv` (for `--batch`)
+- `batch/batch_winners.csv` (for `--batch`)
 - `metrics_timeseries.png`
 - `node_loads.png`
 - `outputs/<experiment>/run.log`
 
-## Current scope (Sprint 7)
+## Current scope (Sprint 8)
 
 - Core system model (`Node`, `Task`, `Network`, `SystemState`)
 - Task queue and time-based task release
@@ -54,3 +61,5 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - LLM policy guard: strict action schema, algorithm whitelist, clamped node bias
 - LLM integration into control via MAS messages (`llm_policy`, `llm_algorithm_hint`)
 - Simulation loop: `generate_tasks -> agents.step(state) -> update_state`
+- Experiment Runner: automatic batch matrix (`scenario x algorithm x repeat`)
+- Batch comparison tables: aggregated mean/std metrics and scenario winners

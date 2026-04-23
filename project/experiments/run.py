@@ -11,9 +11,18 @@ from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig, load_config
 from project.core.models import SystemState
 from project.experiments.controller import Experiment
+from project.experiments.runner import BatchRunResult, BatchRunSpec, ExperimentRunner
 from project.metrics import persist_observability, summarize_state
 
 LOGGER = logging.getLogger(__name__)
+
+DEFAULT_BATCH_SCENARIOS = [
+    "static",
+    "dynamic-load",
+    "peak-load",
+    "node-failures",
+    "heterogeneous-tasks",
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,6 +71,37 @@ def parse_args() -> argparse.Namespace:
         "--compare",
         action="store_true",
         help="Run comparison for algorithms from config optimization.compare_algorithms.",
+    )
+    parser.add_argument(
+        "--batch",
+        action="store_true",
+        help="Run batch matrix: scenarios x algorithms x repeats.",
+    )
+    parser.add_argument(
+        "--batch-scenarios",
+        default=None,
+        help="Comma-separated list of scenarios for batch run.",
+    )
+    parser.add_argument(
+        "--batch-algorithms",
+        default=None,
+        help="Comma-separated list of algorithms for batch run.",
+    )
+    parser.add_argument(
+        "--batch-runs",
+        type=int,
+        default=3,
+        help="Number of repeats per scenario/algorithm in batch run.",
+    )
+    parser.add_argument(
+        "--batch-save-runs",
+        action="store_true",
+        help="Persist full observability artifacts for each batch run.",
+    )
+    parser.add_argument(
+        "--batch-keep-adaptive",
+        action="store_true",
+        help="Keep adaptive intelligence and LLM behavior in batch mode.",
     )
     parser.add_argument(
         "--compare-algorithms",
@@ -113,6 +153,11 @@ def main() -> None:
             algorithms = config.optimization.compare_algorithms
         _run_comparison(config, algorithms)
         LOGGER.info("Comparison run finished. Log: %s", log_path)
+        return
+
+    if args.batch:
+        _run_batch(config, args)
+        LOGGER.info("Batch run finished. Log: %s", log_path)
         return
 
     final_state = Experiment(config=config).run()
@@ -250,6 +295,23 @@ def _run_llm_ab(config: ExperimentConfig) -> None:
     print(f"LLM A/B CSV: {ab_csv}")
 
 
+def _run_batch(config: ExperimentConfig, args: argparse.Namespace) -> None:
+    scenarios = _parse_batch_scenarios(args.batch_scenarios)
+    algorithms = _parse_compare_algorithms(args.batch_algorithms)
+    if not algorithms:
+        algorithms = config.optimization.compare_algorithms
+
+    spec = BatchRunSpec(
+        scenarios=scenarios,
+        algorithms=algorithms,
+        repeats=max(1, int(args.batch_runs)),
+        persist_individual_runs=bool(args.batch_save_runs),
+        strict_algorithm_comparison=not bool(args.batch_keep_adaptive),
+    )
+    result = ExperimentRunner(config=config).run_batch(spec)
+    _print_batch_result(config.name, spec, result)
+
+
 def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace) -> ExperimentConfig:
     if args.algorithm:
         config = _with_algorithm(config, args.algorithm)
@@ -311,6 +373,17 @@ def _parse_compare_algorithms(raw: str | None) -> list[str]:
     return parsed
 
 
+def _parse_batch_scenarios(raw: str | None) -> list[str]:
+    if not raw:
+        return list(DEFAULT_BATCH_SCENARIOS)
+    parsed: list[str] = []
+    for item in raw.split(","):
+        name = _slug(item)
+        if name and name not in parsed:
+            parsed.append(name)
+    return parsed or list(DEFAULT_BATCH_SCENARIOS)
+
+
 def _print_single_result(name: str, final_state: SystemState, artifacts: dict[str, str]) -> None:
     print(f"Experiment '{name}' completed.")
     print(f"Scenario: {final_state.scenario}")
@@ -339,6 +412,69 @@ def _print_single_result(name: str, final_state: SystemState, artifacts: dict[st
     print(f"State updates: {len(final_state.history)}")
     print(f"Final node loads: {final_state.node_loads}")
     for key, path in artifacts.items():
+        print(f"{key}: {path}")
+
+
+def _print_batch_result(name: str, spec: BatchRunSpec, result: BatchRunResult) -> None:
+    print(f"Experiment '{name}' batch run")
+    print(f"Scenarios: {', '.join(spec.scenarios)}")
+    print(f"Algorithms: {', '.join(spec.algorithms)}")
+    print(f"Repeats per pair: {spec.repeats}")
+    print(f"Strict algorithm comparison: {spec.strict_algorithm_comparison}")
+    print(
+        f"Total runs: {len(result.runs_df)} "
+        f"({len(spec.scenarios)} scenarios x {len(spec.algorithms)} algorithms x {spec.repeats} repeats)"
+    )
+
+    if result.summary_df.empty:
+        print("No batch results were produced.")
+    else:
+        print("Summary table (mean/std):")
+        summary_columns = [
+            "scenario",
+            "algorithm",
+            "runs",
+            "avg_latency_mean",
+            "avg_latency_std",
+            "throughput_mean",
+            "throughput_std",
+            "avg_load_mean",
+            "avg_load_std",
+            "deadline_violations_mean",
+            "pending_tasks_mean",
+        ]
+        available_columns = [
+            col for col in summary_columns if col in result.summary_df.columns
+        ]
+        print(
+            result.summary_df[available_columns].to_string(
+                index=False,
+                float_format=lambda value: f"{value:.3f}",
+            )
+        )
+
+    if result.winners_df.empty:
+        print("Winners table is empty.")
+    else:
+        print("Winners by scenario:")
+        winner_columns = [
+            "scenario",
+            "algorithm",
+            "composite_score",
+            "avg_latency_mean",
+            "throughput_mean",
+            "pending_tasks_mean",
+            "deadline_violations_mean",
+        ]
+        available_columns = [col for col in winner_columns if col in result.winners_df.columns]
+        print(
+            result.winners_df[available_columns].to_string(
+                index=False,
+                float_format=lambda value: f"{value:.3f}",
+            )
+        )
+
+    for key, path in result.output_paths.items():
         print(f"{key}: {path}")
 
 
