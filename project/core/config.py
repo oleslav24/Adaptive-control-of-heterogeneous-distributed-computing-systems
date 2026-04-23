@@ -34,6 +34,18 @@ class ObservabilityConfig:
 
 
 @dataclass(slots=True)
+class IntelligenceConfig:
+    enabled: bool = True
+    prediction_window: int = 6
+    znn_gain: float = 0.35
+    high_queue_threshold: float = 2.0
+    high_load_threshold: float = 0.70
+    adaptive_algorithm: bool = True
+    congestion_algorithm: str = "round-robin"
+    normal_algorithm: str = "min-load"
+
+
+@dataclass(slots=True)
 class DynamicLoadConfig:
     enabled: bool = False
     base_rate: float = 0.0
@@ -100,6 +112,7 @@ class ExperimentConfig:
     scenario: str = "static"
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
     optimization: OptimizationConfig = field(default_factory=OptimizationConfig)
+    intelligence: IntelligenceConfig = field(default_factory=IntelligenceConfig)
     observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
     scenarios: ScenarioConfig = field(default_factory=ScenarioConfig)
     nodes: list[Node] = field(default_factory=list)
@@ -126,6 +139,8 @@ def load_config(path: str | Path) -> ExperimentConfig:
         algorithm=normalize_algorithm(str(optimization_raw.get("algorithm", "min-load"))),
         compare_algorithms=compare_algorithms or list(SUPPORTED_ALGORITHMS),
     )
+
+    intelligence = _load_intelligence_config(raw.get("intelligence", {}))
 
     observability_raw = raw.get("observability", {})
     observability = ObservabilityConfig(
@@ -165,6 +180,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
         scenario=str(raw.get("scenario", "static")),
         simulation=simulation,
         optimization=optimization,
+        intelligence=intelligence,
         observability=observability,
         scenarios=scenarios,
         nodes=nodes,
@@ -235,6 +251,26 @@ def _load_scenario_config(raw: object) -> ScenarioConfig:
         peak_load=peak,
         node_failures=failures,
         heterogeneous_tasks=heterogeneous,
+    )
+
+
+def _load_intelligence_config(raw: object) -> IntelligenceConfig:
+    data = raw if isinstance(raw, dict) else {}
+    return IntelligenceConfig(
+        enabled=_as_bool(data.get("enabled", True)),
+        prediction_window=max(2, _as_int(data.get("prediction_window", 6), 6)),
+        znn_gain=max(0.01, _as_float(data.get("znn_gain", 0.35), 0.35)),
+        high_queue_threshold=max(
+            0.1, _as_float(data.get("high_queue_threshold", 2.0), 2.0)
+        ),
+        high_load_threshold=min(
+            1.0, max(0.1, _as_float(data.get("high_load_threshold", 0.70), 0.70))
+        ),
+        adaptive_algorithm=_as_bool(data.get("adaptive_algorithm", True)),
+        congestion_algorithm=normalize_algorithm(
+            str(data.get("congestion_algorithm", "round-robin"))
+        ),
+        normal_algorithm=normalize_algorithm(str(data.get("normal_algorithm", "min-load"))),
     )
 
 
@@ -375,4 +411,3 @@ def _as_float(value: object, default: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
-

@@ -1,6 +1,6 @@
 # Experimental Multi-Agent Testbed
 
-Sprint 5 dynamics and scenarios for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
+Sprint 6 intelligence layer (ML + ZNN) for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
 
 ## Quick start
 
@@ -16,6 +16,8 @@ python -m project.experiments.run --config config.yaml --compare
 python -m project.experiments.run --config config.yaml --scenario peak-load
 python -m project.experiments.run --config config.yaml --scenario node-failures
 python -m project.experiments.run --config config.yaml --scenario heterogeneous-tasks
+python -m project.experiments.run --config config.yaml --ab-intelligence
+python -m project.experiments.run --config config.yaml --disable-intelligence
 ```
 
 Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
@@ -24,11 +26,12 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - `history.csv`
 - `completed_tasks.csv`
 - `scenario_events.csv`
+- `intelligence_ab.csv` (for `--ab-intelligence`)
 - `metrics_timeseries.png`
 - `node_loads.png`
 - `outputs/<experiment>/run.log`
 
-## Current scope (Sprint 5)
+## Current scope (Sprint 6)
 
 - Core system model (`Node`, `Task`, `Network`, `SystemState`)
 - Task queue and time-based task release
@@ -40,4 +43,7 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - Metrics: `latency`, `throughput`, `load`
 - Observability: logging, CSV export, matplotlib plots
 - Scenarios: dynamic load, peak load, node failures, heterogeneous tasks
+- Prediction agent with ML regression load forecast
+- Simplified ZNN balancing module for node-level biasing
+- Predictive integration into control loop and adaptive algorithm hinting
 - Simulation loop: `generate_tasks -> agents.step(state) -> update_state`

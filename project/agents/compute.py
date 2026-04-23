@@ -14,6 +14,9 @@ class ComputeAgent(Agent):
         self._urgent_task_ids: set[str] = set()
         self._algorithm = "min-load"
         self._rr_cursor = 0
+        self._predicted_queue: float = 0.0
+        self._predicted_avg_load: float = 0.0
+        self._node_bias: dict[str, float] = {}
 
     def decide(self) -> None:
         if self.context is None:
@@ -50,6 +53,8 @@ class ComputeAgent(Agent):
                 topic="compute_plan",
                 payload={
                     "algorithm": self._algorithm,
+                    "predicted_queue": self._predicted_queue,
+                    "predicted_avg_load": self._predicted_avg_load,
                     "planned_assignments": len(self._plan),
                     "unassigned_tasks": [task.id for task in unassigned],
                 },
@@ -86,11 +91,27 @@ class ComputeAgent(Agent):
         self._node_bandwidth = {node_id: float("inf") for node_id in self.context.nodes}
         self._blocked_nodes = set()
         self._urgent_task_ids = set()
+        self._predicted_queue = 0.0
+        self._predicted_avg_load = 0.0
+        self._node_bias = {}
         for message in self.read_messages():
             if message.topic == "optimization_policy":
                 algorithm = message.payload.get("algorithm", "min-load")
                 self._algorithm = normalize_algorithm(str(algorithm))
                 self.context.active_algorithm = self._algorithm
+            if message.topic == "prediction_signal":
+                self._predicted_queue = max(
+                    0.0, float(message.payload.get("predicted_queue", 0.0))
+                )
+                self._predicted_avg_load = min(
+                    1.0, max(0.0, float(message.payload.get("predicted_avg_load", 0.0)))
+                )
+                bias = message.payload.get("node_bias", {})
+                if isinstance(bias, dict):
+                    self._node_bias = {
+                        str(node_id): float(value)
+                        for node_id, value in bias.items()
+                    }
             if message.topic == "bandwidth_policy":
                 node_bandwidth = message.payload.get("node_bandwidth", {})
                 blocked_nodes = message.payload.get("blocked_nodes", [])
@@ -115,13 +136,49 @@ class ComputeAgent(Agent):
             for node in self.context.nodes.values()
             if node.id not in self._blocked_nodes and node.can_run(task)
         ]
-        selected, next_cursor = choose_node(
-            algorithm=self._algorithm,
-            task=task,
-            candidates=candidates,
-            all_node_ids=list(self.context.nodes.keys()),
-            node_bandwidth=self._node_bandwidth,
-            rr_cursor=self._rr_cursor,
+        if not candidates:
+            return None
+        if self._algorithm == "round-robin":
+            selected, next_cursor = choose_node(
+                algorithm=self._algorithm,
+                task=task,
+                candidates=candidates,
+                all_node_ids=list(self.context.nodes.keys()),
+                node_bandwidth=self._node_bandwidth,
+                rr_cursor=self._rr_cursor,
+            )
+            self._rr_cursor = next_cursor
+            return selected
+        if self._algorithm == "greedy":
+            return min(candidates, key=lambda node: self._greedy_score(task, node))
+        return min(candidates, key=self._min_load_score)
+
+    def _min_load_score(self, node: Node) -> float:
+        predicted_target = self._predicted_avg_load
+        projected_over_target = max(0.0, node.load - predicted_target)
+        bias = self._node_bias.get(node.id, 0.0)
+        bandwidth = self._node_bandwidth.get(node.id, 1.0)
+        bandwidth_penalty = 1.0 / (1.0 + max(0.0, bandwidth))
+        pressure = self._predicted_queue / max(1.0, float(len(self._node_bandwidth)))
+        return (
+            node.load
+            + 0.30 * projected_over_target
+            + 0.08 * pressure
+            - 0.35 * bias
+            + bandwidth_penalty
+            - 0.0001 * node.cpu
         )
-        self._rr_cursor = next_cursor
-        return selected
+
+    def _greedy_score(self, task: Task, node: Node) -> float:
+        residual = (
+            (node.cpu - (node.used_cpu + task.cpu_required))
+            + 0.1 * (node.memory - (node.used_memory + task.memory_required))
+        )
+        bias = self._node_bias.get(node.id, 0.0)
+        projected_over_target = max(0.0, node.load - self._predicted_avg_load)
+        return (
+            -residual
+            + 0.25 * projected_over_target
+            - 0.25 * bias
+            + 0.06 * (self._predicted_queue / max(1.0, len(self._node_bandwidth)))
+        )

@@ -3,7 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import logging
 
-from project.agents import ComputeAgent, MonitoringAgent, NetworkAgent, OptimizationAgent, QoSAgent
+from project.agents import (
+    ComputeAgent,
+    MonitoringAgent,
+    NetworkAgent,
+    OptimizationAgent,
+    PredictionAgent,
+    QoSAgent,
+)
 from project.core.agent import Agent
 from project.core.config import ExperimentConfig
 from project.core.models import Node, SystemState, Task
@@ -74,18 +81,37 @@ class SimulationLoop:
             active_algorithm=self.config.optimization.algorithm,
         )
         if not self.agents:
-            self.agents = [
-                MonitoringAgent(),
-                NetworkAgent(),
-                QoSAgent(),
-                OptimizationAgent(algorithm=self.config.optimization.algorithm),
-                ComputeAgent(),
-            ]
+            agents: list[Agent] = [MonitoringAgent()]
+            if self.config.intelligence.enabled:
+                agents.append(
+                    PredictionAgent(
+                        prediction_window=self.config.intelligence.prediction_window,
+                        znn_gain=self.config.intelligence.znn_gain,
+                        high_queue_threshold=self.config.intelligence.high_queue_threshold,
+                        high_load_threshold=self.config.intelligence.high_load_threshold,
+                        adaptive_algorithm=self.config.intelligence.adaptive_algorithm,
+                        congestion_algorithm=self.config.intelligence.congestion_algorithm,
+                        normal_algorithm=self.config.intelligence.normal_algorithm,
+                    )
+                )
+            agents.extend(
+                [
+                    NetworkAgent(),
+                    QoSAgent(),
+                    OptimizationAgent(
+                        algorithm=self.config.optimization.algorithm,
+                        adaptive_algorithm=self.config.intelligence.adaptive_algorithm,
+                    ),
+                    ComputeAgent(),
+                ]
+            )
+            self.agents = agents
         self.mas = MultiAgentSystem(agents=self.agents, context=self.context)
         self._sync_state(0)
         LOGGER.info(
-            "Simulation initialized: algorithm=%s nodes=%d tasks=%d horizon=%d",
+            "Simulation initialized: algorithm=%s intelligence=%s nodes=%d tasks=%d horizon=%d",
             self.config.optimization.algorithm,
+            self.config.intelligence.enabled,
             len(self.nodes),
             len(self.future_tasks),
             self.config.simulation.time_horizon,
@@ -138,12 +164,14 @@ class SimulationLoop:
             self.mas.step(self.state)
             self.update_state(t)
         LOGGER.info(
-            "Simulation finished: completed=%d pending=%d latency=%.3f throughput=%.3f avg_load=%.3f",
+            "Simulation finished: completed=%d pending=%d latency=%.3f throughput=%.3f avg_load=%.3f predicted_queue=%.3f predicted_load=%.3f",
             self.state.completed_tasks,
             self.state.pending_tasks,
             self.state.avg_latency,
             self.state.throughput,
             self.state.avg_load,
+            self.state.predicted_queue,
+            self.state.predicted_avg_load,
         )
         return self.state
 
@@ -152,8 +180,11 @@ class SimulationLoop:
             self.context.current_time = current_time
         self.state.current_time = current_time
         self.state.scenario = self.config.scenario
+        self.state.intelligence_enabled = self.config.intelligence.enabled
         if self.context is not None:
             self.state.selected_algorithm = self.context.active_algorithm
+            self.state.predicted_queue = self.context.predicted_queue
+            self.state.predicted_avg_load = self.context.predicted_avg_load
         self.state.node_loads = {node_id: node.load for node_id, node in self.nodes.items()}
         self.state.queue_lengths = {"global": len(self.queue)}
         self.state.network_state = self.network.snapshot()
@@ -230,6 +261,9 @@ class SimulationLoop:
                 "time": self.state.current_time,
                 "scenario": self.state.scenario,
                 "algorithm": self.state.selected_algorithm,
+                "intelligence_enabled": self.state.intelligence_enabled,
+                "predicted_queue": self.state.predicted_queue,
+                "predicted_avg_load": self.state.predicted_avg_load,
                 "node_loads": dict(self.state.node_loads),
                 "queue_size": self.state.queue_lengths["global"],
                 "pending_tasks": self.state.pending_tasks,

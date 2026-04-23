@@ -17,6 +17,9 @@ class SimulationContext:
     network: NetworkModel
     current_time: int = 0
     active_algorithm: str = "min-load"
+    predicted_queue: float = 0.0
+    predicted_avg_load: float = 0.0
+    prediction_node_bias: dict[str, float] = field(default_factory=dict)
     assignment_log: list[dict[str, object]] = field(default_factory=list)
 
     def pop_queued_tasks(self) -> list[Task]:

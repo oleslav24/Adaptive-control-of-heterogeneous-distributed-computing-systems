@@ -5,23 +5,36 @@ from project.core.agent import Agent, AgentMessage
 
 
 class OptimizationAgent(Agent):
-    def __init__(self, algorithm: str = "min-load", name: str = "optimization") -> None:
+    def __init__(
+        self,
+        algorithm: str = "min-load",
+        adaptive_algorithm: bool = True,
+        name: str = "optimization",
+    ) -> None:
         super().__init__(name=name)
-        self.algorithm = normalize_algorithm(algorithm)
+        self.base_algorithm = normalize_algorithm(algorithm)
+        self.adaptive_algorithm = adaptive_algorithm
 
     def decide(self) -> None:
         if self.context is None:
             return
-        self.context.active_algorithm = self.algorithm
+        selected = self.base_algorithm
+        messages = self.read_messages()
+        if self.adaptive_algorithm:
+            for message in messages:
+                if message.topic != "prediction_algorithm_hint":
+                    continue
+                hint = message.payload.get("algorithm", selected)
+                selected = normalize_algorithm(str(hint))
+        self.context.active_algorithm = selected
         self.send(
             AgentMessage(
                 sender=self.name,
                 recipient="compute",
                 topic="optimization_policy",
-                payload={"algorithm": self.algorithm},
+                payload={"algorithm": selected},
             )
         )
 
     def act(self) -> None:
         return
-

@@ -74,6 +74,9 @@ class SystemState:
     current_time: int = 0
     scenario: str = "static"
     selected_algorithm: str = "min-load"
+    intelligence_enabled: bool = False
+    predicted_queue: float = 0.0
+    predicted_avg_load: float = 0.0
     node_loads: dict[str, float] = field(default_factory=dict)
     queue_lengths: dict[str, int] = field(default_factory=dict)
     network_state: dict[tuple[str, str], dict[str, float]] = field(default_factory=dict)

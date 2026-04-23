@@ -1,5 +1,5 @@
-name: sprint5-dynamics-scenarios
-scenario: dynamic-load
+name: sprint6-intelligence-ml-znn
+scenario: peak-load
 
 simulation:
   time_horizon: 8
@@ -12,6 +12,16 @@ optimization:
     - round-robin
     - min-load
     - greedy
+
+intelligence:
+  enabled: true
+  prediction_window: 6
+  znn_gain: 0.40
+  high_queue_threshold: 1.5
+  high_load_threshold: 0.65
+  adaptive_algorithm: true
+  congestion_algorithm: round-robin
+  normal_algorithm: min-load
 
 observability:
   output_dir: outputs

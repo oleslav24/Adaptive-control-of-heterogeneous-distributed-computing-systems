@@ -25,6 +25,9 @@ def summarize_state(state: SystemState) -> dict[str, float | int | str]:
     return {
         "scenario": state.scenario,
         "algorithm": state.selected_algorithm,
+        "intelligence_enabled": state.intelligence_enabled,
+        "predicted_queue": state.predicted_queue,
+        "predicted_avg_load": state.predicted_avg_load,
         "time": state.current_time,
         "completed_tasks": state.completed_tasks,
         "pending_tasks": state.pending_tasks,
