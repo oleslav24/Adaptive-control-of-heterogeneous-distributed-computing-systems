@@ -17,6 +17,8 @@ class ComputeAgent(Agent):
         self._predicted_queue: float = 0.0
         self._predicted_avg_load: float = 0.0
         self._node_bias: dict[str, float] = {}
+        self._llm_bias: dict[str, float] = {}
+        self._llm_confidence: float = 0.0
 
     def decide(self) -> None:
         if self.context is None:
@@ -55,6 +57,7 @@ class ComputeAgent(Agent):
                     "algorithm": self._algorithm,
                     "predicted_queue": self._predicted_queue,
                     "predicted_avg_load": self._predicted_avg_load,
+                    "llm_confidence": self._llm_confidence,
                     "planned_assignments": len(self._plan),
                     "unassigned_tasks": [task.id for task in unassigned],
                 },
@@ -94,6 +97,8 @@ class ComputeAgent(Agent):
         self._predicted_queue = 0.0
         self._predicted_avg_load = 0.0
         self._node_bias = {}
+        self._llm_bias = {}
+        self._llm_confidence = 0.0
         for message in self.read_messages():
             if message.topic == "optimization_policy":
                 algorithm = message.payload.get("algorithm", "min-load")
@@ -111,6 +116,16 @@ class ComputeAgent(Agent):
                     self._node_bias = {
                         str(node_id): float(value)
                         for node_id, value in bias.items()
+                    }
+            if message.topic == "llm_policy":
+                self._llm_confidence = max(
+                    0.0, min(1.0, float(message.payload.get("confidence", 0.0)))
+                )
+                llm_bias = message.payload.get("node_bias", {})
+                if isinstance(llm_bias, dict):
+                    self._llm_bias = {
+                        str(node_id): float(value)
+                        for node_id, value in llm_bias.items()
                     }
             if message.topic == "bandwidth_policy":
                 node_bandwidth = message.payload.get("node_bandwidth", {})
@@ -156,7 +171,9 @@ class ComputeAgent(Agent):
     def _min_load_score(self, node: Node) -> float:
         predicted_target = self._predicted_avg_load
         projected_over_target = max(0.0, node.load - predicted_target)
-        bias = self._node_bias.get(node.id, 0.0)
+        bias = self._node_bias.get(node.id, 0.0) + (
+            self._llm_bias.get(node.id, 0.0) * self._llm_confidence
+        )
         bandwidth = self._node_bandwidth.get(node.id, 1.0)
         bandwidth_penalty = 1.0 / (1.0 + max(0.0, bandwidth))
         pressure = self._predicted_queue / max(1.0, float(len(self._node_bandwidth)))
@@ -174,7 +191,9 @@ class ComputeAgent(Agent):
             (node.cpu - (node.used_cpu + task.cpu_required))
             + 0.1 * (node.memory - (node.used_memory + task.memory_required))
         )
-        bias = self._node_bias.get(node.id, 0.0)
+        bias = self._node_bias.get(node.id, 0.0) + (
+            self._llm_bias.get(node.id, 0.0) * self._llm_confidence
+        )
         projected_over_target = max(0.0, node.load - self._predicted_avg_load)
         return (
             -residual

@@ -1,4 +1,4 @@
-name: sprint6-intelligence-ml-znn
+name: sprint7-llm-agent
 scenario: peak-load
 
 simulation:
@@ -22,6 +22,22 @@ intelligence:
   adaptive_algorithm: true
   congestion_algorithm: round-robin
   normal_algorithm: min-load
+
+llm:
+  enabled: true
+  provider: auto
+  model: gpt-5.4-mini
+  temperature: 0.2
+  max_tokens: 300
+  timeout_seconds: 12
+  api_base_url: https://api.openai.com
+  api_key_env: OPENAI_API_KEY
+  allow_algorithm_override: true
+  allow_node_bias_override: true
+  allowed_algorithms:
+    - round-robin
+    - min-load
+    - greedy
 
 observability:
   output_dir: outputs

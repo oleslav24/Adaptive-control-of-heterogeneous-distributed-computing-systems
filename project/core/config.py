@@ -46,6 +46,23 @@ class IntelligenceConfig:
 
 
 @dataclass(slots=True)
+class LLMConfig:
+    enabled: bool = True
+    provider: str = "auto"  # auto | openai | mock
+    model: str = "gpt-5.4-mini"
+    temperature: float = 0.2
+    max_tokens: int = 300
+    timeout_seconds: int = 12
+    api_base_url: str = "https://api.openai.com"
+    api_key_env: str = "OPENAI_API_KEY"
+    allow_algorithm_override: bool = True
+    allow_node_bias_override: bool = True
+    allowed_algorithms: list[str] = field(
+        default_factory=lambda: ["round-robin", "min-load", "greedy"]
+    )
+
+
+@dataclass(slots=True)
 class DynamicLoadConfig:
     enabled: bool = False
     base_rate: float = 0.0
@@ -113,6 +130,7 @@ class ExperimentConfig:
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
     optimization: OptimizationConfig = field(default_factory=OptimizationConfig)
     intelligence: IntelligenceConfig = field(default_factory=IntelligenceConfig)
+    llm: LLMConfig = field(default_factory=LLMConfig)
     observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
     scenarios: ScenarioConfig = field(default_factory=ScenarioConfig)
     nodes: list[Node] = field(default_factory=list)
@@ -141,6 +159,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
     )
 
     intelligence = _load_intelligence_config(raw.get("intelligence", {}))
+    llm = _load_llm_config(raw.get("llm", {}))
 
     observability_raw = raw.get("observability", {})
     observability = ObservabilityConfig(
@@ -181,6 +200,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
         simulation=simulation,
         optimization=optimization,
         intelligence=intelligence,
+        llm=llm,
         observability=observability,
         scenarios=scenarios,
         nodes=nodes,
@@ -271,6 +291,29 @@ def _load_intelligence_config(raw: object) -> IntelligenceConfig:
             str(data.get("congestion_algorithm", "round-robin"))
         ),
         normal_algorithm=normalize_algorithm(str(data.get("normal_algorithm", "min-load"))),
+    )
+
+
+def _load_llm_config(raw: object) -> LLMConfig:
+    data = raw if isinstance(raw, dict) else {}
+    allowed = _normalize_algorithm_list(data.get("allowed_algorithms", []))
+    if not allowed:
+        allowed = list(SUPPORTED_ALGORITHMS)
+    provider = str(data.get("provider", "auto")).strip().lower()
+    if provider not in {"auto", "openai", "mock"}:
+        provider = "auto"
+    return LLMConfig(
+        enabled=_as_bool(data.get("enabled", True)),
+        provider=provider,
+        model=str(data.get("model", "gpt-5.4-mini")),
+        temperature=max(0.0, _as_float(data.get("temperature", 0.2), 0.2)),
+        max_tokens=max(64, _as_int(data.get("max_tokens", 300), 300)),
+        timeout_seconds=max(3, _as_int(data.get("timeout_seconds", 12), 12)),
+        api_base_url=str(data.get("api_base_url", "https://api.openai.com")).rstrip("/"),
+        api_key_env=str(data.get("api_key_env", "OPENAI_API_KEY")),
+        allow_algorithm_override=_as_bool(data.get("allow_algorithm_override", True)),
+        allow_node_bias_override=_as_bool(data.get("allow_node_bias_override", True)),
+        allowed_algorithms=allowed,
     )
 
 

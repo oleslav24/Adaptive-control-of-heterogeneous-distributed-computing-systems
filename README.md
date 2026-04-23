@@ -1,6 +1,6 @@
 # Experimental Multi-Agent Testbed
 
-Sprint 6 intelligence layer (ML + ZNN) for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
+Sprint 7 LLM-agent layer for an experimental platform to study adaptive control of heterogeneous distributed computing systems.
 
 ## Quick start
 
@@ -18,6 +18,9 @@ python -m project.experiments.run --config config.yaml --scenario node-failures
 python -m project.experiments.run --config config.yaml --scenario heterogeneous-tasks
 python -m project.experiments.run --config config.yaml --ab-intelligence
 python -m project.experiments.run --config config.yaml --disable-intelligence
+python -m project.experiments.run --config config.yaml --ab-llm
+python -m project.experiments.run --config config.yaml --disable-llm
+python -m project.experiments.run --config config.yaml --llm-provider mock
 ```
 
 Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
@@ -27,11 +30,12 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - `completed_tasks.csv`
 - `scenario_events.csv`
 - `intelligence_ab.csv` (for `--ab-intelligence`)
+- `llm_ab.csv` (for `--ab-llm`)
 - `metrics_timeseries.png`
 - `node_loads.png`
 - `outputs/<experiment>/run.log`
 
-## Current scope (Sprint 6)
+## Current scope (Sprint 7)
 
 - Core system model (`Node`, `Task`, `Network`, `SystemState`)
 - Task queue and time-based task release
@@ -46,4 +50,7 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - Prediction agent with ML regression load forecast
 - Simplified ZNN balancing module for node-level biasing
 - Predictive integration into control loop and adaptive algorithm hinting
+- LLM Agent: `state -> text`, prompt template, API integration (`auto/openai/mock`)
+- LLM policy guard: strict action schema, algorithm whitelist, clamped node bias
+- LLM integration into control via MAS messages (`llm_policy`, `llm_algorithm_hint`)
 - Simulation loop: `generate_tasks -> agents.step(state) -> update_state`

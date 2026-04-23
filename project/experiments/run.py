@@ -39,6 +39,21 @@ def parse_args() -> argparse.Namespace:
         help="Disable prediction/ML/ZNN layer for this run.",
     )
     parser.add_argument(
+        "--disable-llm",
+        action="store_true",
+        help="Disable LLM agent for this run.",
+    )
+    parser.add_argument(
+        "--llm-provider",
+        default=None,
+        help="Override LLM provider: auto, openai, mock.",
+    )
+    parser.add_argument(
+        "--ab-llm",
+        action="store_true",
+        help="Run A/B comparison: baseline algorithms vs LLM-guided control.",
+    )
+    parser.add_argument(
         "--ab-intelligence",
         action="store_true",
         help="Run A/B comparison: without intelligence vs with intelligence.",
@@ -82,6 +97,11 @@ def main() -> None:
     log_path = _configure_logging(config)
     LOGGER.info("Run started: experiment=%s", config.name)
 
+    if args.ab_llm:
+        _run_llm_ab(config)
+        LOGGER.info("A/B LLM run finished. Log: %s", log_path)
+        return
+
     if args.ab_intelligence:
         _run_intelligence_ab(config)
         LOGGER.info("A/B intelligence run finished. Log: %s", log_path)
@@ -114,6 +134,7 @@ def _run_comparison(config: ExperimentConfig, algorithms: list[str]) -> None:
         scenario_config = replace(
             scenario_config,
             intelligence=replace(scenario_config.intelligence, adaptive_algorithm=False),
+            llm=replace(scenario_config.llm, enabled=False),
         )
         state = Experiment(config=scenario_config).run()
         rows.append(summarize_state(state))
@@ -178,6 +199,57 @@ def _run_intelligence_ab(config: ExperimentConfig) -> None:
     print(f"A/B CSV: {ab_csv}")
 
 
+def _run_llm_ab(config: ExperimentConfig) -> None:
+    baseline_config = replace(
+        config,
+        intelligence=replace(config.intelligence, adaptive_algorithm=False),
+        llm=replace(config.llm, enabled=False),
+    )
+    llm_config = replace(
+        config,
+        llm=replace(config.llm, enabled=True),
+    )
+    baseline_state = Experiment(config=baseline_config).run()
+    llm_state = Experiment(config=llm_config).run()
+    _persist_run_artifacts(baseline_config, baseline_state)
+    _persist_run_artifacts(llm_config, llm_state)
+
+    print(f"Experiment '{config.name}' LLM A/B")
+    print(
+        "mode | algorithm | llm_source | completed | pending | latency | throughput | avg_load"
+    )
+    print("-" * 102)
+    print(
+        f"baseline | {baseline_state.selected_algorithm} | {baseline_state.llm_source} | "
+        f"{baseline_state.completed_tasks} | {baseline_state.pending_tasks} | "
+        f"{baseline_state.avg_latency:.3f} | {baseline_state.throughput:.3f} | "
+        f"{baseline_state.avg_load:.3f}"
+    )
+    print(
+        f"llm | {llm_state.selected_algorithm} | {llm_state.llm_source} | "
+        f"{llm_state.completed_tasks} | {llm_state.pending_tasks} | "
+        f"{llm_state.avg_latency:.3f} | {llm_state.throughput:.3f} | "
+        f"{llm_state.avg_load:.3f}"
+    )
+
+    improvement_latency = baseline_state.avg_latency - llm_state.avg_latency
+    improvement_throughput = llm_state.throughput - baseline_state.throughput
+    print(
+        f"Delta: latency={improvement_latency:+.3f}, throughput={improvement_throughput:+.3f}"
+    )
+
+    rows = [
+        {"mode": "baseline", **summarize_state(baseline_state)},
+        {"mode": "llm", **summarize_state(llm_state)},
+    ]
+    ab_df = pd.DataFrame(rows)
+    ab_dir = Path(config.observability.output_dir) / config.name / _slug(config.scenario)
+    ab_dir.mkdir(parents=True, exist_ok=True)
+    ab_csv = ab_dir / "llm_ab.csv"
+    ab_df.to_csv(ab_csv, index=False)
+    print(f"LLM A/B CSV: {ab_csv}")
+
+
 def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace) -> ExperimentConfig:
     if args.algorithm:
         config = _with_algorithm(config, args.algorithm)
@@ -187,6 +259,13 @@ def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace)
         config = replace(
             config,
             intelligence=replace(config.intelligence, enabled=False, adaptive_algorithm=False),
+        )
+    if args.disable_llm:
+        config = replace(config, llm=replace(config.llm, enabled=False))
+    if args.llm_provider:
+        config = replace(
+            config,
+            llm=replace(config.llm, provider=str(args.llm_provider).strip().lower()),
         )
 
     observability = config.observability
@@ -237,6 +316,11 @@ def _print_single_result(name: str, final_state: SystemState, artifacts: dict[st
     print(f"Scenario: {final_state.scenario}")
     print(f"Algorithm: {final_state.selected_algorithm}")
     print(f"Intelligence enabled: {final_state.intelligence_enabled}")
+    print(f"LLM enabled: {final_state.llm_enabled}")
+    print(f"LLM source: {final_state.llm_source}")
+    print(f"LLM confidence: {final_state.llm_confidence:.3f}")
+    print(f"LLM algorithm hint: {final_state.llm_algorithm_hint}")
+    print(f"LLM actions applied: {final_state.llm_actions_applied}")
     print(f"Predicted queue: {final_state.predicted_queue:.3f}")
     print(f"Predicted avg load: {final_state.predicted_avg_load:.3f}")
     print(f"Simulation time: {final_state.current_time}")

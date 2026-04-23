@@ -5,6 +5,7 @@ import logging
 
 from project.agents import (
     ComputeAgent,
+    LLMAgent,
     MonitoringAgent,
     NetworkAgent,
     OptimizationAgent,
@@ -94,6 +95,21 @@ class SimulationLoop:
                         normal_algorithm=self.config.intelligence.normal_algorithm,
                     )
                 )
+            if self.config.llm.enabled:
+                agents.append(
+                    LLMAgent(
+                        provider=self.config.llm.provider,
+                        model=self.config.llm.model,
+                        temperature=self.config.llm.temperature,
+                        max_tokens=self.config.llm.max_tokens,
+                        timeout_seconds=self.config.llm.timeout_seconds,
+                        api_base_url=self.config.llm.api_base_url,
+                        api_key_env=self.config.llm.api_key_env,
+                        allowed_algorithms=self.config.llm.allowed_algorithms,
+                        allow_algorithm_override=self.config.llm.allow_algorithm_override,
+                        allow_node_bias_override=self.config.llm.allow_node_bias_override,
+                    )
+                )
             agents.extend(
                 [
                     NetworkAgent(),
@@ -109,9 +125,10 @@ class SimulationLoop:
         self.mas = MultiAgentSystem(agents=self.agents, context=self.context)
         self._sync_state(0)
         LOGGER.info(
-            "Simulation initialized: algorithm=%s intelligence=%s nodes=%d tasks=%d horizon=%d",
+            "Simulation initialized: algorithm=%s intelligence=%s llm=%s nodes=%d tasks=%d horizon=%d",
             self.config.optimization.algorithm,
             self.config.intelligence.enabled,
+            self.config.llm.enabled,
             len(self.nodes),
             len(self.future_tasks),
             self.config.simulation.time_horizon,
@@ -164,7 +181,7 @@ class SimulationLoop:
             self.mas.step(self.state)
             self.update_state(t)
         LOGGER.info(
-            "Simulation finished: completed=%d pending=%d latency=%.3f throughput=%.3f avg_load=%.3f predicted_queue=%.3f predicted_load=%.3f",
+            "Simulation finished: completed=%d pending=%d latency=%.3f throughput=%.3f avg_load=%.3f predicted_queue=%.3f predicted_load=%.3f llm_source=%s llm_hint=%s",
             self.state.completed_tasks,
             self.state.pending_tasks,
             self.state.avg_latency,
@@ -172,6 +189,8 @@ class SimulationLoop:
             self.state.avg_load,
             self.state.predicted_queue,
             self.state.predicted_avg_load,
+            self.state.llm_source,
+            self.state.llm_algorithm_hint,
         )
         return self.state
 
@@ -181,10 +200,16 @@ class SimulationLoop:
         self.state.current_time = current_time
         self.state.scenario = self.config.scenario
         self.state.intelligence_enabled = self.config.intelligence.enabled
+        self.state.llm_enabled = self.config.llm.enabled
         if self.context is not None:
             self.state.selected_algorithm = self.context.active_algorithm
             self.state.predicted_queue = self.context.predicted_queue
             self.state.predicted_avg_load = self.context.predicted_avg_load
+            self.state.llm_source = self.context.llm_source
+            self.state.llm_confidence = self.context.llm_confidence
+            self.state.llm_algorithm_hint = self.context.llm_algorithm_hint
+            self.state.llm_actions_applied = self.context.llm_actions_applied
+            self.state.llm_last_reason = self.context.llm_reason
         self.state.node_loads = {node_id: node.load for node_id, node in self.nodes.items()}
         self.state.queue_lengths = {"global": len(self.queue)}
         self.state.network_state = self.network.snapshot()
@@ -262,6 +287,11 @@ class SimulationLoop:
                 "scenario": self.state.scenario,
                 "algorithm": self.state.selected_algorithm,
                 "intelligence_enabled": self.state.intelligence_enabled,
+                "llm_enabled": self.state.llm_enabled,
+                "llm_source": self.state.llm_source,
+                "llm_confidence": self.state.llm_confidence,
+                "llm_algorithm_hint": self.state.llm_algorithm_hint,
+                "llm_actions_applied": self.state.llm_actions_applied,
                 "predicted_queue": self.state.predicted_queue,
                 "predicted_avg_load": self.state.predicted_avg_load,
                 "node_loads": dict(self.state.node_loads),

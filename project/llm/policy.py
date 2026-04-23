@@ -1,0 +1,104 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+import json
+
+
+@dataclass(slots=True)
+class LLMDecision:
+    algorithm_hint: str | None = None
+    node_bias: dict[str, float] = field(default_factory=dict)
+    confidence: float = 0.0
+    reason: str = ""
+    source: str = "unknown"
+    raw: str = ""
+
+
+def parse_llm_decision(text: str, source: str = "llm") -> LLMDecision:
+    payload = _parse_json_payload(text)
+    algorithm = payload.get("algorithm_hint")
+    algorithm_hint = str(algorithm) if isinstance(algorithm, str) else None
+
+    node_bias_raw = payload.get("node_bias", {})
+    node_bias: dict[str, float] = {}
+    if isinstance(node_bias_raw, dict):
+        for node_id, value in node_bias_raw.items():
+            try:
+                node_bias[str(node_id)] = float(value)
+            except (TypeError, ValueError):
+                continue
+
+    confidence_raw = payload.get("confidence", 0.0)
+    try:
+        confidence = float(confidence_raw)
+    except (TypeError, ValueError):
+        confidence = 0.0
+
+    reason = str(payload.get("reason", "")).strip()
+    return LLMDecision(
+        algorithm_hint=algorithm_hint,
+        node_bias=node_bias,
+        confidence=confidence,
+        reason=reason,
+        source=source,
+        raw=text,
+    )
+
+
+def clamp_decision(
+    decision: LLMDecision,
+    allowed_algorithms: set[str],
+    allowed_nodes: set[str],
+    allow_algorithm_override: bool,
+    allow_node_bias_override: bool,
+) -> LLMDecision:
+    algorithm_hint: str | None = None
+    if allow_algorithm_override and decision.algorithm_hint:
+        candidate = decision.algorithm_hint.strip().lower().replace("_", "-")
+        if candidate in allowed_algorithms:
+            algorithm_hint = candidate
+
+    node_bias: dict[str, float] = {}
+    if allow_node_bias_override:
+        for node_id, value in decision.node_bias.items():
+            if node_id not in allowed_nodes:
+                continue
+            node_bias[node_id] = max(-0.5, min(0.5, float(value)))
+
+    confidence = max(0.0, min(1.0, float(decision.confidence)))
+    reason = decision.reason[:240]
+    return LLMDecision(
+        algorithm_hint=algorithm_hint,
+        node_bias=node_bias,
+        confidence=confidence,
+        reason=reason,
+        source=decision.source,
+        raw=decision.raw,
+    )
+
+
+def _parse_json_payload(text: str) -> dict[str, object]:
+    text = str(text or "").strip()
+    if not text:
+        return {}
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        pass
+
+    # Fallback for fenced or verbose responses: take first {...} block.
+    start = text.find("{")
+    end = text.rfind("}")
+    if start < 0 or end <= start:
+        return {}
+    snippet = text[start : end + 1]
+    try:
+        parsed = json.loads(snippet)
+        if isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        return {}
+    return {}
+

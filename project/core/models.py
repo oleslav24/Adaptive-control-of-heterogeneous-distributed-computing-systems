@@ -75,6 +75,12 @@ class SystemState:
     scenario: str = "static"
     selected_algorithm: str = "min-load"
     intelligence_enabled: bool = False
+    llm_enabled: bool = False
+    llm_source: str = "none"
+    llm_confidence: float = 0.0
+    llm_algorithm_hint: str | None = None
+    llm_actions_applied: int = 0
+    llm_last_reason: str = ""
     predicted_queue: float = 0.0
     predicted_avg_load: float = 0.0
     node_loads: dict[str, float] = field(default_factory=dict)

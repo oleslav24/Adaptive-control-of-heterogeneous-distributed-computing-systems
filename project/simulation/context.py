@@ -20,6 +20,13 @@ class SimulationContext:
     predicted_queue: float = 0.0
     predicted_avg_load: float = 0.0
     prediction_node_bias: dict[str, float] = field(default_factory=dict)
+    llm_algorithm_hint: str | None = None
+    llm_node_bias: dict[str, float] = field(default_factory=dict)
+    llm_confidence: float = 0.0
+    llm_reason: str = ""
+    llm_source: str = "none"
+    llm_raw_response: str = ""
+    llm_actions_applied: int = 0
     assignment_log: list[dict[str, object]] = field(default_factory=list)
 
     def pop_queued_tasks(self) -> list[Task]:

@@ -26,6 +26,11 @@ class OptimizationAgent(Agent):
                     continue
                 hint = message.payload.get("algorithm", selected)
                 selected = normalize_algorithm(str(hint))
+        for message in messages:
+            if message.topic != "llm_algorithm_hint":
+                continue
+            hint = message.payload.get("algorithm", selected)
+            selected = normalize_algorithm(str(hint))
         self.context.active_algorithm = selected
         self.send(
             AgentMessage(
