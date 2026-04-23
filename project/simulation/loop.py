@@ -10,6 +10,7 @@ from project.core.models import Node, SystemState, Task
 from project.simulation.context import SimulationContext
 from project.simulation.mas import MultiAgentSystem
 from project.simulation.network import NetworkModel
+from project.simulation.scenarios import ScenarioEngine
 from project.simulation.task_queue import TaskQueue
 
 LOGGER = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ class SimulationLoop:
     running_tasks: dict[str, list[Task]] = field(default_factory=dict)
     completed_tasks: list[Task] = field(default_factory=list)
     network: NetworkModel = field(default_factory=NetworkModel)
+    scenario_engine: ScenarioEngine | None = None
     context: SimulationContext | None = None
     mas: MultiAgentSystem | None = None
     state: SystemState = field(default_factory=SystemState)
@@ -60,6 +62,7 @@ class SimulationLoop:
         self.queue = TaskQueue()
         self.running_tasks = {node_id: [] for node_id in self.nodes}
         self.completed_tasks = []
+        self.scenario_engine = ScenarioEngine(config=self.config)
         self.context = SimulationContext(
             nodes=self.nodes,
             queue=self.queue,
@@ -94,7 +97,12 @@ class SimulationLoop:
             task = self.future_tasks.pop(0)
             task.status = "queued"
             released.append(task)
-        self.queue.extend(released)
+        generated: list[Task] = []
+        if self.scenario_engine is not None:
+            generated = self.scenario_engine.generate_tasks(t)
+            for task in generated:
+                task.status = "queued"
+        self.queue.extend(released + generated)
 
     def update_state(self, t: int) -> None:
         for node_id, tasks in self.running_tasks.items():
@@ -118,6 +126,14 @@ class SimulationLoop:
             if self.context is None or self.mas is None:
                 raise RuntimeError("Simulation context is not initialized.")
             self.context.current_time = t
+            if self.scenario_engine is not None:
+                for event in self.scenario_engine.apply_events(t, self.context):
+                    LOGGER.warning(
+                        "Scenario event: time=%d kind=%s details=%s",
+                        event.time,
+                        event.kind,
+                        event.details,
+                    )
             self.generate_tasks(t)
             self.mas.step(self.state)
             self.update_state(t)
@@ -135,6 +151,7 @@ class SimulationLoop:
         if self.context is not None:
             self.context.current_time = current_time
         self.state.current_time = current_time
+        self.state.scenario = self.config.scenario
         if self.context is not None:
             self.state.selected_algorithm = self.context.active_algorithm
         self.state.node_loads = {node_id: node.load for node_id, node in self.nodes.items()}
@@ -150,10 +167,18 @@ class SimulationLoop:
             + len(self.queue)
             + sum(len(tasks) for tasks in self.running_tasks.values())
         )
+        self.state.inactive_nodes = sorted(
+            [node_id for node_id, node in self.nodes.items() if not node.is_active]
+        )
         self.state.deadline_violations = sum(
             1
             for task in self.completed_tasks
             if task.finish_time is not None and task.finish_time > task.deadline
+        )
+        self.state.generated_tasks = (
+            self.scenario_engine.generated_tasks_total
+            if self.scenario_engine is not None
+            else 0
         )
         latencies = [
             float(task.finish_time - task.arrival_time)
@@ -191,17 +216,26 @@ class SimulationLoop:
                 "duration": task.duration,
                 "assigned_node": task.assigned_node,
                 "algorithm": self.state.selected_algorithm,
+                "scenario": self.state.scenario,
             }
             for task in self.completed_tasks
         ]
+        self.state.scenario_events = (
+            self.scenario_engine.events_as_dicts()
+            if self.scenario_engine is not None
+            else []
+        )
         self.state.history.append(
             {
                 "time": self.state.current_time,
+                "scenario": self.state.scenario,
                 "algorithm": self.state.selected_algorithm,
                 "node_loads": dict(self.state.node_loads),
                 "queue_size": self.state.queue_lengths["global"],
                 "pending_tasks": self.state.pending_tasks,
                 "completed_tasks": self.state.completed_tasks,
+                "inactive_nodes": len(self.state.inactive_nodes),
+                "generated_tasks": self.state.generated_tasks,
                 "avg_latency": self.state.avg_latency,
                 "throughput": self.state.throughput,
                 "avg_load": self.state.avg_load,

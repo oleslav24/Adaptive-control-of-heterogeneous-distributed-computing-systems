@@ -1,5 +1,5 @@
-name: sprint4-metrics-observability
-scenario: static
+name: sprint5-dynamics-scenarios
+scenario: dynamic-load
 
 simulation:
   time_horizon: 8
@@ -18,6 +18,51 @@ observability:
   log_level: INFO
   save_csv: true
   save_plots: true
+
+scenarios:
+  dynamic_load:
+    enabled: true
+    base_rate: 1.4
+    amplitude: 0.40
+    period: 6
+    max_new_tasks: 6
+    cpu_range: [1.0, 6.0]
+    memory_range: [2.0, 14.0]
+    data_size_range: [64.0, 768.0]
+    duration_range: [1, 5]
+    deadline_slack_range: [2, 8]
+  peak_load:
+    enabled: false
+    start: 3
+    end: 5
+    multiplier: 3.0
+  node_failures:
+    enabled: false
+    events:
+      - node_id: node-b
+        time: 4
+        duration: 2
+  heterogeneous_tasks:
+    enabled: false
+    profiles:
+      - name: cpu-heavy
+        cpu_range: [5.0, 9.0]
+        memory_range: [2.0, 6.0]
+        data_size_range: [96.0, 320.0]
+        duration_range: [2, 5]
+        deadline_slack_range: [2, 5]
+      - name: memory-heavy
+        cpu_range: [1.0, 3.0]
+        memory_range: [10.0, 22.0]
+        data_size_range: [256.0, 768.0]
+        duration_range: [2, 5]
+        deadline_slack_range: [3, 7]
+      - name: balanced
+        cpu_range: [2.0, 5.0]
+        memory_range: [4.0, 12.0]
+        data_size_range: [128.0, 512.0]
+        duration_range: [1, 4]
+        deadline_slack_range: [2, 6]
 
 nodes:
   - id: node-a

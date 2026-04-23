@@ -12,14 +12,20 @@ class Node:
     gpu: float
     used_cpu: float = 0.0
     used_memory: float = 0.0
+    is_active: bool = True
+    failed_since: int | None = None
 
     @property
     def load(self) -> float:
+        if not self.is_active:
+            return 1.0
         if self.cpu <= 0:
             return 0.0
         return min(1.0, self.used_cpu / self.cpu)
 
     def can_run(self, task: Task) -> bool:
+        if not self.is_active:
+            return False
         return (
             self.used_cpu + task.cpu_required <= self.cpu
             and self.used_memory + task.memory_required <= self.memory
@@ -66,13 +72,16 @@ class NetworkEdge:
 @dataclass(slots=True)
 class SystemState:
     current_time: int = 0
+    scenario: str = "static"
     selected_algorithm: str = "min-load"
     node_loads: dict[str, float] = field(default_factory=dict)
     queue_lengths: dict[str, int] = field(default_factory=dict)
     network_state: dict[tuple[str, str], dict[str, float]] = field(default_factory=dict)
     running_tasks: dict[str, list[str]] = field(default_factory=dict)
+    inactive_nodes: list[str] = field(default_factory=list)
     pending_tasks: int = 0
     completed_tasks: int = 0
+    generated_tasks: int = 0
     deadline_violations: int = 0
     avg_latency: float = 0.0
     throughput: float = 0.0
@@ -80,4 +89,5 @@ class SystemState:
     mas_messages: int = 0
     mas_assignments: int = 0
     completed_task_records: list[dict[str, object]] = field(default_factory=list)
+    scenario_events: list[dict[str, object]] = field(default_factory=list)
     history: list[dict[str, object]] = field(default_factory=list)

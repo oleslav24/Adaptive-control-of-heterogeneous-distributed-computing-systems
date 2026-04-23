@@ -29,6 +29,11 @@ def parse_args() -> argparse.Namespace:
         help="Scheduling algorithm: round-robin, min-load, greedy.",
     )
     parser.add_argument(
+        "--scenario",
+        default=None,
+        help="Scenario: static, dynamic-load, peak-load, node-failures, heterogeneous-tasks, mixed.",
+    )
+    parser.add_argument(
         "--compare",
         action="store_true",
         help="Run comparison for algorithms from config optimization.compare_algorithms.",
@@ -84,9 +89,9 @@ def main() -> None:
 def _run_comparison(config: ExperimentConfig, algorithms: list[str]) -> None:
     print(f"Experiment '{config.name}' comparison")
     print(
-        "algorithm | completed | pending | deadline_violations | latency | throughput | avg_load"
+        "scenario | algorithm | completed | pending | deadline_violations | latency | throughput | avg_load"
     )
-    print("-" * 94)
+    print("-" * 118)
 
     rows: list[dict[str, object]] = []
     for algorithm in algorithms:
@@ -95,13 +100,13 @@ def _run_comparison(config: ExperimentConfig, algorithms: list[str]) -> None:
         rows.append(summarize_state(state))
         _persist_run_artifacts(scenario_config, state)
         print(
-            f"{state.selected_algorithm} | {state.completed_tasks} | {state.pending_tasks} | "
+            f"{state.scenario} | {state.selected_algorithm} | {state.completed_tasks} | {state.pending_tasks} | "
             f"{state.deadline_violations} | {state.avg_latency:.3f} | "
             f"{state.throughput:.3f} | {state.avg_load:.3f}"
         )
 
     comparison_df = pd.DataFrame(rows)
-    comparison_dir = Path(config.observability.output_dir) / config.name
+    comparison_dir = Path(config.observability.output_dir) / config.name / _slug(config.scenario)
     comparison_dir.mkdir(parents=True, exist_ok=True)
     comparison_csv = comparison_dir / "comparison.csv"
     comparison_df.to_csv(comparison_csv, index=False)
@@ -111,6 +116,8 @@ def _run_comparison(config: ExperimentConfig, algorithms: list[str]) -> None:
 def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace) -> ExperimentConfig:
     if args.algorithm:
         config = _with_algorithm(config, args.algorithm)
+    if args.scenario:
+        config = replace(config, scenario=str(args.scenario).strip())
 
     observability = config.observability
     if args.output_dir:
@@ -128,6 +135,7 @@ def _persist_run_artifacts(config: ExperimentConfig, state: SystemState) -> dict
     output_dir = (
         Path(config.observability.output_dir)
         / config.name
+        / _slug(config.scenario)
         / state.selected_algorithm
     )
     return persist_observability(
@@ -156,11 +164,15 @@ def _parse_compare_algorithms(raw: str | None) -> list[str]:
 
 def _print_single_result(name: str, final_state: SystemState, artifacts: dict[str, str]) -> None:
     print(f"Experiment '{name}' completed.")
+    print(f"Scenario: {final_state.scenario}")
     print(f"Algorithm: {final_state.selected_algorithm}")
     print(f"Simulation time: {final_state.current_time}")
     print(f"Completed tasks: {final_state.completed_tasks}")
     print(f"Pending tasks: {final_state.pending_tasks}")
     print(f"Queue size: {final_state.queue_lengths.get('global', 0)}")
+    print(f"Generated tasks: {final_state.generated_tasks}")
+    print(f"Inactive nodes: {final_state.inactive_nodes}")
+    print(f"Scenario events: {len(final_state.scenario_events)}")
     print(f"Deadline violations: {final_state.deadline_violations}")
     print(f"Latency (avg): {final_state.avg_latency:.3f}")
     print(f"Throughput: {final_state.throughput:.3f}")
@@ -191,6 +203,9 @@ def _configure_logging(config: ExperimentConfig) -> Path:
     return log_path
 
 
+def _slug(value: str) -> str:
+    return str(value).strip().lower().replace("_", "-").replace(" ", "-")
+
+
 if __name__ == "__main__":
     main()
-

@@ -23,10 +23,13 @@ LOGGER = logging.getLogger(__name__)
 
 def summarize_state(state: SystemState) -> dict[str, float | int | str]:
     return {
+        "scenario": state.scenario,
         "algorithm": state.selected_algorithm,
         "time": state.current_time,
         "completed_tasks": state.completed_tasks,
         "pending_tasks": state.pending_tasks,
+        "generated_tasks": state.generated_tasks,
+        "inactive_nodes": len(state.inactive_nodes),
         "deadline_violations": state.deadline_violations,
         "avg_latency": state.avg_latency,
         "throughput": state.throughput,
@@ -48,17 +51,21 @@ def persist_observability(
     artifact_paths: dict[str, str] = {}
     history_df = _build_history_dataframe(state)
     tasks_df = pd.DataFrame(state.completed_task_records)
+    events_df = pd.DataFrame(state.scenario_events)
     summary_df = pd.DataFrame([summarize_state(state)])
 
     if save_csv:
         history_path = out / "history.csv"
         tasks_path = out / "completed_tasks.csv"
+        events_path = out / "scenario_events.csv"
         summary_path = out / "summary.csv"
         history_df.to_csv(history_path, index=False)
         tasks_df.to_csv(tasks_path, index=False)
+        events_df.to_csv(events_path, index=False)
         summary_df.to_csv(summary_path, index=False)
         artifact_paths["history_csv"] = str(history_path)
         artifact_paths["tasks_csv"] = str(tasks_path)
+        artifact_paths["events_csv"] = str(events_path)
         artifact_paths["summary_csv"] = str(summary_path)
         LOGGER.info("CSV metrics saved to %s", out)
 
