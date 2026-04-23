@@ -18,6 +18,7 @@ from project.core.models import Node, SystemState, Task
 from project.simulation.context import SimulationContext
 from project.simulation.mas import MultiAgentSystem
 from project.simulation.network import NetworkModel
+from project.simulation.randomness import set_global_seed
 from project.simulation.scenarios import ScenarioEngine
 from project.simulation.task_queue import TaskQueue
 
@@ -40,6 +41,7 @@ class SimulationLoop:
     state: SystemState = field(default_factory=SystemState)
 
     def init_system(self) -> None:
+        seed = set_global_seed(self.config.simulation.seed)
         self.nodes = {
             node.id: Node(
                 id=node.id,
@@ -125,10 +127,11 @@ class SimulationLoop:
         self.mas = MultiAgentSystem(agents=self.agents, context=self.context)
         self._sync_state(0)
         LOGGER.info(
-            "Simulation initialized: algorithm=%s intelligence=%s llm=%s nodes=%d tasks=%d horizon=%d",
+            "Simulation initialized: algorithm=%s intelligence=%s llm=%s seed=%d nodes=%d tasks=%d horizon=%d",
             self.config.optimization.algorithm,
             self.config.intelligence.enabled,
             self.config.llm.enabled,
+            seed,
             len(self.nodes),
             len(self.future_tasks),
             self.config.simulation.time_horizon,

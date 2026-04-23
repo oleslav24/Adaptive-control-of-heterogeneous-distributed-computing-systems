@@ -1,6 +1,8 @@
 # Experimental Multi-Agent Testbed
 
-Sprint 8 experimental module for an adaptive control platform targeting heterogeneous distributed computing systems.
+Sprint 9 publication-ready module for an adaptive control platform targeting heterogeneous distributed computing systems.
+
+Detailed reproducibility protocol: `docs/reproducibility.md`.
 
 ## Quick start
 
@@ -24,6 +26,7 @@ python -m project.experiments.run --config config.yaml --llm-provider mock
 python -m project.experiments.run --config config.yaml --batch
 python -m project.experiments.run --config config.yaml --batch --batch-runs 5
 python -m project.experiments.run --config config.yaml --batch --batch-scenarios static,peak-load --batch-algorithms round-robin,min-load,greedy
+python -m project.experiments.run --config config.yaml --repro-check --repro-runs 3
 ```
 
 Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
@@ -32,17 +35,28 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - `history.csv`
 - `completed_tasks.csv`
 - `scenario_events.csv`
+- `summary.json`
+- `history.json`
+- `completed_tasks.json`
+- `scenario_events.json`
+- `run_manifest.json`
 - `intelligence_ab.csv` (for `--ab-intelligence`)
 - `llm_ab.csv` (for `--ab-llm`)
+- `repro_check.csv` (for `--repro-check`)
+- `repro_check_manifest.json` (for `--repro-check`)
 - `batch/batch_runs.csv` (for `--batch`)
 - `batch/batch_summary.csv` (for `--batch`)
 - `batch/batch_ranking.csv` (for `--batch`)
 - `batch/batch_winners.csv` (for `--batch`)
-- `metrics_timeseries.png`
-- `node_loads.png`
+- `batch/batch_manifest.json` (for `--batch`)
+- `metrics_timeseries.{png,pdf,svg}`
+- `node_loads.{png,pdf,svg}`
+- `batch/batch_metric_latency.{png,pdf,svg}`
+- `batch/batch_metric_throughput.{png,pdf,svg}`
+- `batch/batch_metric_load.{png,pdf,svg}`
 - `outputs/<experiment>/run.log`
 
-## Current scope (Sprint 8)
+## Current scope (Sprint 9)
 
 - Core system model (`Node`, `Task`, `Network`, `SystemState`)
 - Task queue and time-based task release
@@ -63,3 +77,6 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - Simulation loop: `generate_tasks -> agents.step(state) -> update_state`
 - Experiment Runner: automatic batch matrix (`scenario x algorithm x repeat`)
 - Batch comparison tables: aggregated mean/std metrics and scenario winners
+- Reproducibility controls: fixed global seed per run and run/batch manifests
+- Publication export: high-DPI plots with vector formats (`pdf`, `svg`)
+- Reproducibility check mode: repeated run consistency verification (`--repro-check`)

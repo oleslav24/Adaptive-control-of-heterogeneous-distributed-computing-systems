@@ -1,4 +1,4 @@
-name: sprint8-experiment-module
+name: sprint9-publication-ready
 scenario: peak-load
 
 simulation:
@@ -43,7 +43,11 @@ observability:
   output_dir: outputs
   log_level: INFO
   save_csv: true
+  save_json: true
   save_plots: true
+  plot_profile: publication
+  plot_dpi: 300
+  plot_formats: [png, pdf, svg]
 
 scenarios:
   dynamic_load:

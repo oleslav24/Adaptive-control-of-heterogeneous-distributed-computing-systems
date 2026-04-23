@@ -2,13 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig
 from project.experiments.controller import Experiment
-from project.metrics import persist_observability, summarize_state
+from project.experiments.manifest import build_run_manifest
+from project.metrics import (
+    persist_batch_observability,
+    persist_observability,
+    summarize_state,
+)
 
 
 @dataclass(slots=True)
@@ -33,9 +39,14 @@ class ExperimentRunner:
     def __init__(self, config: ExperimentConfig) -> None:
         self.config = config
 
-    def run_batch(self, spec: BatchRunSpec) -> BatchRunResult:
+    def run_batch(
+        self,
+        spec: BatchRunSpec,
+        cli_args: list[str] | None = None,
+    ) -> BatchRunResult:
         repeats = max(1, int(spec.repeats))
         rows: list[dict[str, object]] = []
+        cli_args = list(cli_args or [])
 
         scenarios = [_normalize_scenario_name(name) for name in spec.scenarios]
         algorithms = [normalize_algorithm(name) for name in spec.algorithms]
@@ -62,8 +73,24 @@ class ExperimentRunner:
                         )
 
                     state = Experiment(config=run_config).run()
+                    run_manifest = build_run_manifest(
+                        config=run_config,
+                        mode="batch-run",
+                        cli_args=cli_args,
+                        extra={
+                            "repeat": repeat_idx + 1,
+                            "seed": run_seed,
+                            "configured_scenario": scenario,
+                            "configured_algorithm": algorithm,
+                        },
+                    )
                     if spec.persist_individual_runs:
-                        self._persist_single_run(run_config, state, repeat_idx)
+                        self._persist_single_run(
+                            config=run_config,
+                            state=state,
+                            repeat_idx=repeat_idx,
+                            run_manifest=run_manifest,
+                        )
 
                     row = {
                         "repeat": repeat_idx + 1,
@@ -82,12 +109,26 @@ class ExperimentRunner:
             if not ranking_df.empty
             else pd.DataFrame()
         )
+        batch_manifest = build_run_manifest(
+            config=self.config,
+            mode="batch",
+            cli_args=cli_args,
+            extra={
+                "repeats": repeats,
+                "scenarios": scenarios,
+                "algorithms": algorithms,
+                "strict_algorithm_comparison": spec.strict_algorithm_comparison,
+                "persist_individual_runs": spec.persist_individual_runs,
+                "total_runs": len(runs_df),
+            },
+        )
 
         output_paths = self._persist_batch_tables(
             runs_df=runs_df,
             summary_df=summary_df,
             ranking_df=ranking_df,
             winners_df=winners_df,
+            batch_manifest=batch_manifest,
         )
         return BatchRunResult(
             runs_df=runs_df,
@@ -102,6 +143,7 @@ class ExperimentRunner:
         config: ExperimentConfig,
         state,
         repeat_idx: int,
+        run_manifest: dict[str, Any] | None = None,
     ) -> None:
         output_dir = (
             Path(config.observability.output_dir)
@@ -116,6 +158,11 @@ class ExperimentRunner:
             output_dir=output_dir,
             save_csv=config.observability.save_csv,
             save_plots=config.observability.save_plots,
+            save_json=config.observability.save_json,
+            plot_profile=config.observability.plot_profile,
+            plot_dpi=config.observability.plot_dpi,
+            plot_formats=config.observability.plot_formats,
+            run_manifest=run_manifest,
         )
 
     def _persist_batch_tables(
@@ -124,21 +171,23 @@ class ExperimentRunner:
         summary_df: pd.DataFrame,
         ranking_df: pd.DataFrame,
         winners_df: pd.DataFrame,
+        batch_manifest: dict[str, Any] | None = None,
     ) -> dict[str, str]:
         out_dir = Path(self.config.observability.output_dir) / self.config.name / "batch"
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        paths = {
-            "runs_csv": str(out_dir / "batch_runs.csv"),
-            "summary_csv": str(out_dir / "batch_summary.csv"),
-            "ranking_csv": str(out_dir / "batch_ranking.csv"),
-            "winners_csv": str(out_dir / "batch_winners.csv"),
-        }
-        runs_df.to_csv(paths["runs_csv"], index=False)
-        summary_df.to_csv(paths["summary_csv"], index=False)
-        ranking_df.to_csv(paths["ranking_csv"], index=False)
-        winners_df.to_csv(paths["winners_csv"], index=False)
-        return paths
+        return persist_batch_observability(
+            runs_df=runs_df,
+            summary_df=summary_df,
+            ranking_df=ranking_df,
+            winners_df=winners_df,
+            output_dir=out_dir,
+            save_csv=self.config.observability.save_csv,
+            save_plots=self.config.observability.save_plots,
+            save_json=self.config.observability.save_json,
+            plot_profile=self.config.observability.plot_profile,
+            plot_dpi=self.config.observability.plot_dpi,
+            plot_formats=self.config.observability.plot_formats,
+            batch_manifest=batch_manifest,
+        )
 
 
 def _build_batch_summary(runs_df: pd.DataFrame) -> pd.DataFrame:

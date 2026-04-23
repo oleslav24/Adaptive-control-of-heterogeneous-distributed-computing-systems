@@ -3,14 +3,22 @@ from __future__ import annotations
 import argparse
 from dataclasses import replace
 import logging
+import os
 from pathlib import Path
+import sys
+import tempfile
 
 import pandas as pd
+
+_MPL_DIR = Path(tempfile.gettempdir()) / "mplconfig-codex"
+_MPL_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("MPLCONFIGDIR", str(_MPL_DIR))
 
 from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig, load_config
 from project.core.models import SystemState
 from project.experiments.controller import Experiment
+from project.experiments.manifest import build_run_manifest, write_manifest
 from project.experiments.runner import BatchRunResult, BatchRunSpec, ExperimentRunner
 from project.metrics import persist_observability, summarize_state
 
@@ -111,7 +119,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Override output directory for logs, CSV, and plots.",
+        help="Override output directory for logs, CSV, JSON, and plots.",
     )
     parser.add_argument(
         "--log-level",
@@ -128,22 +136,34 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable plot export for this run.",
     )
+    parser.add_argument(
+        "--repro-check",
+        action="store_true",
+        help="Run the same configuration multiple times and verify reproducibility.",
+    )
+    parser.add_argument(
+        "--repro-runs",
+        type=int,
+        default=3,
+        help="Number of repeated runs for --repro-check.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    cli_args = list(sys.argv[1:])
     config = _apply_runtime_overrides(load_config(args.config), args)
     log_path = _configure_logging(config)
     LOGGER.info("Run started: experiment=%s", config.name)
 
     if args.ab_llm:
-        _run_llm_ab(config)
+        _run_llm_ab(config, cli_args)
         LOGGER.info("A/B LLM run finished. Log: %s", log_path)
         return
 
     if args.ab_intelligence:
-        _run_intelligence_ab(config)
+        _run_intelligence_ab(config, cli_args)
         LOGGER.info("A/B intelligence run finished. Log: %s", log_path)
         return
 
@@ -151,22 +171,27 @@ def main() -> None:
         algorithms = _parse_compare_algorithms(args.compare_algorithms)
         if not algorithms:
             algorithms = config.optimization.compare_algorithms
-        _run_comparison(config, algorithms)
+        _run_comparison(config, algorithms, cli_args)
         LOGGER.info("Comparison run finished. Log: %s", log_path)
         return
 
     if args.batch:
-        _run_batch(config, args)
+        _run_batch(config, args, cli_args)
         LOGGER.info("Batch run finished. Log: %s", log_path)
         return
 
+    if args.repro_check:
+        _run_repro_check(config, max(2, int(args.repro_runs)), cli_args)
+        LOGGER.info("Reproducibility check finished. Log: %s", log_path)
+        return
+
     final_state = Experiment(config=config).run()
-    artifacts = _persist_run_artifacts(config, final_state)
+    artifacts = _persist_run_artifacts(config, final_state, mode="single", cli_args=cli_args)
     _print_single_result(config.name, final_state, artifacts)
     LOGGER.info("Single run finished. Log: %s", log_path)
 
 
-def _run_comparison(config: ExperimentConfig, algorithms: list[str]) -> None:
+def _run_comparison(config: ExperimentConfig, algorithms: list[str], cli_args: list[str]) -> None:
     print(f"Experiment '{config.name}' comparison")
     print(
         "scenario | algorithm | completed | pending | deadline_violations | latency | throughput | avg_load"
@@ -183,7 +208,13 @@ def _run_comparison(config: ExperimentConfig, algorithms: list[str]) -> None:
         )
         state = Experiment(config=scenario_config).run()
         rows.append(summarize_state(state))
-        _persist_run_artifacts(scenario_config, state)
+        _persist_run_artifacts(
+            scenario_config,
+            state,
+            mode="comparison",
+            cli_args=cli_args,
+            extra={"comparison_algorithm": algorithm},
+        )
         print(
             f"{state.scenario} | {state.selected_algorithm} | {state.completed_tasks} | {state.pending_tasks} | "
             f"{state.deadline_violations} | {state.avg_latency:.3f} | "
@@ -197,8 +228,24 @@ def _run_comparison(config: ExperimentConfig, algorithms: list[str]) -> None:
     comparison_df.to_csv(comparison_csv, index=False)
     print(f"Comparison CSV: {comparison_csv}")
 
+    manifest_path = comparison_dir / "comparison_manifest.json"
+    write_manifest(
+        manifest_path,
+        build_run_manifest(
+            config=config,
+            mode="comparison",
+            cli_args=cli_args,
+            extra={
+                "algorithms": algorithms,
+                "rows": comparison_df.to_dict(orient="records"),
+                "comparison_csv": str(comparison_csv),
+            },
+        ),
+    )
+    print(f"Comparison manifest: {manifest_path}")
 
-def _run_intelligence_ab(config: ExperimentConfig) -> None:
+
+def _run_intelligence_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
     baseline_config = replace(
         config,
         intelligence=replace(config.intelligence, enabled=False, adaptive_algorithm=False),
@@ -209,8 +256,20 @@ def _run_intelligence_ab(config: ExperimentConfig) -> None:
     )
     baseline_state = Experiment(config=baseline_config).run()
     smart_state = Experiment(config=smart_config).run()
-    _persist_run_artifacts(baseline_config, baseline_state)
-    _persist_run_artifacts(smart_config, smart_state)
+    _persist_run_artifacts(
+        baseline_config,
+        baseline_state,
+        mode="ab-intelligence",
+        cli_args=cli_args,
+        extra={"mode": "baseline"},
+    )
+    _persist_run_artifacts(
+        smart_config,
+        smart_state,
+        mode="ab-intelligence",
+        cli_args=cli_args,
+        extra={"mode": "intelligent"},
+    )
 
     print(f"Experiment '{config.name}' intelligence A/B")
     print("mode | algorithm | completed | pending | latency | throughput | avg_load")
@@ -243,8 +302,20 @@ def _run_intelligence_ab(config: ExperimentConfig) -> None:
     ab_df.to_csv(ab_csv, index=False)
     print(f"A/B CSV: {ab_csv}")
 
+    manifest_path = ab_dir / "intelligence_ab_manifest.json"
+    write_manifest(
+        manifest_path,
+        build_run_manifest(
+            config=config,
+            mode="ab-intelligence",
+            cli_args=cli_args,
+            extra={"rows": ab_df.to_dict(orient="records"), "ab_csv": str(ab_csv)},
+        ),
+    )
+    print(f"A/B manifest: {manifest_path}")
 
-def _run_llm_ab(config: ExperimentConfig) -> None:
+
+def _run_llm_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
     baseline_config = replace(
         config,
         intelligence=replace(config.intelligence, adaptive_algorithm=False),
@@ -256,8 +327,20 @@ def _run_llm_ab(config: ExperimentConfig) -> None:
     )
     baseline_state = Experiment(config=baseline_config).run()
     llm_state = Experiment(config=llm_config).run()
-    _persist_run_artifacts(baseline_config, baseline_state)
-    _persist_run_artifacts(llm_config, llm_state)
+    _persist_run_artifacts(
+        baseline_config,
+        baseline_state,
+        mode="ab-llm",
+        cli_args=cli_args,
+        extra={"mode": "baseline"},
+    )
+    _persist_run_artifacts(
+        llm_config,
+        llm_state,
+        mode="ab-llm",
+        cli_args=cli_args,
+        extra={"mode": "llm"},
+    )
 
     print(f"Experiment '{config.name}' LLM A/B")
     print(
@@ -294,8 +377,20 @@ def _run_llm_ab(config: ExperimentConfig) -> None:
     ab_df.to_csv(ab_csv, index=False)
     print(f"LLM A/B CSV: {ab_csv}")
 
+    manifest_path = ab_dir / "llm_ab_manifest.json"
+    write_manifest(
+        manifest_path,
+        build_run_manifest(
+            config=config,
+            mode="ab-llm",
+            cli_args=cli_args,
+            extra={"rows": ab_df.to_dict(orient="records"), "ab_csv": str(ab_csv)},
+        ),
+    )
+    print(f"LLM A/B manifest: {manifest_path}")
 
-def _run_batch(config: ExperimentConfig, args: argparse.Namespace) -> None:
+
+def _run_batch(config: ExperimentConfig, args: argparse.Namespace, cli_args: list[str]) -> None:
     scenarios = _parse_batch_scenarios(args.batch_scenarios)
     algorithms = _parse_compare_algorithms(args.batch_algorithms)
     if not algorithms:
@@ -308,8 +403,94 @@ def _run_batch(config: ExperimentConfig, args: argparse.Namespace) -> None:
         persist_individual_runs=bool(args.batch_save_runs),
         strict_algorithm_comparison=not bool(args.batch_keep_adaptive),
     )
-    result = ExperimentRunner(config=config).run_batch(spec)
+    result = ExperimentRunner(config=config).run_batch(spec, cli_args=cli_args)
     _print_batch_result(config.name, spec, result)
+
+
+def _run_repro_check(config: ExperimentConfig, runs: int, cli_args: list[str]) -> None:
+    rows: list[dict[str, object]] = []
+    for idx in range(runs):
+        state = Experiment(config=config).run()
+        rows.append({"run": idx + 1, **summarize_state(state)})
+
+    repro_df = pd.DataFrame(rows)
+    out_dir = (
+        Path(config.observability.output_dir)
+        / config.name
+        / _slug(config.scenario)
+        / config.optimization.algorithm
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    repro_csv = out_dir / "repro_check.csv"
+    repro_df.to_csv(repro_csv, index=False)
+
+    reproducible, details = _evaluate_reproducibility(repro_df)
+    print(f"Experiment '{config.name}' reproducibility check")
+    print(f"Scenario: {config.scenario}")
+    print(f"Algorithm: {config.optimization.algorithm}")
+    print(f"Runs: {runs}")
+    print(f"Reproducible: {reproducible}")
+    print("Runs table:")
+    print(repro_df.to_string(index=False, float_format=lambda value: f"{value:.3f}"))
+    print("Details:")
+    for line in details:
+        print(f"- {line}")
+    print(f"Repro CSV: {repro_csv}")
+
+    manifest_path = out_dir / "repro_check_manifest.json"
+    write_manifest(
+        manifest_path,
+        build_run_manifest(
+            config=config,
+            mode="repro-check",
+            cli_args=cli_args,
+            extra={
+                "runs": runs,
+                "reproducible": reproducible,
+                "details": details,
+                "repro_csv": str(repro_csv),
+            },
+        ),
+    )
+    print(f"Repro manifest: {manifest_path}")
+
+
+def _evaluate_reproducibility(repro_df: pd.DataFrame) -> tuple[bool, list[str]]:
+    if repro_df.empty:
+        return False, ["No runs were executed."]
+
+    strict_columns = [
+        "completed_tasks",
+        "pending_tasks",
+        "deadline_violations",
+        "generated_tasks",
+        "scenario",
+        "algorithm",
+    ]
+    float_columns = ["avg_latency", "throughput", "avg_load"]
+    baseline = repro_df.iloc[0]
+
+    details: list[str] = []
+    reproducible = True
+    for column in strict_columns:
+        if column not in repro_df.columns:
+            continue
+        if not (repro_df[column] == baseline[column]).all():
+            reproducible = False
+            details.append(f"Mismatch in '{column}'.")
+
+    tolerance = 1e-9
+    for column in float_columns:
+        if column not in repro_df.columns:
+            continue
+        max_diff = float((repro_df[column] - float(baseline[column])).abs().max())
+        if max_diff > tolerance:
+            reproducible = False
+            details.append(f"Mismatch in '{column}' (max diff {max_diff:.12f}).")
+
+    if reproducible:
+        details.append("All tracked metrics are identical across repeated runs.")
+    return reproducible, details
 
 
 def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace) -> ExperimentConfig:
@@ -342,18 +523,35 @@ def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace)
     return replace(config, observability=observability)
 
 
-def _persist_run_artifacts(config: ExperimentConfig, state: SystemState) -> dict[str, str]:
+def _persist_run_artifacts(
+    config: ExperimentConfig,
+    state: SystemState,
+    mode: str = "single",
+    cli_args: list[str] | None = None,
+    extra: dict[str, object] | None = None,
+) -> dict[str, str]:
     output_dir = (
         Path(config.observability.output_dir)
         / config.name
         / _slug(config.scenario)
         / state.selected_algorithm
     )
+    run_manifest = build_run_manifest(
+        config=config,
+        mode=mode,
+        cli_args=list(cli_args or []),
+        extra=extra or {},
+    )
     return persist_observability(
         state=state,
         output_dir=output_dir,
         save_csv=config.observability.save_csv,
         save_plots=config.observability.save_plots,
+        save_json=config.observability.save_json,
+        plot_profile=config.observability.plot_profile,
+        plot_dpi=config.observability.plot_dpi,
+        plot_formats=config.observability.plot_formats,
+        run_manifest=run_manifest,
     )
 
 

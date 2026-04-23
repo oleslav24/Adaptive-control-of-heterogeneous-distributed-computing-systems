@@ -31,6 +31,10 @@ class ObservabilityConfig:
     log_level: str = "INFO"
     save_csv: bool = True
     save_plots: bool = True
+    save_json: bool = True
+    plot_profile: str = "publication"  # publication | default
+    plot_dpi: int = 300
+    plot_formats: list[str] = field(default_factory=lambda: ["png", "pdf", "svg"])
 
 
 @dataclass(slots=True)
@@ -162,11 +166,16 @@ def load_config(path: str | Path) -> ExperimentConfig:
     llm = _load_llm_config(raw.get("llm", {}))
 
     observability_raw = raw.get("observability", {})
+    plot_formats = _parse_plot_formats(observability_raw.get("plot_formats", ["png"]))
     observability = ObservabilityConfig(
         output_dir=str(observability_raw.get("output_dir", "outputs")),
         log_level=str(observability_raw.get("log_level", "INFO")),
         save_csv=_as_bool(observability_raw.get("save_csv", True)),
         save_plots=_as_bool(observability_raw.get("save_plots", True)),
+        save_json=_as_bool(observability_raw.get("save_json", True)),
+        plot_profile=_parse_plot_profile(observability_raw.get("plot_profile", "publication")),
+        plot_dpi=max(72, _as_int(observability_raw.get("plot_dpi", 300), 300)),
+        plot_formats=plot_formats or ["png"],
     )
 
     scenarios = _load_scenario_config(raw.get("scenarios", {}))
@@ -454,3 +463,27 @@ def _as_float(value: object, default: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def _parse_plot_profile(value: object) -> str:
+    profile = str(value).strip().lower()
+    if profile in {"publication", "default"}:
+        return profile
+    return "publication"
+
+
+def _parse_plot_formats(value: object) -> list[str]:
+    allowed = {"png", "pdf", "svg"}
+    raw_items: list[str]
+    if isinstance(value, list):
+        raw_items = [str(item).strip().lower() for item in value]
+    elif isinstance(value, str):
+        raw_items = [item.strip().lower() for item in value.split(",")]
+    else:
+        raw_items = []
+
+    normalized: list[str] = []
+    for item in raw_items:
+        if item in allowed and item not in normalized:
+            normalized.append(item)
+    return normalized
