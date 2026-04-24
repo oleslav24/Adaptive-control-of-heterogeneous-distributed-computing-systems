@@ -1,3 +1,5 @@
+"""Prediction agent that provides load forecasts and adaptive hints."""
+
 from __future__ import annotations
 
 from project.algorithms import normalize_algorithm
@@ -6,6 +8,8 @@ from project.intelligence import LinearLoadRegressor, ZNNBalancer
 
 
 class PredictionAgent(Agent):
+    """Predict queue/load dynamics and provide balancing signals."""
+
     def __init__(
         self,
         prediction_window: int = 6,
@@ -30,6 +34,7 @@ class PredictionAgent(Agent):
         self.load_history: list[float] = []
 
     def decide(self) -> None:
+        """Produce prediction signals and optional algorithm hint."""
         if self.context is None or self.state is None:
             return
 
@@ -77,9 +82,11 @@ class PredictionAgent(Agent):
             )
 
     def act(self) -> None:
+        """No direct side effects; output is delivered via MAS messages."""
         return
 
     def _consume_snapshots(self) -> None:
+        """Update local history from monitoring snapshots and current state."""
         queue = float(self.state.queue_lengths.get("global", 0)) if self.state else 0.0
         load = float(self.state.avg_load) if self.state else 0.0
         seen_snapshot = False
@@ -98,4 +105,3 @@ class PredictionAgent(Agent):
         if seen_snapshot or self.state is not None:
             self.queue_history.append(max(0.0, queue))
             self.load_history.append(max(0.0, load))
-

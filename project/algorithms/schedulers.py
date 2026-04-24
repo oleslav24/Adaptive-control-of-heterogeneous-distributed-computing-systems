@@ -1,3 +1,5 @@
+"""Scheduling heuristics used by the compute agent."""
+
 from __future__ import annotations
 
 from project.core.models import Node, Task
@@ -6,6 +8,7 @@ SUPPORTED_ALGORITHMS = ("round-robin", "min-load", "greedy")
 
 
 def normalize_algorithm(name: str) -> str:
+    """Normalize external algorithm name to a supported identifier."""
     normalized = str(name).strip().lower().replace("_", "-")
     if normalized in SUPPORTED_ALGORITHMS:
         return normalized
@@ -20,6 +23,7 @@ def choose_node(
     node_bandwidth: dict[str, float],
     rr_cursor: int,
 ) -> tuple[Node | None, int]:
+    """Select a node with the requested strategy and return next RR cursor."""
     algorithm = normalize_algorithm(algorithm)
     if not candidates:
         return None, rr_cursor
@@ -35,6 +39,7 @@ def _round_robin(
     all_node_ids: list[str],
     rr_cursor: int,
 ) -> tuple[Node | None, int]:
+    """Pick next available candidate in global node-id order."""
     if not all_node_ids:
         return None, rr_cursor
     ordered_ids = sorted(all_node_ids)
@@ -50,6 +55,7 @@ def _round_robin(
 
 
 def _min_load(candidates: list[Node], node_bandwidth: dict[str, float]) -> Node:
+    """Prefer less-loaded nodes and higher available bandwidth."""
     return min(
         candidates,
         key=lambda node: (
@@ -61,6 +67,7 @@ def _min_load(candidates: list[Node], node_bandwidth: dict[str, float]) -> Node:
 
 
 def _greedy(task: Task, candidates: list[Node], node_bandwidth: dict[str, float]) -> Node:
+    """Prefer nodes with the largest residual resources after assignment."""
     return min(
         candidates,
         key=lambda node: (
@@ -70,4 +77,3 @@ def _greedy(task: Task, candidates: list[Node], node_bandwidth: dict[str, float]
             -node_bandwidth.get(node.id, float("inf")),
         ),
     )
-

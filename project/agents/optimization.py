@@ -1,3 +1,5 @@
+"""Optimization agent that selects the active scheduling algorithm."""
+
 from __future__ import annotations
 
 from project.algorithms import normalize_algorithm
@@ -5,6 +7,8 @@ from project.core.agent import Agent, AgentMessage
 
 
 class OptimizationAgent(Agent):
+    """Translate adaptive hints into a concrete scheduler policy."""
+
     def __init__(
         self,
         algorithm: str = "min-load",
@@ -16,6 +20,7 @@ class OptimizationAgent(Agent):
         self.adaptive_algorithm = adaptive_algorithm
 
     def decide(self) -> None:
+        """Resolve final algorithm and send policy update to compute agent."""
         if self.context is None:
             return
         selected = self.base_algorithm
@@ -42,4 +47,5 @@ class OptimizationAgent(Agent):
         )
 
     def act(self) -> None:
+        """No direct actuation beyond policy dispatch in decide phase."""
         return

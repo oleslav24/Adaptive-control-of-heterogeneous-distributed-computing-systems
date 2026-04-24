@@ -1,3 +1,5 @@
+"""Metrics summarization and artifact persistence for runs and batches."""
+
 from __future__ import annotations
 
 import json
@@ -23,6 +25,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def summarize_state(state: SystemState) -> dict[str, float | int | str]:
+    """Build compact final-state summary used in tables and reports."""
     return {
         "scenario": state.scenario,
         "algorithm": state.selected_algorithm,
@@ -59,6 +62,7 @@ def persist_observability(
     plot_formats: list[str] | None = None,
     run_manifest: dict[str, Any] | None = None,
 ) -> dict[str, str]:
+    """Persist per-run CSV/JSON/plot artifacts and return artifact map."""
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -149,6 +153,7 @@ def persist_batch_observability(
     plot_formats: list[str] | None = None,
     batch_manifest: dict[str, Any] | None = None,
 ) -> dict[str, str]:
+    """Persist batch-level tables and comparison plots."""
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     artifact_paths: dict[str, str] = {}
@@ -247,6 +252,7 @@ def persist_batch_observability(
 
 
 def _build_history_dataframe(state: SystemState) -> pd.DataFrame:
+    """Convert state.history entries into tabular DataFrame."""
     rows: list[dict[str, Any]] = []
     for entry in state.history:
         row = {k: v for k, v in entry.items() if k != "node_loads"}
@@ -259,6 +265,7 @@ def _build_history_dataframe(state: SystemState) -> pd.DataFrame:
 
 
 def _build_metrics_timeseries_figure(df: pd.DataFrame):
+    """Create latency/throughput/load timeseries figure."""
     time = df["time"] if "time" in df else range(len(df))
     fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
 
@@ -282,6 +289,7 @@ def _build_metrics_timeseries_figure(df: pd.DataFrame):
 
 
 def _build_node_loads_figure(df: pd.DataFrame):
+    """Create per-node load timeline figure if node columns are present."""
     load_columns = [col for col in df.columns if col.startswith("load_")]
     if not load_columns:
         return None
@@ -307,6 +315,7 @@ def _build_batch_metric_figure(
     title: str,
     ylabel: str,
 ):
+    """Create scenario-wise comparison figure for one aggregated metric."""
     ordered = summary_df.sort_values(["scenario", "algorithm"])
     scenarios = sorted(ordered["scenario"].astype(str).unique().tolist())
     algorithms = sorted(ordered["algorithm"].astype(str).unique().tolist())
@@ -344,6 +353,7 @@ def _save_figure_formats(
     formats: list[str],
     dpi: int,
 ) -> dict[str, str]:
+    """Save figure in requested formats and return format-to-path mapping."""
     paths: dict[str, str] = {}
     for fmt in formats:
         path = output_stem.with_suffix(f".{fmt}")
@@ -354,6 +364,7 @@ def _save_figure_formats(
 
 
 def _normalize_plot_formats(formats: list[str] | None) -> list[str]:
+    """Normalize and validate requested output plot formats."""
     allowed = {"png", "pdf", "svg"}
     selected = formats or ["png"]
     normalized: list[str] = []
@@ -365,6 +376,7 @@ def _normalize_plot_formats(formats: list[str] | None) -> list[str]:
 
 
 def _plot_style_params(profile: str) -> dict[str, object]:
+    """Return matplotlib style map for selected plotting profile."""
     if str(profile).strip().lower() != "publication":
         return {}
     return {
@@ -385,17 +397,20 @@ def _plot_style_params(profile: str) -> dict[str, object]:
 
 
 def _series_or_default(df: pd.DataFrame, column: str) -> pd.Series:
+    """Return DataFrame column or zero series when missing."""
     if column in df:
         return df[column]
     return pd.Series([0.0] * len(df))
 
 
 def _write_json(path: Path, payload: Any) -> None:
+    """Write JSON payload with deterministic key ordering."""
     with path.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True)
 
 
 def _dataframe_to_records(df: pd.DataFrame) -> list[dict[str, Any]]:
+    """Convert DataFrame to list of JSON-safe records."""
     if df.empty:
         return []
     safe_df = df.where(pd.notna(df), None)

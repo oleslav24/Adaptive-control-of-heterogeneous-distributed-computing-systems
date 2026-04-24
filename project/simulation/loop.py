@@ -1,3 +1,5 @@
+"""Main time-stepped simulation loop for the experimental testbed."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -27,6 +29,8 @@ LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class SimulationLoop:
+    """Drive system initialization, per-tick actions, and state synchronization."""
+
     config: ExperimentConfig
     agents: list[Agent] = field(default_factory=list)
     nodes: dict[str, Node] = field(default_factory=dict)
@@ -41,6 +45,7 @@ class SimulationLoop:
     state: SystemState = field(default_factory=SystemState)
 
     def init_system(self) -> None:
+        """Initialize nodes, queue, scenarios, MAS, and initial system state."""
         seed = set_global_seed(self.config.simulation.seed)
         self.nodes = {
             node.id: Node(
@@ -138,6 +143,7 @@ class SimulationLoop:
         )
 
     def generate_tasks(self, t: int) -> None:
+        """Release preloaded tasks and generate scenario tasks for tick t."""
         released: list[Task] = []
         while self.future_tasks and self.future_tasks[0].arrival_time <= t:
             task = self.future_tasks.pop(0)
@@ -151,6 +157,7 @@ class SimulationLoop:
         self.queue.extend(released + generated)
 
     def update_state(self, t: int) -> None:
+        """Advance running tasks by one tick and refresh aggregate state."""
         for node_id, tasks in self.running_tasks.items():
             node = self.nodes[node_id]
             still_running: list[Task] = []
@@ -167,6 +174,7 @@ class SimulationLoop:
         self._sync_state(t + 1)
 
     def run(self) -> SystemState:
+        """Execute the configured simulation horizon and return final state."""
         self.init_system()
         for t in range(self.config.simulation.time_horizon):
             if self.context is None or self.mas is None:
@@ -198,6 +206,7 @@ class SimulationLoop:
         return self.state
 
     def _sync_state(self, current_time: int) -> None:
+        """Recompute SystemState snapshot and append history point."""
         if self.context is not None:
             self.context.current_time = current_time
         self.state.current_time = current_time

@@ -1,3 +1,5 @@
+"""Prompt construction helpers for the LLM scheduling agent."""
+
 from __future__ import annotations
 
 import json
@@ -6,6 +8,7 @@ from project.core.models import SystemState
 
 
 def state_to_text(state: SystemState) -> str:
+    """Serialize key system state fields into compact textual summary."""
     node_lines = []
     for node_id, load in sorted(state.node_loads.items()):
         node_lines.append(f"- {node_id}: load={float(load):.3f}")
@@ -39,6 +42,7 @@ def build_prompt(
     allowed_algorithms: list[str],
     node_ids: list[str],
 ) -> str:
+    """Build strict JSON-only prompt with policy and safety constraints."""
     safe_algorithms = ", ".join(sorted(set(allowed_algorithms)))
     safe_nodes = ", ".join(sorted(set(node_ids)))
     return (
@@ -58,4 +62,3 @@ def build_prompt(
         "- if uncertain, set algorithm_hint to null and confidence low\n\n"
         f"{state_text}"
     )
-

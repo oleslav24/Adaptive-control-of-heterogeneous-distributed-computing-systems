@@ -1,3 +1,5 @@
+"""LLM-based agent that proposes coordination policies."""
+
 from __future__ import annotations
 
 from project.algorithms import SUPPORTED_ALGORITHMS
@@ -13,6 +15,8 @@ from project.llm import (
 
 
 class LLMAgent(Agent):
+    """Analyze system state with LLM and broadcast constrained control hints."""
+
     def __init__(
         self,
         provider: str = "auto",
@@ -44,6 +48,7 @@ class LLMAgent(Agent):
         self.allow_node_bias_override = allow_node_bias_override
 
     def decide(self) -> None:
+        """Request an LLM decision and publish validated policy messages."""
         if self.state is None or self.context is None:
             return
         node_ids = sorted(self.context.nodes.keys())
@@ -107,5 +112,5 @@ class LLMAgent(Agent):
         )
 
     def act(self) -> None:
+        """This agent only emits messages during decide phase."""
         return
-

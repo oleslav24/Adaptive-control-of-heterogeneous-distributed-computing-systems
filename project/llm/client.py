@@ -1,3 +1,5 @@
+"""LLM client abstraction with OpenAI and deterministic mock backends."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,6 +14,8 @@ from project.core.models import SystemState
 
 @dataclass(slots=True)
 class LLMClientConfig:
+    """Runtime configuration for LLM completion requests."""
+
     provider: str = "auto"  # auto | openai | mock
     model: str = "gpt-5.4-mini"
     temperature: float = 0.2
@@ -22,6 +26,8 @@ class LLMClientConfig:
 
 
 class LLMClient:
+    """Provide a uniform completion API for agent-side LLM usage."""
+
     def __init__(self, config: LLMClientConfig) -> None:
         self.config = config
 
@@ -31,6 +37,7 @@ class LLMClient:
         state: SystemState,
         node_ids: list[str],
     ) -> tuple[str, str]:
+        """Return model output text and provider source label."""
         provider = self.config.provider.strip().lower()
         api_key = os.environ.get(self.config.api_key_env, "").strip()
 
@@ -48,6 +55,7 @@ class LLMClient:
         return self._mock_response(state, node_ids), "mock"
 
     def _call_openai(self, prompt: str, api_key: str) -> str:
+        """Call OpenAI Responses API with fallback to chat completions endpoint."""
         base = self.config.api_base_url.rstrip("/")
         responses_url = f"{base}/v1/responses"
         payload = {
@@ -77,6 +85,7 @@ class LLMClient:
         return self._extract_chat_text(chat_data)
 
     def _post_json(self, url: str, payload: dict[str, Any], api_key: str) -> dict[str, Any]:
+        """Send authenticated JSON POST request and return parsed object payload."""
         body = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
             url=url,
@@ -95,6 +104,7 @@ class LLMClient:
         return {}
 
     def _extract_responses_text(self, data: dict[str, Any]) -> str:
+        """Extract assistant text from Responses API schema variants."""
         output_text = data.get("output_text")
         if isinstance(output_text, str) and output_text.strip():
             return output_text
@@ -118,6 +128,7 @@ class LLMClient:
         return "\n".join(chunks).strip()
 
     def _extract_chat_text(self, data: dict[str, Any]) -> str:
+        """Extract assistant text from chat completions payload."""
         choices = data.get("choices")
         if not isinstance(choices, list) or not choices:
             return ""
@@ -133,6 +144,7 @@ class LLMClient:
         return ""
 
     def _mock_response(self, state: SystemState, node_ids: list[str]) -> str:
+        """Produce deterministic JSON decision for reproducible experiments."""
         queue_size = float(state.queue_lengths.get("global", 0))
         high_pressure = queue_size >= 2.0 or state.avg_load >= 0.70
         algorithm_hint = "round-robin" if high_pressure else "min-load"
@@ -153,4 +165,3 @@ class LLMClient:
             "reason": "Mock policy: spread load when predicted pressure is high.",
         }
         return json.dumps(payload, ensure_ascii=True)
-

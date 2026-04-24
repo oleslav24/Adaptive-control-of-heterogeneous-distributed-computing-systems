@@ -1,3 +1,5 @@
+"""Configuration schema and YAML loader for experiments."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,6 +14,8 @@ from .models import NetworkEdge, Node, Task
 
 @dataclass(slots=True)
 class SimulationConfig:
+    """Simulation timing and deterministic randomization settings."""
+
     time_horizon: int = 10
     seed: int = 42
     step_seconds: float = 1.0
@@ -19,6 +23,8 @@ class SimulationConfig:
 
 @dataclass(slots=True)
 class OptimizationConfig:
+    """Scheduling algorithm selection and comparison set."""
+
     algorithm: str = "min-load"
     compare_algorithms: list[str] = field(
         default_factory=lambda: ["round-robin", "min-load", "greedy"]
@@ -27,6 +33,8 @@ class OptimizationConfig:
 
 @dataclass(slots=True)
 class ObservabilityConfig:
+    """Persistence, logging, and plotting settings for outputs."""
+
     output_dir: str = "outputs"
     log_level: str = "INFO"
     save_csv: bool = True
@@ -39,6 +47,8 @@ class ObservabilityConfig:
 
 @dataclass(slots=True)
 class IntelligenceConfig:
+    """Prediction and adaptive-control parameters (ML/ZNN layer)."""
+
     enabled: bool = True
     prediction_window: int = 6
     znn_gain: float = 0.35
@@ -51,6 +61,8 @@ class IntelligenceConfig:
 
 @dataclass(slots=True)
 class LLMConfig:
+    """LLM integration settings and policy guard toggles."""
+
     enabled: bool = True
     provider: str = "auto"  # auto | openai | mock
     model: str = "gpt-5.4-mini"
@@ -68,6 +80,8 @@ class LLMConfig:
 
 @dataclass(slots=True)
 class DynamicLoadConfig:
+    """Dynamic load generator parameters for scenario engine."""
+
     enabled: bool = False
     base_rate: float = 0.0
     amplitude: float = 0.0
@@ -82,6 +96,8 @@ class DynamicLoadConfig:
 
 @dataclass(slots=True)
 class PeakLoadConfig:
+    """Burst window configuration for peak-load experiments."""
+
     enabled: bool = False
     start: int = 0
     end: int = 0
@@ -90,6 +106,8 @@ class PeakLoadConfig:
 
 @dataclass(slots=True)
 class NodeFailureEventConfig:
+    """Single node-failure event in simulation time."""
+
     node_id: str
     time: int
     duration: int = 0
@@ -97,12 +115,16 @@ class NodeFailureEventConfig:
 
 @dataclass(slots=True)
 class NodeFailuresConfig:
+    """Collection of node failure events."""
+
     enabled: bool = False
     events: list[NodeFailureEventConfig] = field(default_factory=list)
 
 
 @dataclass(slots=True)
 class HeterogeneousProfileConfig:
+    """Task profile for heterogeneous workload generation."""
+
     name: str
     cpu_range: tuple[float, float]
     memory_range: tuple[float, float]
@@ -113,12 +135,16 @@ class HeterogeneousProfileConfig:
 
 @dataclass(slots=True)
 class HeterogeneousTasksConfig:
+    """Heterogeneous task generation switch and profile set."""
+
     enabled: bool = False
     profiles: list[HeterogeneousProfileConfig] = field(default_factory=list)
 
 
 @dataclass(slots=True)
 class ScenarioConfig:
+    """Scenario-layer configuration bundle."""
+
     dynamic_load: DynamicLoadConfig = field(default_factory=DynamicLoadConfig)
     peak_load: PeakLoadConfig = field(default_factory=PeakLoadConfig)
     node_failures: NodeFailuresConfig = field(default_factory=NodeFailuresConfig)
@@ -129,6 +155,8 @@ class ScenarioConfig:
 
 @dataclass(slots=True)
 class ExperimentConfig:
+    """Top-level experiment configuration object."""
+
     name: str = "sprint0-smoke"
     scenario: str = "static"
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
@@ -143,6 +171,7 @@ class ExperimentConfig:
 
 
 def load_config(path: str | Path) -> ExperimentConfig:
+    """Load YAML config and convert it into a fully typed ExperimentConfig."""
     path = Path(path)
     with path.open("r", encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
@@ -219,6 +248,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
 
 
 def _load_scenario_config(raw: object) -> ScenarioConfig:
+    """Parse scenario subsection and build ScenarioConfig."""
     data = raw if isinstance(raw, dict) else {}
 
     dynamic_raw = data.get("dynamic_load", {})
@@ -284,6 +314,7 @@ def _load_scenario_config(raw: object) -> ScenarioConfig:
 
 
 def _load_intelligence_config(raw: object) -> IntelligenceConfig:
+    """Parse intelligence subsection with defaults and clamping."""
     data = raw if isinstance(raw, dict) else {}
     return IntelligenceConfig(
         enabled=_as_bool(data.get("enabled", True)),
@@ -304,6 +335,7 @@ def _load_intelligence_config(raw: object) -> IntelligenceConfig:
 
 
 def _load_llm_config(raw: object) -> LLMConfig:
+    """Parse LLM subsection and validate provider/allowed algorithms."""
     data = raw if isinstance(raw, dict) else {}
     allowed = _normalize_algorithm_list(data.get("allowed_algorithms", []))
     if not allowed:
@@ -327,6 +359,7 @@ def _load_llm_config(raw: object) -> LLMConfig:
 
 
 def _build_node(item: dict[str, object]) -> Node:
+    """Build Node model from YAML item and optional initial load."""
     cpu = float(item["cpu"])
     load = float(item.get("load", 0.0))
     used_cpu = max(0.0, min(cpu, cpu * load))
@@ -341,6 +374,7 @@ def _build_node(item: dict[str, object]) -> Node:
 
 
 def _normalize_algorithm_list(raw: object) -> list[str]:
+    """Normalize list-like algorithm input to unique supported names."""
     if not isinstance(raw, list):
         return []
     normalized: list[str] = []
@@ -352,6 +386,7 @@ def _normalize_algorithm_list(raw: object) -> list[str]:
 
 
 def _parse_failure_events(raw: object) -> list[NodeFailureEventConfig]:
+    """Parse node failure event list from config."""
     if not isinstance(raw, list):
         return []
     events: list[NodeFailureEventConfig] = []
@@ -372,6 +407,7 @@ def _parse_failure_events(raw: object) -> list[NodeFailureEventConfig]:
 
 
 def _parse_heterogeneous_profiles(raw: object) -> list[HeterogeneousProfileConfig]:
+    """Parse heterogeneous task profiles from config."""
     if not isinstance(raw, list):
         return []
     profiles: list[HeterogeneousProfileConfig] = []
@@ -395,6 +431,7 @@ def _parse_heterogeneous_profiles(raw: object) -> list[HeterogeneousProfileConfi
 
 
 def _default_heterogeneous_profiles() -> list[HeterogeneousProfileConfig]:
+    """Fallback profile set used when none is provided in config."""
     return [
         HeterogeneousProfileConfig(
             name="cpu-heavy",
@@ -424,6 +461,7 @@ def _default_heterogeneous_profiles() -> list[HeterogeneousProfileConfig]:
 
 
 def _parse_float_range(raw: object, default: tuple[float, float]) -> tuple[float, float]:
+    """Parse numeric [low, high] range with ordering normalization."""
     if not isinstance(raw, list) or len(raw) != 2:
         return default
     lo = _as_float(raw[0], default[0])
@@ -432,6 +470,7 @@ def _parse_float_range(raw: object, default: tuple[float, float]) -> tuple[float
 
 
 def _parse_int_range(raw: object, default: tuple[int, int]) -> tuple[int, int]:
+    """Parse integer [low, high] range with non-negative bounds."""
     if not isinstance(raw, list) or len(raw) != 2:
         return default
     lo = _as_int(raw[0], default[0])
@@ -442,6 +481,7 @@ def _parse_int_range(raw: object, default: tuple[int, int]) -> tuple[int, int]:
 
 
 def _as_bool(value: object) -> bool:
+    """Convert loose YAML value into bool."""
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
@@ -452,6 +492,7 @@ def _as_bool(value: object) -> bool:
 
 
 def _as_int(value: object, default: int) -> int:
+    """Convert value to int with fallback default."""
     try:
         return int(value)
     except (TypeError, ValueError):
@@ -459,6 +500,7 @@ def _as_int(value: object, default: int) -> int:
 
 
 def _as_float(value: object, default: float) -> float:
+    """Convert value to float with fallback default."""
     try:
         return float(value)
     except (TypeError, ValueError):
@@ -466,6 +508,7 @@ def _as_float(value: object, default: float) -> float:
 
 
 def _parse_plot_profile(value: object) -> str:
+    """Normalize plot profile to a supported option."""
     profile = str(value).strip().lower()
     if profile in {"publication", "default"}:
         return profile
@@ -473,6 +516,7 @@ def _parse_plot_profile(value: object) -> str:
 
 
 def _parse_plot_formats(value: object) -> list[str]:
+    """Normalize plot formats to unique supported extensions."""
     allowed = {"png", "pdf", "svg"}
     raw_items: list[str]
     if isinstance(value, list):

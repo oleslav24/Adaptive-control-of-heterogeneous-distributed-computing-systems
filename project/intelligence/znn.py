@@ -1,3 +1,5 @@
+"""Simplified ZNN-style balancing heuristic."""
+
 from __future__ import annotations
 
 
@@ -8,6 +10,7 @@ class ZNNBalancer:
     """
 
     def __init__(self, gain: float = 0.35) -> None:
+        """Configure feedback gain for load-error correction."""
         self.gain = max(0.01, float(gain))
 
     def node_bias(
@@ -24,4 +27,3 @@ class ZNNBalancer:
             bias_value = -self.gain * error
             bias[node_id] = max(-1.0, min(1.0, bias_value))
         return bias
-

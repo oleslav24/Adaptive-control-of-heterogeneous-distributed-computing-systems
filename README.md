@@ -3,6 +3,8 @@
 Sprint 9 publication-ready module for an adaptive control platform targeting heterogeneous distributed computing systems.
 
 Detailed reproducibility protocol: `docs/reproducibility.md`.
+Publication pipeline protocol (E1-E5, H1-H5): `docs/experimental_pipeline.md`.
+Codebase module map: `docs/codebase_modules.md`.
 
 ## Quick start
 
@@ -27,7 +29,12 @@ python -m project.experiments.run --config config.yaml --batch
 python -m project.experiments.run --config config.yaml --batch --batch-runs 5
 python -m project.experiments.run --config config.yaml --batch --batch-scenarios static,peak-load --batch-algorithms round-robin,min-load,greedy
 python -m project.experiments.run --config config.yaml --repro-check --repro-runs 3
+python -m project.experiments.run --config config.yaml --publication-study
+python -m project.experiments.run --config config.yaml --publication-study --study-quick --study-seeds 42,43
+python -m project.web.app --host 127.0.0.1 --port 8080
 ```
+
+Web UI guide: `docs/web_interface.md`.
 
 Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 
@@ -56,6 +63,20 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - `batch/batch_metric_load.{png,pdf,svg}`
 - `outputs/<experiment>/run.log`
 
+Publication study artifacts (`--publication-study`) are saved under `outputs/<experiment>/publication/`:
+
+- `raw_runs.csv` / `raw_runs.json`
+- `summary.csv` / `summary.json`
+- `hypotheses.csv` / `hypotheses.json` (H1-H5)
+- `methods_catalog.csv` / `methods_catalog.json`
+- `unsupported_methods.csv`
+- `publication_manifest.json`
+- `publication_report.md`
+- `e1_scalability_makespan.{png,pdf,svg}`
+- `e4_hybrid_vs_classical_latency_boxplot.{png,pdf,svg}`
+- `e5_llm_vs_algorithmic_latency_boxplot.{png,pdf,svg}`
+- `global_load_imbalance_boxplot.{png,pdf,svg}`
+
 ## Current scope (Sprint 9)
 
 - Core system model (`Node`, `Task`, `Network`, `SystemState`)
@@ -80,3 +101,4 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - Reproducibility controls: fixed global seed per run and run/batch manifests
 - Publication export: high-DPI plots with vector formats (`pdf`, `svg`)
 - Reproducibility check mode: repeated run consistency verification (`--repro-check`)
+- Publication study mode: E1-E5 pipeline + H1-H5 evaluation (`--publication-study`)

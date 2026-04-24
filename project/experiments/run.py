@@ -1,3 +1,5 @@
+"""CLI entrypoint for single, batch, A/B, and publication experiment modes."""
+
 from __future__ import annotations
 
 import argparse
@@ -19,6 +21,7 @@ from project.core.config import ExperimentConfig, load_config
 from project.core.models import SystemState
 from project.experiments.controller import Experiment
 from project.experiments.manifest import build_run_manifest, write_manifest
+from project.experiments.publication import StudyResult, run_publication_pipeline
 from project.experiments.runner import BatchRunResult, BatchRunSpec, ExperimentRunner
 from project.metrics import persist_observability, summarize_state
 
@@ -34,6 +37,7 @@ DEFAULT_BATCH_SCENARIOS = [
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for experiment execution modes."""
     parser = argparse.ArgumentParser(description="Run experimental testbed simulation.")
     parser.add_argument(
         "--config",
@@ -147,15 +151,44 @@ def parse_args() -> argparse.Namespace:
         default=3,
         help="Number of repeated runs for --repro-check.",
     )
+    parser.add_argument(
+        "--publication-study",
+        action="store_true",
+        help="Run publication pipeline (E1-E5, H1-H5, stats, plots, report).",
+    )
+    parser.add_argument(
+        "--study-seeds",
+        default="42-71",
+        help="Seeds for publication study: comma list (42,43,44) or range (42-71).",
+    )
+    parser.add_argument(
+        "--study-quick",
+        action="store_true",
+        help="Run reduced publication pipeline for quick verification.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
+    """Dispatch execution into selected run mode and print summary outputs."""
     args = parse_args()
     cli_args = list(sys.argv[1:])
     config = _apply_runtime_overrides(load_config(args.config), args)
     log_path = _configure_logging(config)
     LOGGER.info("Run started: experiment=%s", config.name)
+
+    if args.publication_study:
+        seeds = _parse_study_seeds(args.study_seeds)
+        result = run_publication_pipeline(
+            config,
+            seeds=seeds,
+            quick=bool(args.study_quick),
+            save_plots=not bool(args.no_plots),
+            cli_args=cli_args,
+        )
+        _print_publication_result(config.name, seeds, result)
+        LOGGER.info("Publication study finished. Log: %s", log_path)
+        return
 
     if args.ab_llm:
         _run_llm_ab(config, cli_args)
@@ -192,6 +225,7 @@ def main() -> None:
 
 
 def _run_comparison(config: ExperimentConfig, algorithms: list[str], cli_args: list[str]) -> None:
+    """Run same scenario with multiple algorithms and export comparison table."""
     print(f"Experiment '{config.name}' comparison")
     print(
         "scenario | algorithm | completed | pending | deadline_violations | latency | throughput | avg_load"
@@ -246,6 +280,7 @@ def _run_comparison(config: ExperimentConfig, algorithms: list[str], cli_args: l
 
 
 def _run_intelligence_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
+    """Run A/B experiment with intelligence layer disabled vs enabled."""
     baseline_config = replace(
         config,
         intelligence=replace(config.intelligence, enabled=False, adaptive_algorithm=False),
@@ -316,6 +351,7 @@ def _run_intelligence_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
 
 
 def _run_llm_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
+    """Run A/B experiment with and without LLM agent influence."""
     baseline_config = replace(
         config,
         intelligence=replace(config.intelligence, adaptive_algorithm=False),
@@ -391,6 +427,7 @@ def _run_llm_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
 
 
 def _run_batch(config: ExperimentConfig, args: argparse.Namespace, cli_args: list[str]) -> None:
+    """Run scenario/algorithm matrix and print aggregated winners."""
     scenarios = _parse_batch_scenarios(args.batch_scenarios)
     algorithms = _parse_compare_algorithms(args.batch_algorithms)
     if not algorithms:
@@ -408,6 +445,7 @@ def _run_batch(config: ExperimentConfig, args: argparse.Namespace, cli_args: lis
 
 
 def _run_repro_check(config: ExperimentConfig, runs: int, cli_args: list[str]) -> None:
+    """Repeat identical run several times and verify deterministic outputs."""
     rows: list[dict[str, object]] = []
     for idx in range(runs):
         state = Experiment(config=config).run()
@@ -456,6 +494,7 @@ def _run_repro_check(config: ExperimentConfig, runs: int, cli_args: list[str]) -
 
 
 def _evaluate_reproducibility(repro_df: pd.DataFrame) -> tuple[bool, list[str]]:
+    """Evaluate equality of key metrics across repeated runs."""
     if repro_df.empty:
         return False, ["No runs were executed."]
 
@@ -494,6 +533,7 @@ def _evaluate_reproducibility(repro_df: pd.DataFrame) -> tuple[bool, list[str]]:
 
 
 def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace) -> ExperimentConfig:
+    """Apply CLI overrides to loaded experiment configuration."""
     if args.algorithm:
         config = _with_algorithm(config, args.algorithm)
     if args.scenario:
@@ -530,6 +570,7 @@ def _persist_run_artifacts(
     cli_args: list[str] | None = None,
     extra: dict[str, object] | None = None,
 ) -> dict[str, str]:
+    """Persist observability artifacts for a single run flavor."""
     output_dir = (
         Path(config.observability.output_dir)
         / config.name
@@ -556,11 +597,13 @@ def _persist_run_artifacts(
 
 
 def _with_algorithm(config: ExperimentConfig, algorithm: str) -> ExperimentConfig:
+    """Return config copy with normalized scheduling algorithm."""
     optimization = replace(config.optimization, algorithm=normalize_algorithm(algorithm))
     return replace(config, optimization=optimization)
 
 
 def _parse_compare_algorithms(raw: str | None) -> list[str]:
+    """Parse comma-separated algorithm list from CLI."""
     if not raw:
         return []
     parsed: list[str] = []
@@ -572,6 +615,7 @@ def _parse_compare_algorithms(raw: str | None) -> list[str]:
 
 
 def _parse_batch_scenarios(raw: str | None) -> list[str]:
+    """Parse comma-separated scenario names for batch mode."""
     if not raw:
         return list(DEFAULT_BATCH_SCENARIOS)
     parsed: list[str] = []
@@ -582,7 +626,35 @@ def _parse_batch_scenarios(raw: str | None) -> list[str]:
     return parsed or list(DEFAULT_BATCH_SCENARIOS)
 
 
+def _parse_study_seeds(raw: str | None) -> list[int]:
+    """Parse publication seeds from list or numeric range expression."""
+    if not raw:
+        return list(range(42, 72))
+    text = str(raw).strip()
+    if "-" in text and "," not in text:
+        parts = [part.strip() for part in text.split("-", maxsplit=1)]
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            start = int(parts[0])
+            end = int(parts[1])
+            if end < start:
+                start, end = end, start
+            return list(range(start, end + 1))
+    seeds: list[int] = []
+    for item in text.split(","):
+        value = item.strip()
+        if not value:
+            continue
+        try:
+            parsed = int(value)
+        except ValueError:
+            continue
+        if parsed not in seeds:
+            seeds.append(parsed)
+    return seeds or list(range(42, 72))
+
+
 def _print_single_result(name: str, final_state: SystemState, artifacts: dict[str, str]) -> None:
+    """Print concise summary for one experiment run."""
     print(f"Experiment '{name}' completed.")
     print(f"Scenario: {final_state.scenario}")
     print(f"Algorithm: {final_state.selected_algorithm}")
@@ -614,6 +686,7 @@ def _print_single_result(name: str, final_state: SystemState, artifacts: dict[st
 
 
 def _print_batch_result(name: str, spec: BatchRunSpec, result: BatchRunResult) -> None:
+    """Print batch summary tables and generated artifact paths."""
     print(f"Experiment '{name}' batch run")
     print(f"Scenarios: {', '.join(spec.scenarios)}")
     print(f"Algorithms: {', '.join(spec.algorithms)}")
@@ -676,7 +749,49 @@ def _print_batch_result(name: str, spec: BatchRunSpec, result: BatchRunResult) -
         print(f"{key}: {path}")
 
 
+def _print_publication_result(name: str, seeds: list[int], result: StudyResult) -> None:
+    """Print publication-study summary and hypothesis table."""
+    print(f"Experiment '{name}' publication study")
+    print(f"Seeds: {len(seeds)} ({min(seeds)}..{max(seeds)})")
+    print(f"Output dir: {result.output_dir}")
+
+    if result.summary.empty:
+        print("No publication results were produced.")
+    else:
+        print("Top summary rows (sorted by avg_latency_mean):")
+        top = result.summary.sort_values("avg_latency_mean").head(15)
+        columns = [
+            "study_id",
+            "scenario",
+            "method",
+            "node_count",
+            "task_count",
+            "n_runs",
+            "avg_latency_mean",
+            "throughput_mean",
+            "load_imbalance_mean",
+            "sla_violations_mean",
+        ]
+        available = [col for col in columns if col in top.columns]
+        print(top[available].to_string(index=False, float_format=lambda value: f"{value:.3f}"))
+
+    if result.hypothesis_df.empty:
+        print("Hypothesis table is empty.")
+    else:
+        print("Hypotheses H1-H5:")
+        print(
+            result.hypothesis_df.to_string(
+                index=False,
+                float_format=lambda value: f"{value:.3f}" if isinstance(value, float) else str(value),
+            )
+        )
+
+    for key, path in result.output_paths.items():
+        print(f"{key}: {path}")
+
+
 def _configure_logging(config: ExperimentConfig) -> Path:
+    """Configure console/file logging and return log file path."""
     level_name = str(config.observability.log_level).strip().upper()
     level = getattr(logging, level_name, logging.INFO)
     log_dir = Path(config.observability.output_dir) / config.name
@@ -695,6 +810,7 @@ def _configure_logging(config: ExperimentConfig) -> Path:
 
 
 def _slug(value: str) -> str:
+    """Normalize free-form labels into filesystem-friendly token."""
     return str(value).strip().lower().replace("_", "-").replace(" ", "-")
 
 

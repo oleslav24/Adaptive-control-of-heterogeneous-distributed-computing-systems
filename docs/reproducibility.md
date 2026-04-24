@@ -24,6 +24,12 @@ Batch experiments:
 python -m project.experiments.run --config config.yaml --batch --batch-runs 5
 ```
 
+Publication pipeline:
+
+```bash
+python -m project.experiments.run --config config.yaml --publication-study
+```
+
 Reproducibility check:
 
 ```bash

@@ -1,3 +1,5 @@
+"""Batch experiment orchestration and ranking utilities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
@@ -19,6 +21,8 @@ from project.metrics import (
 
 @dataclass(slots=True)
 class BatchRunSpec:
+    """Input specification for scenario/algorithm batch matrix."""
+
     scenarios: list[str]
     algorithms: list[str]
     repeats: int = 1
@@ -28,6 +32,8 @@ class BatchRunSpec:
 
 @dataclass(slots=True)
 class BatchRunResult:
+    """Tabular outputs and artifact paths produced by batch execution."""
+
     runs_df: pd.DataFrame
     summary_df: pd.DataFrame
     ranking_df: pd.DataFrame
@@ -36,7 +42,10 @@ class BatchRunResult:
 
 
 class ExperimentRunner:
+    """Execute batch experiment matrix and persist aggregated artifacts."""
+
     def __init__(self, config: ExperimentConfig) -> None:
+        """Store base config used to derive each run configuration."""
         self.config = config
 
     def run_batch(
@@ -44,6 +53,7 @@ class ExperimentRunner:
         spec: BatchRunSpec,
         cli_args: list[str] | None = None,
     ) -> BatchRunResult:
+        """Run all scenario/algorithm/repeat combinations and aggregate results."""
         repeats = max(1, int(spec.repeats))
         rows: list[dict[str, object]] = []
         cli_args = list(cli_args or [])
@@ -145,6 +155,7 @@ class ExperimentRunner:
         repeat_idx: int,
         run_manifest: dict[str, Any] | None = None,
     ) -> None:
+        """Persist artifacts for one batch run when detailed saving is enabled."""
         output_dir = (
             Path(config.observability.output_dir)
             / config.name
@@ -173,6 +184,7 @@ class ExperimentRunner:
         winners_df: pd.DataFrame,
         batch_manifest: dict[str, Any] | None = None,
     ) -> dict[str, str]:
+        """Persist aggregated batch tables/plots and return artifact map."""
         out_dir = Path(self.config.observability.output_dir) / self.config.name / "batch"
         return persist_batch_observability(
             runs_df=runs_df,
@@ -191,6 +203,7 @@ class ExperimentRunner:
 
 
 def _build_batch_summary(runs_df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate per-run metrics into mean/std summary by scenario and algorithm."""
     if runs_df.empty:
         return pd.DataFrame()
 
@@ -233,6 +246,7 @@ def _build_batch_summary(runs_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _build_batch_ranking(summary_df: pd.DataFrame) -> pd.DataFrame:
+    """Rank algorithms per scenario using a composite score."""
     if summary_df.empty:
         return pd.DataFrame()
 
@@ -263,4 +277,5 @@ def _build_batch_ranking(summary_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _normalize_scenario_name(name: str) -> str:
+    """Normalize scenario labels for consistent indexing."""
     return str(name).strip().lower().replace("_", "-").replace(" ", "-")

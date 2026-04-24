@@ -1,14 +1,19 @@
+"""Network agent that maps link capacity into scheduling constraints."""
+
 from __future__ import annotations
 
 from project.core.agent import Agent, AgentMessage
 
 
 class NetworkAgent(Agent):
+    """Compute bandwidth-based constraints and send them to compute agent."""
+
     def __init__(self, name: str = "network", min_bandwidth: float = 50.0) -> None:
         super().__init__(name=name)
         self.min_bandwidth = min_bandwidth
 
     def decide(self) -> None:
+        """Publish average-node bandwidth and a blocked-node list."""
         if self.context is None:
             return
         node_bandwidth = self.context.network.node_bandwidth_map(list(self.context.nodes.keys()))
@@ -30,5 +35,5 @@ class NetworkAgent(Agent):
         )
 
     def act(self) -> None:
+        """This agent only contributes policy messages."""
         return
-

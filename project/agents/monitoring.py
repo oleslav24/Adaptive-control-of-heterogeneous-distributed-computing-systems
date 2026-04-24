@@ -1,13 +1,18 @@
+"""Monitoring agent that publishes state snapshots for the MAS."""
+
 from __future__ import annotations
 
 from project.core.agent import Agent, AgentMessage
 
 
 class MonitoringAgent(Agent):
+    """Broadcast lightweight snapshots for predictive and coordination agents."""
+
     def __init__(self, name: str = "monitoring") -> None:
         super().__init__(name=name)
 
     def decide(self) -> None:
+        """Prepare and send the current state snapshot to all agents."""
         if self.state is None or self.context is None:
             return
         snapshot = {
@@ -27,5 +32,5 @@ class MonitoringAgent(Agent):
         )
 
     def act(self) -> None:
+        """This agent has no direct effectors."""
         return
-

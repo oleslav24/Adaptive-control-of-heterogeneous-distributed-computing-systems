@@ -1,3 +1,5 @@
+"""Network topology model backed by a directed graph."""
+
 from __future__ import annotations
 
 import networkx as nx
@@ -9,10 +11,12 @@ class NetworkModel:
     """Network topology wrapper over networkx directed graph."""
 
     def __init__(self) -> None:
+        """Initialize empty directed network graph."""
         self.graph = nx.DiGraph()
 
     @classmethod
     def from_edges(cls, edges: list[NetworkEdge]) -> NetworkModel:
+        """Build model from typed edge list."""
         model = cls()
         for edge in edges:
             model.graph.add_edge(
@@ -24,6 +28,7 @@ class NetworkModel:
         return model
 
     def snapshot(self) -> dict[tuple[str, str], dict[str, float]]:
+        """Return immutable edge-attribute snapshot for SystemState."""
         data: dict[tuple[str, str], dict[str, float]] = {}
         for source, target, attr in self.graph.edges(data=True):
             data[(str(source), str(target))] = {

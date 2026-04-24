@@ -1,3 +1,5 @@
+"""Scenario engine for dynamic load, bursts, failures, and heterogeneity."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -19,13 +21,18 @@ LOGGER = logging.getLogger(__name__)
 
 @dataclass(slots=True)
 class ScenarioEvent:
+    """Normalized scenario event record for observability/history."""
+
     time: int
     kind: str
     details: dict[str, object]
 
 
 class ScenarioEngine:
+    """Generate scenario-driven tasks and runtime events per simulation tick."""
+
     def __init__(self, config: ExperimentConfig) -> None:
+        """Initialize scenario state and failure/recovery schedules."""
         self.config = config
         self.scenario = _normalize_scenario_name(config.scenario)
         self._rng = np.random.default_rng(config.simulation.seed)
@@ -38,6 +45,7 @@ class ScenarioEngine:
             self._failure_schedule.setdefault(event.time, []).append(event)
 
     def apply_events(self, t: int, context: SimulationContext) -> list[ScenarioEvent]:
+        """Apply failure/recovery events planned for tick t."""
         events: list[ScenarioEvent] = []
         if not self._is_failure_enabled():
             return events
@@ -66,6 +74,7 @@ class ScenarioEngine:
         return events
 
     def generate_tasks(self, t: int) -> list[Task]:
+        """Generate new tasks for dynamic scenarios at tick t."""
         if not self._is_dynamic_enabled():
             return []
 
@@ -84,6 +93,7 @@ class ScenarioEngine:
         return tasks
 
     def events_as_dicts(self) -> list[dict[str, object]]:
+        """Export scenario events in JSON-friendly dict format."""
         return [
             {
                 "time": event.time,
@@ -99,6 +109,7 @@ class ScenarioEngine:
         context: SimulationContext,
         t: int,
     ) -> ScenarioEvent | None:
+        """Deactivate failed node, requeue tasks, and schedule recovery."""
         node = context.nodes.get(failure.node_id)
         if node is None or not node.is_active:
             return None
@@ -137,6 +148,7 @@ class ScenarioEngine:
         )
 
     def _arrival_rate(self, t: int) -> float:
+        """Compute task arrival rate for tick t with dynamic and peak modifiers."""
         dynamic = self.config.scenarios.dynamic_load
         rate = max(0.0, dynamic.base_rate)
         if dynamic.amplitude > 0.0 and dynamic.period > 0:
@@ -150,6 +162,7 @@ class ScenarioEngine:
         return max(0.0, rate)
 
     def _create_task(self, t: int) -> Task:
+        """Create one synthetic task according to active profile."""
         if self._is_heterogeneous_enabled():
             profile = self._pick_profile()
         else:
@@ -170,11 +183,13 @@ class ScenarioEngine:
         return task
 
     def _pick_profile(self) -> HeterogeneousProfileConfig:
+        """Randomly select one heterogeneous profile."""
         profiles = self.config.scenarios.heterogeneous_tasks.profiles
         idx = int(self._rng.integers(0, len(profiles)))
         return profiles[idx]
 
     def _dynamic_profile(self) -> HeterogeneousProfileConfig:
+        """Build profile from dynamic-load ranges when heterogeneity is disabled."""
         dynamic = self.config.scenarios.dynamic_load
         return HeterogeneousProfileConfig(
             name="dynamic",
@@ -186,14 +201,17 @@ class ScenarioEngine:
         )
 
     def _rand_int(self, value_range: tuple[int, int]) -> int:
+        """Sample integer from inclusive range."""
         low, high = value_range
         return int(self._rng.integers(low, high + 1))
 
     def _rand_float(self, value_range: tuple[float, float]) -> float:
+        """Sample float from continuous range."""
         low, high = value_range
         return float(self._rng.uniform(low, high))
 
     def _is_dynamic_enabled(self) -> bool:
+        """Return True when dynamic task generation must be active."""
         if self.scenario in {
             "dynamic-load",
             "peak-load",
@@ -205,21 +223,24 @@ class ScenarioEngine:
         return self.config.scenarios.dynamic_load.enabled
 
     def _is_peak_enabled(self) -> bool:
+        """Return True when peak-load modifier must be applied."""
         if self.scenario in {"peak-load", "mixed"}:
             return True
         return self.config.scenarios.peak_load.enabled
 
     def _is_failure_enabled(self) -> bool:
+        """Return True when node failure events are active."""
         if self.scenario in {"node-failures", "mixed"}:
             return True
         return self.config.scenarios.node_failures.enabled
 
     def _is_heterogeneous_enabled(self) -> bool:
+        """Return True when heterogeneous task profiles are active."""
         if self.scenario in {"heterogeneous-tasks", "mixed"}:
             return True
         return self.config.scenarios.heterogeneous_tasks.enabled
 
 
 def _normalize_scenario_name(name: str) -> str:
+    """Normalize scenario identifier for comparisons and dispatch."""
     return str(name).strip().lower().replace("_", "-").replace(" ", "-")
-

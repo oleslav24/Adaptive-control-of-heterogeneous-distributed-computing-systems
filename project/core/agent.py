@@ -1,3 +1,5 @@
+"""Base messaging and lifecycle contracts for MAS agents."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,6 +14,8 @@ if TYPE_CHECKING:
 
 @dataclass(slots=True)
 class AgentMessage:
+    """Envelope used for inter-agent communication."""
+
     sender: str
     topic: str
     payload: dict[str, Any] = field(default_factory=dict)

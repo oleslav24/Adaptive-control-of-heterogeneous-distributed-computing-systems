@@ -1,3 +1,5 @@
+"""Compute agent that performs task-to-node assignments."""
+
 from __future__ import annotations
 
 from project.algorithms import choose_node, normalize_algorithm
@@ -6,6 +8,8 @@ from project.core.models import Node, Task
 
 
 class ComputeAgent(Agent):
+    """Assign queued tasks to nodes using active scheduling policies."""
+
     def __init__(self, name: str = "compute") -> None:
         super().__init__(name=name)
         self._plan: list[tuple[Task, str]] = []
@@ -21,6 +25,7 @@ class ComputeAgent(Agent):
         self._llm_confidence: float = 0.0
 
     def decide(self) -> None:
+        """Build an assignment plan for tasks currently in the queue."""
         if self.context is None:
             return
         self._refresh_policies()
@@ -65,6 +70,7 @@ class ComputeAgent(Agent):
         )
 
     def act(self) -> None:
+        """Apply planned assignments and requeue tasks that could not be placed."""
         if self.context is None:
             return
         deferred: list[Task] = []
@@ -89,6 +95,7 @@ class ComputeAgent(Agent):
         )
 
     def _refresh_policies(self) -> None:
+        """Ingest policy messages from other agents and refresh local controls."""
         if self.context is None:
             return
         self._node_bandwidth = {node_id: float("inf") for node_id in self.context.nodes}
@@ -144,6 +151,7 @@ class ComputeAgent(Agent):
                     self._urgent_task_ids = {str(task_id) for task_id in urgent}
 
     def _select_node(self, task: Task) -> Node | None:
+        """Choose a node for a single task according to the active strategy."""
         if self.context is None:
             return None
         candidates = [
@@ -169,6 +177,7 @@ class ComputeAgent(Agent):
         return min(candidates, key=self._min_load_score)
 
     def _min_load_score(self, node: Node) -> float:
+        """Score function for min-load style placement with policy modifiers."""
         predicted_target = self._predicted_avg_load
         projected_over_target = max(0.0, node.load - predicted_target)
         bias = self._node_bias.get(node.id, 0.0) + (
@@ -187,6 +196,7 @@ class ComputeAgent(Agent):
         )
 
     def _greedy_score(self, task: Task, node: Node) -> float:
+        """Score function for greedy placement that favors residual capacity."""
         residual = (
             (node.cpu - (node.used_cpu + task.cpu_required))
             + 0.1 * (node.memory - (node.used_memory + task.memory_required))

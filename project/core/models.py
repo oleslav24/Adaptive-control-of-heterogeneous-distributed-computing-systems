@@ -1,3 +1,5 @@
+"""Core domain models for nodes, tasks, links, and global state."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -6,6 +8,8 @@ from typing import Literal
 
 @dataclass(slots=True)
 class Node:
+    """Compute node with capacity, runtime usage, and failure state."""
+
     id: str
     cpu: float
     memory: float
@@ -17,6 +21,7 @@ class Node:
 
     @property
     def load(self) -> float:
+        """Current CPU utilization ratio in [0, 1]."""
         if not self.is_active:
             return 1.0
         if self.cpu <= 0:
@@ -24,6 +29,7 @@ class Node:
         return min(1.0, self.used_cpu / self.cpu)
 
     def can_run(self, task: Task) -> bool:
+        """Return True when node has enough free CPU and memory for task."""
         if not self.is_active:
             return False
         return (
@@ -32,16 +38,20 @@ class Node:
         )
 
     def assign(self, task: Task) -> None:
+        """Reserve node resources for a running task."""
         self.used_cpu += task.cpu_required
         self.used_memory += task.memory_required
 
     def release(self, task: Task) -> None:
+        """Release node resources when task finishes or is preempted."""
         self.used_cpu = max(0.0, self.used_cpu - task.cpu_required)
         self.used_memory = max(0.0, self.used_memory - task.memory_required)
 
 
 @dataclass(slots=True)
 class Task:
+    """Work unit with resource requirements and timing constraints."""
+
     id: str
     cpu_required: float
     memory_required: float
@@ -56,6 +66,7 @@ class Task:
     finish_time: int | None = None
 
     def __post_init__(self) -> None:
+        """Normalize duration and initialize remaining execution time."""
         if self.duration < 1:
             self.duration = 1
         self.remaining_time = self.duration
@@ -63,6 +74,8 @@ class Task:
 
 @dataclass(slots=True)
 class NetworkEdge:
+    """Directed network link between two nodes."""
+
     source: str
     target: str
     bandwidth: float
@@ -71,6 +84,8 @@ class NetworkEdge:
 
 @dataclass(slots=True)
 class SystemState:
+    """Full observable simulation state and aggregated metrics."""
+
     current_time: int = 0
     scenario: str = "static"
     selected_algorithm: str = "min-load"

@@ -1,3 +1,5 @@
+"""Run-manifest helpers for reproducibility metadata."""
+
 from __future__ import annotations
 
 from dataclasses import asdict
@@ -18,6 +20,7 @@ def build_run_manifest(
     cli_args: list[str],
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """Build reproducibility manifest for a run/batch/publication execution."""
     return {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": str(mode),
@@ -33,6 +36,7 @@ def build_run_manifest(
 
 
 def write_manifest(path: str | Path, manifest: dict[str, Any]) -> str:
+    """Persist manifest as formatted JSON and return target path."""
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     with target.open("w", encoding="utf-8") as f:
@@ -41,6 +45,7 @@ def write_manifest(path: str | Path, manifest: dict[str, Any]) -> str:
 
 
 def _git_short_commit() -> str:
+    """Return short git commit hash or placeholder when unavailable."""
     result = _run_git(["rev-parse", "--short", "HEAD"])
     if result is None:
         return "unknown"
@@ -48,6 +53,7 @@ def _git_short_commit() -> str:
 
 
 def _git_is_dirty() -> bool:
+    """Return True when working tree has uncommitted changes."""
     result = _run_git(["status", "--porcelain"])
     if result is None:
         return False
@@ -55,6 +61,7 @@ def _git_is_dirty() -> bool:
 
 
 def _run_git(args: list[str]) -> str | None:
+    """Run git command and return stdout on success."""
     try:
         completed = subprocess.run(
             ["git", *args],
@@ -70,6 +77,7 @@ def _run_git(args: list[str]) -> str | None:
 
 
 def _collect_dependency_versions() -> dict[str, str]:
+    """Collect versions of core runtime dependencies."""
     package_map = {
         "numpy": "numpy",
         "pandas": "pandas",
