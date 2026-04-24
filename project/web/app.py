@@ -56,6 +56,59 @@ SCENARIO_OPTIONS = (
 )
 LANG_OPTIONS = ("en", "ru")
 
+MODE_LABELS: dict[str, dict[str, str]] = {
+    "en": {
+        "single": "Single",
+        "compare": "Compare",
+        "batch": "Batch",
+        "publication": "Publication",
+        "ab-intelligence": "A/B Intelligence",
+        "ab-llm": "A/B LLM",
+        "repro-check": "Repro Check",
+    },
+    "ru": {
+        "single": "Одиночный",
+        "compare": "Сравнение",
+        "batch": "Пакетный",
+        "publication": "Публикационный",
+        "ab-intelligence": "A/B Интеллект",
+        "ab-llm": "A/B LLM",
+        "repro-check": "Проверка воспроизводимости",
+    },
+}
+
+ALGORITHM_LABELS: dict[str, dict[str, str]] = {
+    "en": {
+        "round-robin": "Round-robin",
+        "min-load": "Min-load",
+        "greedy": "Greedy",
+    },
+    "ru": {
+        "round-robin": "Круговой (Round-robin)",
+        "min-load": "Минимальная нагрузка",
+        "greedy": "Жадный",
+    },
+}
+
+SCENARIO_LABELS: dict[str, dict[str, str]] = {
+    "en": {
+        "static": "Static",
+        "dynamic-load": "Dynamic Load",
+        "peak-load": "Peak Load",
+        "node-failures": "Node Failures",
+        "heterogeneous-tasks": "Heterogeneous Tasks",
+        "mixed": "Mixed",
+    },
+    "ru": {
+        "static": "Статический",
+        "dynamic-load": "Динамическая нагрузка",
+        "peak-load": "Пиковая нагрузка",
+        "node-failures": "Отказы узлов",
+        "heterogeneous-tasks": "Гетерогенные задачи",
+        "mixed": "Смешанный",
+    },
+}
+
 UI_TEXT: dict[str, dict[str, str]] = {
     "en": {
         "console_title": "Experimental Testbed Web Console",
@@ -401,15 +454,15 @@ class WebHandler(BaseHTTPRequestHandler):
         )
 
         mode_options = "".join(
-            f"<option value='{escape(mode)}'>{escape(mode)}</option>"
+            f"<option value='{escape(mode)}'>{escape(_catalog_label(MODE_LABELS, lang, mode, mode))}</option>"
             for mode in MODE_OPTIONS
         )
         algorithm_options = "".join(
-            f"<option value='{escape(name)}'>{escape(name or '(default)')}</option>"
+            f"<option value='{escape(name)}'>{escape(_catalog_label(ALGORITHM_LABELS, lang, name, name) if name else _default_select_label(lang))}</option>"
             for name in ALGORITHM_OPTIONS
         )
         scenario_options = "".join(
-            f"<option value='{escape(name)}'>{escape(name or '(default)')}</option>"
+            f"<option value='{escape(name)}'>{escape(_catalog_label(SCENARIO_LABELS, lang, name, name) if name else _default_select_label(lang))}</option>"
             for name in SCENARIO_OPTIONS
         )
         switcher = _language_switcher(
@@ -559,19 +612,15 @@ class WebHandler(BaseHTTPRequestHandler):
 </div>
 <div class="chart-grid">
   <section class="card">
-    <h2>{escape(_tr(lang, "latency_avg"))}</h2>
     <canvas id="chart-latency" class="chart-canvas" width="900" height="260"></canvas>
   </section>
   <section class="card">
-    <h2>{escape(_tr(lang, "throughput"))}</h2>
     <canvas id="chart-throughput" class="chart-canvas" width="900" height="260"></canvas>
   </section>
   <section class="card">
-    <h2>{escape(_tr(lang, "average_load"))}</h2>
     <canvas id="chart-load" class="chart-canvas" width="900" height="260"></canvas>
   </section>
   <section class="card">
-    <h2>{escape(_tr(lang, "queue_completed"))}</h2>
     <canvas id="chart-queue-completed" class="chart-canvas" width="900" height="260"></canvas>
   </section>
 </div>
@@ -584,14 +633,25 @@ const jobId = {json.dumps(job.id)};
 const lang = {json.dumps(lang)};
 const i18n = {{
   noData: {json.dumps(_tr(lang, "no_data_yet"))},
+  axisX: (lang === "ru" ? "\\u0412\\u0440\\u0435\\u043c\\u044f (t)" : "Time (t)"),
+  axisY: (lang === "ru" ? "\\u0417\\u043d\\u0430\\u0447\\u0435\\u043d\\u0438\\u0435" : "Value"),
   latency: {json.dumps(_tr(lang, "latency_avg"))},
   throughput: {json.dumps(_tr(lang, "throughput"))},
   avgLoad: {json.dumps(_tr(lang, "average_load"))},
-  queue: {json.dumps(_tr(lang, "queue"))},
-  completed: {json.dumps(_tr(lang, "completed"))}
+  queueCompleted: {json.dumps(_tr(lang, "queue_completed"))}
 }};
 
-function drawSeries(canvasId, times, values, color, label) {{
+function formatTick(value) {{
+  if (!Number.isFinite(value)) return "";
+  const abs = Math.abs(value);
+  if (abs >= 1000) return value.toFixed(0);
+  if (abs >= 100) return value.toFixed(1);
+  if (abs >= 10) return value.toFixed(2);
+  if (abs >= 1) return value.toFixed(3);
+  return value.toFixed(4);
+}}
+
+function drawSeries(canvasId, times, values, color, yLabel = i18n.axisY) {{
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
@@ -605,15 +665,31 @@ function drawSeries(canvasId, times, values, color, label) {{
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const w = cssWidth;
   const h = cssHeight;
-  const padL = 46;
+  const padL = 64;
   const padR = 14;
   const padT = 14;
-  const padB = 30;
+  const padB = 46;
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, w, h);
   ctx.strokeStyle = "#cbd5e1";
   ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+
+  const drawAxisLabels = () => {{
+    ctx.fillStyle = "#334155";
+    ctx.font = "12px Segoe UI, Tahoma, Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(i18n.axisX, padL + (plotW / 2), h - 8);
+    ctx.save();
+    ctx.translate(16, padT + (plotH / 2));
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(yLabel, 0, 0);
+    ctx.restore();
+    ctx.textAlign = "start";
+  }};
+  drawAxisLabels();
 
   if (!times.length || !values.length) {{
     ctx.fillStyle = "#64748b";
@@ -630,20 +706,65 @@ function drawSeries(canvasId, times, values, color, label) {{
   }}
   const minX = times[0];
   const maxX = times[times.length - 1] === minX ? minX + 1 : times[times.length - 1];
-
-  const plotW = w - padL - padR;
-  const plotH = h - padT - padB;
   const xToPx = (x) => padL + ((x - minX) / (maxX - minX)) * plotW;
   const yToPx = (y) => padT + (1 - (y - minY) / (maxY - minY)) * plotH;
 
+  // Axes
+  ctx.strokeStyle = "#64748b";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, h - padB);
+  ctx.lineTo(w - padR, h - padB);
+  ctx.stroke();
+
+  // Grid + Y ticks
+  const yTicks = 5;
   ctx.strokeStyle = "#e2e8f0";
   ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i += 1) {{
-    const y = padT + (i / 4) * plotH;
+  ctx.fillStyle = "#475569";
+  ctx.font = "11px Segoe UI, Tahoma, Arial";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let i = 0; i <= yTicks; i += 1) {{
+    const ratio = i / yTicks;
+    const y = padT + ratio * plotH;
+    const yValue = maxY - ratio * (maxY - minY);
     ctx.beginPath();
     ctx.moveTo(padL, y);
     ctx.lineTo(w - padR, y);
     ctx.stroke();
+    ctx.strokeStyle = "#94a3b8";
+    ctx.beginPath();
+    ctx.moveTo(padL - 4, y);
+    ctx.lineTo(padL, y);
+    ctx.stroke();
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.fillText(formatTick(yValue), padL - 7, y);
+  }}
+
+  // X ticks + vertical grid
+  const xTicks = 6;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  for (let i = 0; i <= xTicks; i += 1) {{
+    const ratio = i / xTicks;
+    const x = padL + ratio * plotW;
+    const xValue = minX + ratio * (maxX - minX);
+    if (i > 0 && i < xTicks) {{
+      ctx.strokeStyle = "#f1f5f9";
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, h - padB);
+      ctx.stroke();
+    }}
+    ctx.strokeStyle = "#94a3b8";
+    ctx.beginPath();
+    ctx.moveTo(x, h - padB);
+    ctx.lineTo(x, h - padB + 4);
+    ctx.stroke();
+    ctx.fillStyle = "#475569";
+    ctx.fillText(String(Math.round(xValue)), x, h - padB + 6);
   }}
 
   ctx.strokeStyle = color;
@@ -666,13 +787,11 @@ function drawSeries(canvasId, times, values, color, label) {{
 
   ctx.fillStyle = "#0f172a";
   ctx.font = "12px Segoe UI, Tahoma, Arial";
-  ctx.fillText(label, padL, 12);
-  ctx.fillText(`t: ${{minX}} .. ${{times[times.length - 1]}}`, padL, h - 10);
-  ctx.fillText(`min: ${{minY.toFixed(3)}}`, w - 140, 12);
-  ctx.fillText(`max: ${{maxY.toFixed(3)}}`, w - 140, 26);
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(`t: ${{minX}} .. ${{times[times.length - 1]}}`, padL, h - 28);
 }}
 
-function drawDualSeries(canvasId, times, aVals, bVals, aColor, bColor, aLabel, bLabel) {{
+function drawDualSeries(canvasId, times, aVals, bVals, aColor, bColor, yLabel = i18n.axisY) {{
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
@@ -686,15 +805,31 @@ function drawDualSeries(canvasId, times, aVals, bVals, aColor, bColor, aLabel, b
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const w = cssWidth;
   const h = cssHeight;
-  const padL = 46;
+  const padL = 64;
   const padR = 14;
   const padT = 14;
-  const padB = 30;
+  const padB = 46;
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, w, h);
   ctx.strokeStyle = "#cbd5e1";
   ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+
+  const drawAxisLabels = () => {{
+    ctx.fillStyle = "#334155";
+    ctx.font = "12px Segoe UI, Tahoma, Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(i18n.axisX, padL + (plotW / 2), h - 8);
+    ctx.save();
+    ctx.translate(16, padT + (plotH / 2));
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(yLabel, 0, 0);
+    ctx.restore();
+    ctx.textAlign = "start";
+  }};
+  drawAxisLabels();
 
   if (!times.length || !aVals.length || !bVals.length) {{
     ctx.fillStyle = "#64748b";
@@ -711,42 +846,95 @@ function drawDualSeries(canvasId, times, aVals, bVals, aColor, bColor, aLabel, b
   }}
   const minX = times[0];
   const maxX = times[times.length - 1] === minX ? minX + 1 : times[times.length - 1];
-  const plotW = w - padL - padR;
-  const plotH = h - padT - padB;
   const xToPx = (x) => padL + ((x - minX) / (maxX - minX)) * plotW;
   const yToPx = (y) => padT + (1 - (y - minY) / (maxY - minY)) * plotH;
 
+  // Axes
+  ctx.strokeStyle = "#64748b";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, h - padB);
+  ctx.lineTo(w - padR, h - padB);
+  ctx.stroke();
+
+  // Grid + Y ticks
+  const yTicks = 5;
   ctx.strokeStyle = "#e2e8f0";
-  for (let i = 0; i <= 4; i += 1) {{
-    const y = padT + (i / 4) * plotH;
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "#475569";
+  ctx.font = "11px Segoe UI, Tahoma, Arial";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let i = 0; i <= yTicks; i += 1) {{
+    const ratio = i / yTicks;
+    const y = padT + ratio * plotH;
+    const yValue = maxY - ratio * (maxY - minY);
     ctx.beginPath();
     ctx.moveTo(padL, y);
     ctx.lineTo(w - padR, y);
     ctx.stroke();
+    ctx.strokeStyle = "#94a3b8";
+    ctx.beginPath();
+    ctx.moveTo(padL - 4, y);
+    ctx.lineTo(padL, y);
+    ctx.stroke();
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.fillText(formatTick(yValue), padL - 7, y);
+  }}
+
+  // X ticks + vertical grid
+  const xTicks = 6;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  for (let i = 0; i <= xTicks; i += 1) {{
+    const ratio = i / xTicks;
+    const x = padL + ratio * plotW;
+    const xValue = minX + ratio * (maxX - minX);
+    if (i > 0 && i < xTicks) {{
+      ctx.strokeStyle = "#f1f5f9";
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, h - padB);
+      ctx.stroke();
+    }}
+    ctx.strokeStyle = "#94a3b8";
+    ctx.beginPath();
+    ctx.moveTo(x, h - padB);
+    ctx.lineTo(x, h - padB + 4);
+    ctx.stroke();
+    ctx.fillStyle = "#475569";
+    ctx.fillText(String(Math.round(xValue)), x, h - padB + 6);
   }}
 
   function drawLine(vals, color) {{
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.beginPath();
+    let lastPx = padL;
+    let lastPy = h - padB;
     for (let i = 0; i < vals.length; i += 1) {{
       const px = xToPx(times[i]);
       const py = yToPx(vals[i]);
+      lastPx = px;
+      lastPy = py;
       if (i === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     }}
     ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(lastPx, lastPy, 3.5, 0, Math.PI * 2);
+    ctx.fill();
   }}
   drawLine(aVals, aColor);
   drawLine(bVals, bColor);
 
   ctx.font = "12px Segoe UI, Tahoma, Arial";
-  ctx.fillStyle = aColor;
-  ctx.fillText(aLabel, padL, 12);
-  ctx.fillStyle = bColor;
-  ctx.fillText(bLabel, padL + 100, 12);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#0f172a";
-  ctx.fillText(`t: ${{minX}} .. ${{times[times.length - 1]}}`, padL, h - 10);
+  ctx.fillText(`t: ${{minX}} .. ${{times[times.length - 1]}}`, padL, h - 28);
 }}
 
 function updateJobView(data) {{
@@ -775,8 +963,7 @@ function updateJobView(data) {{
     metrics.completed || [],
     "#7c3aed",
     "#0f766e",
-    i18n.queue,
-    i18n.completed
+    i18n.queueCompleted
   );
 }}
 
@@ -1000,6 +1187,26 @@ def _tr(lang: str, key: str) -> str:
     if key in table:
         return table[key]
     return UI_TEXT["en"].get(key, key)
+
+
+def _catalog_label(
+    labels: dict[str, dict[str, str]],
+    lang: str,
+    value: str,
+    fallback: str,
+) -> str:
+    """Get localized label for select options with English fallback."""
+    table = labels.get(lang, labels["en"])
+    if value in table:
+        return table[value]
+    return labels["en"].get(value, fallback)
+
+
+def _default_select_label(lang: str) -> str:
+    """Localized label for empty select value."""
+    if lang == "ru":
+        return "(по умолчанию)"
+    return "(default)"
 
 
 def _lang_from_parsed(parsed) -> str:
