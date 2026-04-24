@@ -17,7 +17,7 @@ import subprocess
 import sys
 from threading import Lock, Thread
 from typing import ClassVar
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 from uuid import uuid4
 
 
@@ -54,6 +54,175 @@ SCENARIO_OPTIONS = (
     "heterogeneous-tasks",
     "mixed",
 )
+LANG_OPTIONS = ("en", "ru")
+
+UI_TEXT: dict[str, dict[str, str]] = {
+    "en": {
+        "console_title": "Experimental Testbed Web Console",
+        "workspace": "Workspace",
+        "start_experiment": "Start Experiment",
+        "mode": "Mode",
+        "config_path": "Config path",
+        "algorithm": "Algorithm",
+        "scenario": "Scenario",
+        "llm_provider": "LLM provider",
+        "compare_algorithms": "Compare algorithms (comma)",
+        "batch_scenarios": "Batch scenarios (comma)",
+        "batch_algorithms": "Batch algorithms (comma)",
+        "batch_runs": "Batch runs",
+        "repro_runs": "Repro runs",
+        "study_seeds": "Study seeds",
+        "output_dir_override": "Output dir override",
+        "log_level": "Log level",
+        "disable_intelligence": "disable intelligence",
+        "disable_llm": "disable llm",
+        "no_plots": "no plots",
+        "no_csv": "no csv",
+        "batch_save_runs": "batch save runs",
+        "batch_keep_adaptive": "batch keep adaptive",
+        "study_quick": "publication quick",
+        "run": "Run",
+        "mode_mapping": "Mode mapping",
+        "quick_links": "Quick Links",
+        "browse_outputs": "Browse outputs",
+        "browse_docs": "Browse docs",
+        "open_config": "Open config.yaml",
+        "health_check": "Health check",
+        "running_jobs": "Running Jobs",
+        "recent_jobs": "Recent Jobs",
+        "no_active_jobs": "No active jobs.",
+        "no_runs_started": "No runs started yet.",
+        "id": "id",
+        "status": "status",
+        "started": "started",
+        "finished": "finished",
+        "rc": "rc",
+        "command": "command",
+        "actions": "actions",
+        "open": "open",
+        "job": "Job",
+        "back_dashboard": "Back to dashboard",
+        "return_code": "Return code",
+        "stop_job": "Stop job",
+        "latency_avg": "Latency (avg)",
+        "throughput": "Throughput",
+        "average_load": "Average Load",
+        "queue_completed": "Queue / Completed",
+        "log": "Log",
+        "no_data_yet": "No data yet",
+        "queue": "Queue",
+        "completed": "Completed",
+        "browse": "Browse",
+        "download_as_is": "Download as-is",
+        "parent": ".. parent",
+        "type": "type",
+        "name": "name",
+        "size_bytes": "size (bytes)",
+        "empty": "(empty)",
+        "dir": "dir",
+        "file": "file",
+        "file_page": "File",
+        "back_folder": "Back to folder",
+        "download": "Download",
+        "preview": "Preview",
+        "path_not_exist": "Path does not exist.",
+        "file_not_found": "File not found.",
+        "job_not_found": "Job not found.",
+        "not_found": "Not found.",
+        "no_inline_preview": "No inline preview for this file type. Use download.",
+    },
+    "ru": {
+        "console_title": "Веб-консоль экспериментального стенда",
+        "workspace": "Рабочая директория",
+        "start_experiment": "Запуск эксперимента",
+        "mode": "Режим",
+        "config_path": "Путь к конфигу",
+        "algorithm": "Алгоритм",
+        "scenario": "Сценарий",
+        "llm_provider": "Провайдер LLM",
+        "compare_algorithms": "Алгоритмы сравнения (через запятую)",
+        "batch_scenarios": "Сценарии batch (через запятую)",
+        "batch_algorithms": "Алгоритмы batch (через запятую)",
+        "batch_runs": "Количество batch-прогонов",
+        "repro_runs": "Количество repro-прогонов",
+        "study_seeds": "Seeds исследования",
+        "output_dir_override": "Переопределить output dir",
+        "log_level": "Уровень логирования",
+        "disable_intelligence": "отключить интеллект",
+        "disable_llm": "отключить llm",
+        "no_plots": "без графиков",
+        "no_csv": "без csv",
+        "batch_save_runs": "сохранять batch-прогоны",
+        "batch_keep_adaptive": "оставить adaptive в batch",
+        "study_quick": "быстрый publication",
+        "run": "Запустить",
+        "mode_mapping": "Сопоставление режимов",
+        "quick_links": "Быстрые ссылки",
+        "browse_outputs": "Открыть outputs",
+        "browse_docs": "Открыть docs",
+        "open_config": "Открыть config.yaml",
+        "health_check": "Проверка health",
+        "running_jobs": "Активные задачи",
+        "recent_jobs": "Последние задачи",
+        "no_active_jobs": "Активных задач нет.",
+        "no_runs_started": "Запуски пока не выполнялись.",
+        "id": "id",
+        "status": "статус",
+        "started": "старт",
+        "finished": "финиш",
+        "rc": "код",
+        "command": "команда",
+        "actions": "действия",
+        "open": "открыть",
+        "job": "Задача",
+        "back_dashboard": "Назад на дашборд",
+        "return_code": "Код возврата",
+        "stop_job": "Остановить задачу",
+        "latency_avg": "Latency (средняя)",
+        "throughput": "Пропускная способность",
+        "average_load": "Средняя загрузка",
+        "queue_completed": "Очередь / Выполнено",
+        "log": "Лог",
+        "no_data_yet": "Данных пока нет",
+        "queue": "Очередь",
+        "completed": "Выполнено",
+        "browse": "Просмотр",
+        "download_as_is": "Скачать как есть",
+        "parent": ".. родительская папка",
+        "type": "тип",
+        "name": "имя",
+        "size_bytes": "размер (байт)",
+        "empty": "(пусто)",
+        "dir": "папка",
+        "file": "файл",
+        "file_page": "Файл",
+        "back_folder": "Назад к папке",
+        "download": "Скачать",
+        "preview": "Предпросмотр",
+        "path_not_exist": "Путь не существует.",
+        "file_not_found": "Файл не найден.",
+        "job_not_found": "Задача не найдена.",
+        "not_found": "Не найдено.",
+        "no_inline_preview": "Для этого типа файла нет предпросмотра. Используйте скачивание.",
+    },
+}
+
+STATUS_LABELS: dict[str, dict[str, str]] = {
+    "en": {
+        "queued": "queued",
+        "running": "running",
+        "success": "success",
+        "failed": "failed",
+        "stopped": "stopped",
+    },
+    "ru": {
+        "queued": "в очереди",
+        "running": "выполняется",
+        "success": "успешно",
+        "failed": "ошибка",
+        "stopped": "остановлено",
+    },
+}
 
 
 @dataclass(slots=True)
@@ -185,7 +354,7 @@ class WebHandler(BaseHTTPRequestHandler):
         """Route GET requests."""
         parsed = urlparse(self.path)
         if parsed.path == "/":
-            self._serve_dashboard()
+            self._serve_dashboard(parsed)
             return
         if parsed.path == "/job":
             self._serve_job(parsed)
@@ -202,7 +371,8 @@ class WebHandler(BaseHTTPRequestHandler):
         if parsed.path == "/health":
             self._send_text(HTTPStatus.OK, "ok")
             return
-        self._send_text(HTTPStatus.NOT_FOUND, "Not found.")
+        lang = _lang_from_parsed(parsed)
+        self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "not_found"))
 
     def do_POST(self) -> None:  # noqa: N802
         """Route POST requests."""
@@ -214,18 +384,20 @@ class WebHandler(BaseHTTPRequestHandler):
         if parsed.path == "/stop":
             self._stop_run(form)
             return
-        self._send_text(HTTPStatus.NOT_FOUND, "Not found.")
+        lang = _lang_from_form(form)
+        self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "not_found"))
 
-    def _serve_dashboard(self) -> None:
+    def _serve_dashboard(self, parsed) -> None:
+        lang = _lang_from_parsed(parsed)
         jobs = self.job_manager.list_jobs()
         running_rows = [job for job in jobs if job.status == "running"]
         recent_rows = jobs[:20]
 
-        running_html = "".join(_job_row_html(job) for job in running_rows) or (
-            "<tr><td colspan='7'>No active jobs.</td></tr>"
+        running_html = "".join(_job_row_html(job, lang) for job in running_rows) or (
+            f"<tr><td colspan='7'>{escape(_tr(lang, 'no_active_jobs'))}</td></tr>"
         )
-        recent_html = "".join(_job_row_html(job) for job in recent_rows) or (
-            "<tr><td colspan='7'>No runs started yet.</td></tr>"
+        recent_html = "".join(_job_row_html(job, lang) for job in recent_rows) or (
+            f"<tr><td colspan='7'>{escape(_tr(lang, 'no_runs_started'))}</td></tr>"
         )
 
         mode_options = "".join(
@@ -240,94 +412,102 @@ class WebHandler(BaseHTTPRequestHandler):
             f"<option value='{escape(name)}'>{escape(name or '(default)')}</option>"
             for name in SCENARIO_OPTIONS
         )
+        switcher = _language_switcher(
+            lang,
+            "/",
+        )
 
         body = f"""
-<h1>Experimental Testbed Web Console</h1>
-<p>Workspace: <code>{escape(str(WORKSPACE_ROOT))}</code></p>
+<header class="topbar">
+  <div>{switcher}</div>
+</header>
+<h1>{escape(_tr(lang, "console_title"))}</h1>
+<p>{escape(_tr(lang, "workspace"))}: <code>{escape(str(WORKSPACE_ROOT))}</code></p>
 <div class="grid">
   <section class="card">
-    <h2>Start Experiment</h2>
+    <h2>{escape(_tr(lang, "start_experiment"))}</h2>
     <form method="post" action="/run">
-      <label>Mode</label>
+      <input type="hidden" name="lang" value="{escape(lang)}" />
+      <label>{escape(_tr(lang, "mode"))}</label>
       <select name="mode">{mode_options}</select>
 
-      <label>Config path</label>
+      <label>{escape(_tr(lang, "config_path"))}</label>
       <input type="text" name="config" value="{escape(DEFAULT_CONFIG)}" />
 
-      <label>Algorithm</label>
+      <label>{escape(_tr(lang, "algorithm"))}</label>
       <select name="algorithm">{algorithm_options}</select>
 
-      <label>Scenario</label>
+      <label>{escape(_tr(lang, "scenario"))}</label>
       <select name="scenario">{scenario_options}</select>
 
-      <label>LLM provider</label>
+      <label>{escape(_tr(lang, "llm_provider"))}</label>
       <input type="text" name="llm_provider" value="" placeholder="auto|openai|mock" />
 
-      <label>Compare algorithms (comma)</label>
+      <label>{escape(_tr(lang, "compare_algorithms"))}</label>
       <input type="text" name="compare_algorithms" value="" placeholder="round-robin,min-load,greedy" />
 
-      <label>Batch scenarios (comma)</label>
+      <label>{escape(_tr(lang, "batch_scenarios"))}</label>
       <input type="text" name="batch_scenarios" value="" placeholder="static,peak-load" />
 
-      <label>Batch algorithms (comma)</label>
+      <label>{escape(_tr(lang, "batch_algorithms"))}</label>
       <input type="text" name="batch_algorithms" value="" placeholder="round-robin,min-load,greedy" />
 
-      <label>Batch runs</label>
+      <label>{escape(_tr(lang, "batch_runs"))}</label>
       <input type="number" name="batch_runs" value="3" min="1" />
 
-      <label>Repro runs</label>
+      <label>{escape(_tr(lang, "repro_runs"))}</label>
       <input type="number" name="repro_runs" value="3" min="2" />
 
-      <label>Study seeds</label>
+      <label>{escape(_tr(lang, "study_seeds"))}</label>
       <input type="text" name="study_seeds" value="42-71" />
 
-      <label>Output dir override</label>
+      <label>{escape(_tr(lang, "output_dir_override"))}</label>
       <input type="text" name="output_dir" value="" placeholder="outputs" />
 
-      <label>Log level</label>
+      <label>{escape(_tr(lang, "log_level"))}</label>
       <input type="text" name="log_level" value="" placeholder="INFO" />
 
       <div class="checks">
-        <label><input type="checkbox" name="disable_intelligence" /> disable intelligence</label>
-        <label><input type="checkbox" name="disable_llm" /> disable llm</label>
-        <label><input type="checkbox" name="no_plots" /> no plots</label>
-        <label><input type="checkbox" name="no_csv" /> no csv</label>
-        <label><input type="checkbox" name="batch_save_runs" /> batch save runs</label>
-        <label><input type="checkbox" name="batch_keep_adaptive" /> batch keep adaptive</label>
-        <label><input type="checkbox" name="study_quick" checked /> publication quick</label>
+        <label><input type="checkbox" name="disable_intelligence" /> {escape(_tr(lang, "disable_intelligence"))}</label>
+        <label><input type="checkbox" name="disable_llm" /> {escape(_tr(lang, "disable_llm"))}</label>
+        <label><input type="checkbox" name="no_plots" /> {escape(_tr(lang, "no_plots"))}</label>
+        <label><input type="checkbox" name="no_csv" /> {escape(_tr(lang, "no_csv"))}</label>
+        <label><input type="checkbox" name="batch_save_runs" /> {escape(_tr(lang, "batch_save_runs"))}</label>
+        <label><input type="checkbox" name="batch_keep_adaptive" /> {escape(_tr(lang, "batch_keep_adaptive"))}</label>
+        <label><input type="checkbox" name="study_quick" checked /> {escape(_tr(lang, "study_quick"))}</label>
       </div>
-      <button type="submit">Run</button>
+      <button type="submit">{escape(_tr(lang, "run"))}</button>
     </form>
-    <p class="hint">Mode mapping: <code>single</code>, <code>compare</code>, <code>batch</code>,
+    <p class="hint">{escape(_tr(lang, "mode_mapping"))}: <code>single</code>, <code>compare</code>, <code>batch</code>,
     <code>publication</code>, <code>ab-intelligence</code>, <code>ab-llm</code>, <code>repro-check</code>.</p>
   </section>
 
   <section class="card">
-    <h2>Quick Links</h2>
+    <h2>{escape(_tr(lang, "quick_links"))}</h2>
     <ul>
-      <li><a href="/files?path=outputs">Browse outputs</a></li>
-      <li><a href="/files?path=docs">Browse docs</a></li>
-      <li><a href="/files?path=config.yaml">Open config.yaml</a></li>
-      <li><a href="/health">Health check</a></li>
+      <li><a href="{escape(_with_lang('/files', lang, path='outputs'))}">{escape(_tr(lang, "browse_outputs"))}</a></li>
+      <li><a href="{escape(_with_lang('/files', lang, path='docs'))}">{escape(_tr(lang, "browse_docs"))}</a></li>
+      <li><a href="{escape(_with_lang('/files', lang, path='config.yaml'))}">{escape(_tr(lang, "open_config"))}</a></li>
+      <li><a href="/health">{escape(_tr(lang, "health_check"))}</a></li>
     </ul>
   </section>
 </div>
 
 <section class="card">
-  <h2>Running Jobs</h2>
+  <h2>{escape(_tr(lang, "running_jobs"))}</h2>
   <table>
     <thead>
-      <tr><th>id</th><th>status</th><th>started</th><th>finished</th><th>rc</th><th>command</th><th>actions</th></tr>
+      <tr><th>{escape(_tr(lang, "id"))}</th><th>{escape(_tr(lang, "status"))}</th><th>{escape(_tr(lang, "started"))}</th><th>{escape(_tr(lang, "finished"))}</th><th>{escape(_tr(lang, "rc"))}</th><th>{escape(_tr(lang, "command"))}</th><th>{escape(_tr(lang, "actions"))}</th></tr>
     </thead>
     <tbody>{running_html}</tbody>
   </table>
 </section>
 
 <section class="card">
-  <h2>Recent Jobs</h2>
+  <h2>{escape(_tr(lang, "recent_jobs"))}</h2>
   <table>
     <thead>
-      <tr><th>id</th><th>status</th><th>started</th><th>finished</th><th>rc</th><th>command</th><th>actions</th></tr>
+      <tr><th>{escape(_tr(lang, "id"))}</th><th>{escape(_tr(lang, "status"))}</th><th>{escape(_tr(lang, "started"))}</th><th>{escape(_tr(lang, "finished"))}</th><th>{escape(_tr(lang, "rc"))}</th><th>{escape(_tr(lang, "command"))}</th><th>{escape(_tr(lang, "actions"))}</th></tr>
     </thead>
     <tbody>{recent_html}</tbody>
   </table>
@@ -335,15 +515,16 @@ class WebHandler(BaseHTTPRequestHandler):
 """
         self._send_html(
             HTTPStatus.OK,
-            _render_layout("Testbed Web Console", body, auto_refresh_seconds=0),
+            _render_layout(_tr(lang, "console_title"), body, auto_refresh_seconds=0, lang=lang),
         )
 
     def _serve_job(self, parsed) -> None:
         query = parse_qs(parsed.query)
+        lang = _lang_from_parsed(parsed)
         job_id = _first(query, "id", "")
         job = self.job_manager.get(job_id)
         if job is None:
-            self._send_text(HTTPStatus.NOT_FOUND, "Job not found.")
+            self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "job_not_found"))
             return
 
         stop_button = ""
@@ -351,46 +532,64 @@ class WebHandler(BaseHTTPRequestHandler):
             stop_button = f"""
 <form method="post" action="/stop" style="display:inline;">
   <input type="hidden" name="id" value="{escape(job.id)}" />
-  <button type="submit">Stop job</button>
+  <input type="hidden" name="lang" value="{escape(lang)}" />
+  <button type="submit">{escape(_tr(lang, "stop_job"))}</button>
 </form>
 """
+        switcher = _language_switcher(
+            lang,
+            "/job",
+            id=job.id,
+        )
 
         body = f"""
-<h1>Job {escape(job.id)}</h1>
-<p><a href="/">Back to dashboard</a> | <a href="/files?path=outputs">Browse outputs</a></p>
+<header class="topbar">
+  <div>{switcher}</div>
+</header>
+<h1>{escape(_tr(lang, "job"))} {escape(job.id)}</h1>
+<p><a href="{escape(_with_lang('/', lang))}">{escape(_tr(lang, "back_dashboard"))}</a> | <a href="{escape(_with_lang('/files', lang, path='outputs'))}">{escape(_tr(lang, "browse_outputs"))}</a></p>
 <div class="card">
-  <p>Status: <span id="job-status">{_status_badge(job.status)}</span></p>
-  <p>Started: <code id="job-started">{escape(_fmt_dt(job.started_at))}</code></p>
-  <p>Finished: <code id="job-finished">{escape(_fmt_dt(job.finished_at))}</code></p>
-  <p>Return code: <code id="job-rc">{escape(str(job.return_code))}</code></p>
-  <p>Command:</p>
+  <p>{escape(_tr(lang, "status"))}: <span id="job-status">{_status_badge(job.status, lang)}</span></p>
+  <p>{escape(_tr(lang, "started"))}: <code id="job-started">{escape(_fmt_dt(job.started_at))}</code></p>
+  <p>{escape(_tr(lang, "finished"))}: <code id="job-finished">{escape(_fmt_dt(job.finished_at))}</code></p>
+  <p>{escape(_tr(lang, "return_code"))}: <code id="job-rc">{escape(str(job.return_code))}</code></p>
+  <p>{escape(_tr(lang, "command"))}:</p>
   <pre id="job-command">{escape(job.command_text())}</pre>
   {stop_button}
 </div>
 <div class="chart-grid">
   <section class="card">
-    <h2>Latency (avg)</h2>
+    <h2>{escape(_tr(lang, "latency_avg"))}</h2>
     <canvas id="chart-latency" class="chart-canvas" width="900" height="260"></canvas>
   </section>
   <section class="card">
-    <h2>Throughput</h2>
+    <h2>{escape(_tr(lang, "throughput"))}</h2>
     <canvas id="chart-throughput" class="chart-canvas" width="900" height="260"></canvas>
   </section>
   <section class="card">
-    <h2>Average Load</h2>
+    <h2>{escape(_tr(lang, "average_load"))}</h2>
     <canvas id="chart-load" class="chart-canvas" width="900" height="260"></canvas>
   </section>
   <section class="card">
-    <h2>Queue / Completed</h2>
+    <h2>{escape(_tr(lang, "queue_completed"))}</h2>
     <canvas id="chart-queue-completed" class="chart-canvas" width="900" height="260"></canvas>
   </section>
 </div>
 <div class="card">
-  <h2>Log</h2>
+  <h2>{escape(_tr(lang, "log"))}</h2>
   <pre class="log" id="job-log"></pre>
 </div>
 <script>
 const jobId = {json.dumps(job.id)};
+const lang = {json.dumps(lang)};
+const i18n = {{
+  noData: {json.dumps(_tr(lang, "no_data_yet"))},
+  latency: {json.dumps(_tr(lang, "latency_avg"))},
+  throughput: {json.dumps(_tr(lang, "throughput"))},
+  avgLoad: {json.dumps(_tr(lang, "average_load"))},
+  queue: {json.dumps(_tr(lang, "queue"))},
+  completed: {json.dumps(_tr(lang, "completed"))}
+}};
 
 function drawSeries(canvasId, times, values, color, label) {{
   const canvas = document.getElementById(canvasId);
@@ -419,7 +618,7 @@ function drawSeries(canvasId, times, values, color, label) {{
   if (!times.length || !values.length) {{
     ctx.fillStyle = "#64748b";
     ctx.font = "13px Segoe UI, Tahoma, Arial";
-    ctx.fillText("No data yet", padL, h / 2);
+    ctx.fillText(i18n.noData, padL, h / 2);
     return;
   }}
 
@@ -500,7 +699,7 @@ function drawDualSeries(canvasId, times, aVals, bVals, aColor, bColor, aLabel, b
   if (!times.length || !aVals.length || !bVals.length) {{
     ctx.fillStyle = "#64748b";
     ctx.font = "13px Segoe UI, Tahoma, Arial";
-    ctx.fillText("No data yet", padL, h / 2);
+    ctx.fillText(i18n.noData, padL, h / 2);
     return;
   }}
   const values = aVals.concat(bVals);
@@ -566,9 +765,9 @@ function updateJobView(data) {{
 
   const metrics = data.metrics || {{}};
   const t = metrics.time || [];
-  drawSeries("chart-latency", t, metrics.latency || [], "#2563eb", "Latency");
-  drawSeries("chart-throughput", t, metrics.throughput || [], "#16a34a", "Throughput");
-  drawSeries("chart-load", t, metrics.avg_load || [], "#dc2626", "Avg load");
+  drawSeries("chart-latency", t, metrics.latency || [], "#2563eb", i18n.latency);
+  drawSeries("chart-throughput", t, metrics.throughput || [], "#16a34a", i18n.throughput);
+  drawSeries("chart-load", t, metrics.avg_load || [], "#dc2626", i18n.avgLoad);
   drawDualSeries(
     "chart-queue-completed",
     t,
@@ -576,15 +775,15 @@ function updateJobView(data) {{
     metrics.completed || [],
     "#7c3aed",
     "#0f766e",
-    "Queue",
-    "Completed"
+    i18n.queue,
+    i18n.completed
   );
 }}
 
 let pollTimer = null;
 async function pollJobData() {{
   try {{
-    const response = await fetch(`/job-data?id=${{encodeURIComponent(jobId)}}`, {{
+    const response = await fetch(`/job-data?id=${{encodeURIComponent(jobId)}}&lang=${{encodeURIComponent(lang)}}`, {{
       cache: "no-store"
     }});
     if (!response.ok) return;
@@ -607,21 +806,23 @@ pollTimer = setInterval(pollJobData, 2000);
 """
         self._send_html(
             HTTPStatus.OK,
-            _render_layout(f"Job {job.id}", body, auto_refresh_seconds=0),
+            _render_layout(f"{_tr(lang, 'job')} {job.id}", body, auto_refresh_seconds=0, lang=lang),
         )
 
     def _serve_job_data(self, parsed) -> None:
         """Return JSON payload with live job status, logs, and chart metrics."""
         query = parse_qs(parsed.query)
+        lang = _lang_from_parsed(parsed)
         job_id = _first(query, "id", "")
         job = self.job_manager.get(job_id)
         if job is None:
-            self._send_json(HTTPStatus.NOT_FOUND, {"error": "Job not found."})
+            self._send_json(HTTPStatus.NOT_FOUND, {"error": _tr(lang, "job_not_found")})
             return
-        self._send_json(HTTPStatus.OK, _job_payload(job))
+        self._send_json(HTTPStatus.OK, _job_payload(job, lang))
 
     def _serve_files(self, parsed) -> None:
         query = parse_qs(parsed.query)
+        lang = _lang_from_parsed(parsed)
         raw_path = _first(query, "path", "outputs")
         try:
             path = _resolve_path(raw_path)
@@ -630,14 +831,14 @@ pollTimer = setInterval(pollJobData, 2000);
             return
 
         if not path.exists():
-            self._send_text(HTTPStatus.NOT_FOUND, "Path does not exist.")
+            self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "path_not_exist"))
             return
 
         rel = _rel_workspace(path)
         parent_link = ""
         if path != WORKSPACE_ROOT:
             parent_link = (
-                f"<p><a href='/files?path={quote(_rel_workspace(path.parent))}'>.. parent</a></p>"
+                f"<p><a href='{escape(_with_lang('/files', lang, path=_rel_workspace(path.parent)))}'>{escape(_tr(lang, 'parent'))}</a></p>"
             )
 
         if path.is_dir():
@@ -648,7 +849,7 @@ pollTimer = setInterval(pollJobData, 2000);
                 if item.is_dir():
                     rows.append(
                         "<tr>"
-                        f"<td>dir</td><td><a href='/files?path={quote(item_rel)}'>{escape(item.name)}</a></td>"
+                        f"<td>{escape(_tr(lang, 'dir'))}</td><td><a href='{escape(_with_lang('/files', lang, path=item_rel))}'>{escape(item.name)}</a></td>"
                         "<td>-</td>"
                         "</tr>"
                     )
@@ -656,36 +857,53 @@ pollTimer = setInterval(pollJobData, 2000);
                     size = item.stat().st_size
                     rows.append(
                         "<tr>"
-                        f"<td>file</td><td><a href='/files?path={quote(item_rel)}'>{escape(item.name)}</a></td>"
+                        f"<td>{escape(_tr(lang, 'file'))}</td><td><a href='{escape(_with_lang('/files', lang, path=item_rel))}'>{escape(item.name)}</a></td>"
                         f"<td>{size}</td>"
                         "</tr>"
                     )
-            table_body = "".join(rows) or "<tr><td colspan='3'>(empty)</td></tr>"
+            table_body = "".join(rows) or f"<tr><td colspan='3'>{escape(_tr(lang, 'empty'))}</td></tr>"
+            switcher = _language_switcher(
+                lang,
+                "/files",
+                path=rel,
+            )
             body = f"""
-<h1>Browse: <code>{escape(rel)}</code></h1>
-<p><a href="/">Back to dashboard</a> | <a href="/download?path={quote(rel)}">Download as-is</a></p>
+<header class="topbar">
+  <div>{switcher}</div>
+</header>
+<h1>{escape(_tr(lang, "browse"))}: <code>{escape(rel)}</code></h1>
+<p><a href="{escape(_with_lang('/', lang))}">{escape(_tr(lang, "back_dashboard"))}</a> | <a href="{escape(_with_lang('/download', lang, path=rel))}">{escape(_tr(lang, "download_as_is"))}</a></p>
 {parent_link}
 <table>
-  <thead><tr><th>type</th><th>name</th><th>size (bytes)</th></tr></thead>
+  <thead><tr><th>{escape(_tr(lang, "type"))}</th><th>{escape(_tr(lang, "name"))}</th><th>{escape(_tr(lang, "size_bytes"))}</th></tr></thead>
   <tbody>{table_body}</tbody>
 </table>
 """
-            self._send_html(HTTPStatus.OK, _render_layout(f"Files: {rel}", body))
+            self._send_html(HTTPStatus.OK, _render_layout(f"{_tr(lang, 'browse')}: {rel}", body, lang=lang))
             return
 
-        download_url = f"/download?path={quote(rel)}"
-        preview_html = _build_preview_html(path, rel)
+        download_url = _with_lang("/download", lang, path=rel)
+        preview_html = _build_preview_html(path, rel, lang)
+        switcher = _language_switcher(
+            lang,
+            "/files",
+            path=rel,
+        )
         body = f"""
-<h1>File: <code>{escape(rel)}</code></h1>
-<p><a href="/">Back to dashboard</a> |
-<a href="/files?path={quote(_rel_workspace(path.parent))}">Back to folder</a> |
-<a href="{download_url}">Download</a></p>
+<header class="topbar">
+  <div>{switcher}</div>
+</header>
+<h1>{escape(_tr(lang, "file_page"))}: <code>{escape(rel)}</code></h1>
+<p><a href="{escape(_with_lang('/', lang))}">{escape(_tr(lang, "back_dashboard"))}</a> |
+<a href="{escape(_with_lang('/files', lang, path=_rel_workspace(path.parent)))}">{escape(_tr(lang, "back_folder"))}</a> |
+<a href="{escape(download_url)}">{escape(_tr(lang, "download"))}</a></p>
 {preview_html}
 """
-        self._send_html(HTTPStatus.OK, _render_layout(f"File: {rel}", body))
+        self._send_html(HTTPStatus.OK, _render_layout(f"{_tr(lang, 'file_page')}: {rel}", body, lang=lang))
 
     def _serve_download(self, parsed) -> None:
         query = parse_qs(parsed.query)
+        lang = _lang_from_parsed(parsed)
         raw_path = _first(query, "path", "")
         try:
             path = _resolve_path(raw_path)
@@ -693,7 +911,7 @@ pollTimer = setInterval(pollJobData, 2000);
             self._send_text(HTTPStatus.BAD_REQUEST, str(exc))
             return
         if not path.exists() or path.is_dir():
-            self._send_text(HTTPStatus.NOT_FOUND, "File not found.")
+            self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "file_not_found"))
             return
         mime_type, _ = mimetypes.guess_type(path.name)
         content_type = mime_type or "application/octet-stream"
@@ -709,21 +927,23 @@ pollTimer = setInterval(pollJobData, 2000);
         self.wfile.write(data)
 
     def _start_run(self, form: dict[str, list[str]]) -> None:
+        lang = _lang_from_form(form)
         command = _build_run_command(form)
         job = self.job_manager.create(command=command, cwd=WORKSPACE_ROOT)
-        self._redirect(f"/job?id={quote(job.id)}")
+        self._redirect(_with_lang("/job", lang, id=job.id))
 
     def _stop_run(self, form: dict[str, list[str]]) -> None:
+        lang = _lang_from_form(form)
         job_id = _first(form, "id", "")
         job = self.job_manager.get(job_id)
         if job is None:
-            self._send_text(HTTPStatus.NOT_FOUND, "Job not found.")
+            self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "job_not_found"))
             return
         stopped = job.stop()
         if stopped:
             job.status = "stopped"
             job.append_log("[web-ui] stop requested.")
-        self._redirect(f"/job?id={quote(job_id)}")
+        self._redirect(_with_lang("/job", lang, id=job_id))
 
     def _parse_form(self) -> dict[str, list[str]]:
         length = int(self.headers.get("Content-Length", "0") or 0)
@@ -772,6 +992,62 @@ def _first(mapping: dict[str, list[str]], key: str, default: str = "") -> str:
     if not values:
         return default
     return values[0]
+
+
+def _tr(lang: str, key: str) -> str:
+    """Translate UI key for selected language with fallback to English."""
+    table = UI_TEXT.get(lang, UI_TEXT["en"])
+    if key in table:
+        return table[key]
+    return UI_TEXT["en"].get(key, key)
+
+
+def _lang_from_parsed(parsed) -> str:
+    """Extract language from query string; default to English."""
+    query = parse_qs(parsed.query)
+    lang = _first(query, "lang", "en").strip().lower()
+    if lang in LANG_OPTIONS:
+        return lang
+    return "en"
+
+
+def _lang_from_form(form: dict[str, list[str]]) -> str:
+    """Extract language from posted form; default to English."""
+    lang = _first(form, "lang", "en").strip().lower()
+    if lang in LANG_OPTIONS:
+        return lang
+    return "en"
+
+
+def _with_lang(route: str, lang: str, include_lang: bool = True, **params: str) -> str:
+    """Build URL with language and optional query params."""
+    payload: dict[str, str] = {}
+    if include_lang:
+        payload["lang"] = lang
+    for key, value in params.items():
+        if value is None:
+            continue
+        text = str(value)
+        if not text:
+            continue
+        payload[key] = text
+    if not payload:
+        return route
+    return f"{route}?{urlencode(payload)}"
+
+
+def _language_switcher(lang: str, route: str, include_lang: bool = True, **params: str) -> str:
+    """Render language toggle links for current page."""
+    ru_url = _with_lang(route, "ru", include_lang=include_lang, **params)
+    en_url = _with_lang(route, "en", include_lang=include_lang, **params)
+    ru_class = "lang-link active" if lang == "ru" else "lang-link"
+    en_class = "lang-link active" if lang == "en" else "lang-link"
+    return (
+        "<nav class='lang-switch'>"
+        f"<a class='{ru_class}' href='{escape(ru_url)}'>RUS</a>"
+        f"<a class='{en_class}' href='{escape(en_url)}'>ENG</a>"
+        "</nav>"
+    )
 
 
 def _is_checked(form: dict[str, list[str]], name: str) -> bool:
@@ -906,7 +1182,7 @@ def _fmt_dt(value: datetime | None) -> str:
     return value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _status_badge(status: str) -> str:
+def _status_badge(status: str, lang: str = "en") -> str:
     """Render status as colored badge."""
     color = {
         "queued": "#6b7280",
@@ -915,29 +1191,31 @@ def _status_badge(status: str) -> str:
         "failed": "#dc2626",
         "stopped": "#b45309",
     }.get(status, "#6b7280")
+    label = STATUS_LABELS.get(lang, STATUS_LABELS["en"]).get(status, status)
     return (
         f"<span class='badge' style='background:{color}'>"
-        f"{escape(status)}</span>"
+        f"{escape(label)}</span>"
     )
 
 
-def _job_row_html(job: RunJob) -> str:
+def _job_row_html(job: RunJob, lang: str) -> str:
     """Render one row of job list table."""
     command = escape(job.command_text())
+    open_url = _with_lang("/job", lang, id=job.id)
     return (
         "<tr>"
-        f"<td><a href='/job?id={quote(job.id)}'><code>{escape(job.id)}</code></a></td>"
-        f"<td>{_status_badge(job.status)}</td>"
+        f"<td><a href='{escape(open_url)}'><code>{escape(job.id)}</code></a></td>"
+        f"<td>{_status_badge(job.status, lang)}</td>"
         f"<td>{escape(_fmt_dt(job.started_at))}</td>"
         f"<td>{escape(_fmt_dt(job.finished_at))}</td>"
         f"<td><code>{escape(str(job.return_code))}</code></td>"
         f"<td><code>{command}</code></td>"
-        f"<td><a href='/job?id={quote(job.id)}'>open</a></td>"
+        f"<td><a href='{escape(open_url)}'>{escape(_tr(lang, 'open'))}</a></td>"
         "</tr>"
     )
 
 
-def _job_payload(job: RunJob) -> dict[str, object]:
+def _job_payload(job: RunJob, lang: str) -> dict[str, object]:
     """Serialize job state for live UI polling endpoint."""
     with job._lock:
         lines = list(job.log_lines)
@@ -945,13 +1223,14 @@ def _job_payload(job: RunJob) -> dict[str, object]:
     return {
         "id": job.id,
         "status": job.status,
-        "status_badge_html": _status_badge(job.status),
+        "status_badge_html": _status_badge(job.status, lang),
         "started_at": _fmt_dt(job.started_at),
         "finished_at": _fmt_dt(job.finished_at),
         "return_code": job.return_code,
         "command": job.command_text(),
         "log_text": "\n".join(lines),
         "metrics": metrics,
+        "lang": lang,
     }
 
 
@@ -994,16 +1273,16 @@ def _extract_metrics_from_logs(lines: list[str]) -> dict[str, list[float | int]]
     }
 
 
-def _build_preview_html(path: Path, rel: str) -> str:
+def _build_preview_html(path: Path, rel: str, lang: str) -> str:
     """Build safe preview block for common file types."""
     suffix = path.suffix.lower()
-    quoted_rel = quote(rel)
+    download_url = _with_lang("/download", lang, path=rel)
 
     if suffix in {".png", ".jpg", ".jpeg", ".gif", ".svg"}:
         return (
             "<div class='card'>"
-            "<h2>Preview</h2>"
-            f"<img src='/download?path={quoted_rel}' alt='{escape(path.name)}' class='preview' />"
+            f"<h2>{escape(_tr(lang, 'preview'))}</h2>"
+            f"<img src='{escape(download_url)}' alt='{escape(path.name)}' class='preview' />"
             "</div>"
         )
 
@@ -1013,19 +1292,19 @@ def _build_preview_html(path: Path, rel: str) -> str:
             text = text[:MAX_PREVIEW_CHARS] + "\n... [truncated]"
         return (
             "<div class='card'>"
-            "<h2>Preview</h2>"
+            f"<h2>{escape(_tr(lang, 'preview'))}</h2>"
             f"<pre class='log'>{escape(text)}</pre>"
             "</div>"
         )
 
     return (
         "<div class='card'>"
-        "<p>No inline preview for this file type. Use download.</p>"
+        f"<p>{escape(_tr(lang, 'no_inline_preview'))}</p>"
         "</div>"
     )
 
 
-def _render_layout(title: str, body: str, auto_refresh_seconds: int = 0) -> str:
+def _render_layout(title: str, body: str, auto_refresh_seconds: int = 0, lang: str = "en") -> str:
     """Render full HTML layout around body content."""
     refresh = (
         f"<meta http-equiv='refresh' content='{auto_refresh_seconds}' />"
@@ -1033,7 +1312,7 @@ def _render_layout(title: str, body: str, auto_refresh_seconds: int = 0) -> str:
         else ""
     )
     return f"""<!doctype html>
-<html lang="en">
+<html lang="{escape(lang)}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -1170,6 +1449,34 @@ def _render_layout(title: str, body: str, auto_refresh_seconds: int = 0) -> str:
       border-radius: 8px;
       background: #ffffff;
       display: block;
+    }}
+    .topbar {{
+      display: flex;
+      justify-content: flex-end;
+      margin: 10px 14px 0 14px;
+    }}
+    .lang-switch {{
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      background: #fff;
+    }}
+    .lang-link {{
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #334e68;
+      text-decoration: none;
+      border-right: 1px solid var(--line);
+    }}
+    .lang-link:last-child {{
+      border-right: none;
+    }}
+    .lang-link.active {{
+      background: #1565c0;
+      color: #ffffff;
     }}
     @media (max-width: 1024px) {{
       .grid {{

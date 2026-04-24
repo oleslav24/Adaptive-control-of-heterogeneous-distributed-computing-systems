@@ -31,6 +31,7 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
 ## Main screens
 
 - `/` dashboard
+  - language switcher `RUS/ENG` (query param `lang=ru|en`)
   - run form
   - active/recent jobs table
   - quick links to files and health check
