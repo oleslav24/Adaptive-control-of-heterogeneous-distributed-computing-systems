@@ -132,7 +132,8 @@ class SimulationLoop:
         self.mas = MultiAgentSystem(agents=self.agents, context=self.context)
         self._sync_state(0)
         LOGGER.info(
-            "Simulation initialized: algorithm=%s intelligence=%s llm=%s seed=%d nodes=%d tasks=%d horizon=%d",
+            "Simulation initialized: scenario=%s algorithm=%s intelligence=%s llm=%s seed=%d nodes=%d tasks=%d horizon=%d",
+            self.config.scenario,
             self.config.optimization.algorithm,
             self.config.intelligence.enabled,
             self.config.llm.enabled,

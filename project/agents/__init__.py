@@ -7,6 +7,7 @@ from .network import NetworkAgent
 from .optimization import OptimizationAgent
 from .prediction import PredictionAgent
 from .qos import QoSAgent
+from .researcher import ResearcherAgent
 
 __all__ = [
     "MonitoringAgent",
@@ -16,4 +17,5 @@ __all__ = [
     "QoSAgent",
     "OptimizationAgent",
     "PredictionAgent",
+    "ResearcherAgent",
 ]

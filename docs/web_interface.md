@@ -33,6 +33,7 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
 - `/` dashboard
   - language switcher `RUS/ENG` (query param `lang=ru|en`)
   - run form
+  - compare algorithms and batch scenarios are selected via checkbox flags (not comma text)
   - active/recent jobs table
   - quick links to files and health check
 - `/job?id=<job_id>`
@@ -40,6 +41,10 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - status (`queued/running/success/failed/stopped`)
   - live log stream
   - realtime charts from loop metrics (`latency`, `throughput`, `avg_load`, `queue/completed`)
+  - inline line explanations under each chart:
+    - color = sub-run
+    - on `queue/completed`: solid = queue, dashed = completed
+  - `ResearcherAgent` textual conclusions based on chart trends (localized RU/EN)
   - stop button for running job
 - `/files?path=...`
   - workspace-safe file browser
