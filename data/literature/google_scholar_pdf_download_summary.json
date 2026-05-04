@@ -1,0 +1,40 @@
+{
+  "downloaded_articles": 44,
+  "downloaded_by_host": {
+    "arxiv.org": 28,
+    "cdn.techscience.cn": 1,
+    "cis.temple.edu": 1,
+    "jatit.org": 1,
+    "journal.bit.edu.cn": 1,
+    "link.springer.com": 2,
+    "openaccess.thecvf.com": 1,
+    "rep.polessu.by": 1,
+    "www.beei.org": 1,
+    "www.jatit.org": 1,
+    "www.nature.com": 5,
+    "www.researchsquare.com": 1
+  },
+  "downloaded_bytes": 167553122,
+  "downloaded_records": 44,
+  "failed_by_host": {
+    "dl.acm.org": 4,
+    "dl.openaccess.ir": 1,
+    "ieeexplore.ieee.org": 22,
+    "link.springer.com": 27,
+    "onlinelibrary.wiley.com": 6,
+    "research.edgehill.ac.uk": 1,
+    "vbn.aau.dk": 1,
+    "www.academia.edu": 1,
+    "www.frontiersin.org": 1,
+    "www.mdpi.com": 15,
+    "www.researchgate.net": 4,
+    "www.scitepress.org": 1
+  },
+  "records": 128,
+  "status_counts": {
+    "downloaded": 44,
+    "http_error": 55,
+    "not_pdf": 27,
+    "url_error": 2
+  }
+}
