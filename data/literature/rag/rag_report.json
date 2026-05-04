@@ -1,0 +1,34 @@
+{
+  "char_count": 2947922,
+  "chunk_count": 2921,
+  "chunks_jsonl": "C:\\work\\GitHub\\Adaptive control of heterogeneous distributed computing systems\\data\\literature\\rag\\chunks.jsonl",
+  "document_manifest": "C:\\work\\GitHub\\Adaptive control of heterogeneous distributed computing systems\\data\\literature\\rag\\document_manifest.jsonl",
+  "extracted_pages": 751,
+  "index_path": "C:\\work\\GitHub\\Adaptive control of heterogeneous distributed computing systems\\data\\literature\\rag\\tfidf_index.joblib",
+  "indexed_articles": 44,
+  "page_count": 751,
+  "pages_jsonl": "C:\\work\\GitHub\\Adaptive control of heterogeneous distributed computing systems\\data\\literature\\rag\\pages.jsonl",
+  "pdf_documents": 44,
+  "publisher_counts": {
+    "CVF Open Access": 1,
+    "Nature": 5,
+    "Research Square": 1,
+    "Springer": 2,
+    "arXiv": 28,
+    "cdn.techscience.cn": 1,
+    "cis.temple.edu": 1,
+    "jatit.org": 1,
+    "journal.bit.edu.cn": 1,
+    "rep.polessu.by": 1,
+    "www.beei.org": 1,
+    "www.jatit.org": 1
+  },
+  "readable_documents": 44,
+  "status_counts": {
+    "extracted": 44
+  },
+  "year_counts": {
+    "2024": 8,
+    "2025": 36
+  }
+}
