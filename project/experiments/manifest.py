@@ -9,7 +9,7 @@ import json
 import platform
 from pathlib import Path
 import subprocess
-from typing import Any
+from typing import Any, Mapping
 
 from project.core.config import ExperimentConfig
 
@@ -42,6 +42,73 @@ def write_manifest(path: str | Path, manifest: dict[str, Any]) -> str:
     with target.open("w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, sort_keys=True)
     return str(target)
+
+
+def validate_run_manifest(manifest: Mapping[str, Any]) -> list[str]:
+    """Validate required run-manifest schema and return list of errors."""
+    errors: list[str] = []
+    required_root_keys = [
+        "created_at_utc",
+        "mode",
+        "cli_args",
+        "python_version",
+        "platform",
+        "git_commit",
+        "git_dirty",
+        "dependencies",
+        "config",
+        "extra",
+    ]
+    for key in required_root_keys:
+        if key not in manifest:
+            errors.append(f"Missing required key: '{key}'.")
+
+    mode = manifest.get("mode")
+    if not isinstance(mode, str) or not mode.strip():
+        errors.append("Field 'mode' must be a non-empty string.")
+
+    cli_args = manifest.get("cli_args")
+    if not isinstance(cli_args, list) or not all(
+        isinstance(item, str) for item in cli_args
+    ):
+        errors.append("Field 'cli_args' must be a list[str].")
+
+    git_dirty = manifest.get("git_dirty")
+    if not isinstance(git_dirty, bool):
+        errors.append("Field 'git_dirty' must be a boolean.")
+
+    config = manifest.get("config")
+    if not isinstance(config, dict):
+        errors.append("Field 'config' must be an object.")
+
+    dependencies = manifest.get("dependencies")
+    if not isinstance(dependencies, dict):
+        errors.append("Field 'dependencies' must be an object.")
+    else:
+        required_deps = ["numpy", "pandas", "matplotlib", "networkx", "pyyaml"]
+        for dep in required_deps:
+            value = dependencies.get(dep)
+            if not isinstance(value, str) or not value.strip():
+                errors.append(
+                    f"Dependency '{dep}' is missing or has invalid version value."
+                )
+    return errors
+
+
+def validate_run_manifest_file(path: str | Path) -> tuple[bool, list[str]]:
+    """Load and validate manifest JSON file."""
+    target = Path(path)
+    if not target.exists():
+        return False, [f"Manifest file not found: {target}"]
+    try:
+        with target.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, [f"Failed to read manifest JSON: {exc}"]
+    if not isinstance(payload, dict):
+        return False, ["Manifest root must be a JSON object."]
+    errors = validate_run_manifest(payload)
+    return (len(errors) == 0), errors
 
 
 def _git_short_commit() -> str:

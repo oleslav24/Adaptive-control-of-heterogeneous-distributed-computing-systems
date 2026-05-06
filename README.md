@@ -31,10 +31,14 @@ python -m project.experiments.run --config config.yaml --batch --batch-scenarios
 python -m project.experiments.run --config config.yaml --repro-check --repro-runs 3
 python -m project.experiments.run --config config.yaml --publication-study
 python -m project.experiments.run --config config.yaml --publication-study --study-quick --study-seeds 42,43
+python -m project.experiments.smoke --config config.yaml
+python -m project.experiments.smoke --config config.yaml --update-golden
 python -m project.web.app --host 127.0.0.1 --port 8080
 ```
 
 Web UI guide: `docs/web_interface.md`.
+Sprint 10 stabilization baseline: `docs/sprint10_stabilization.md`.
+Architecture decision records: `docs/adr/`.
 
 Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 
