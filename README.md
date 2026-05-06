@@ -31,6 +31,9 @@ python -m project.experiments.run --config config.yaml --batch --batch-scenarios
 python -m project.experiments.run --config config.yaml --repro-check --repro-runs 3
 python -m project.experiments.run --config config.yaml --publication-study
 python -m project.experiments.run --config config.yaml --publication-study --study-quick --study-seeds 42,43
+python -m ruff check --no-cache project tests
+python -m mypy --no-sqlite-cache --cache-dir .mypy_cache_ci --follow-imports=skip project/core/models.py project/algorithms/schedulers.py project/simulation/context.py project/simulation/mas.py project/simulation/loop.py project/experiments/manifest.py project/experiments/smoke.py
+python -m pytest -q
 python -m project.experiments.smoke --config config.yaml
 python -m project.experiments.smoke --config config.yaml --update-golden
 python -m project.web.app --host 127.0.0.1 --port 8080
@@ -38,6 +41,7 @@ python -m project.web.app --host 127.0.0.1 --port 8080
 
 Web UI guide: `docs/web_interface.md`.
 Sprint 10 stabilization baseline: `docs/sprint10_stabilization.md`.
+Sprint 11 quality gates: `docs/sprint11_quality_gates.md`.
 Architecture decision records: `docs/adr/`.
 
 Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:

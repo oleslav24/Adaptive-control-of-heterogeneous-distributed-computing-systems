@@ -108,8 +108,8 @@ def _build_edges(
                 NetworkEdge(
                     source=source,
                     target=target,
-                    bandwidth=float(item.get("bandwidth", default_bandwidth)),
-                    latency=float(item.get("latency", default_latency)),
+                    bandwidth=_coerce_float(item.get("bandwidth"), default_bandwidth),
+                    latency=_coerce_float(item.get("latency"), default_latency),
                 )
             )
             continue
@@ -152,14 +152,14 @@ def _named_topology_edges(
         )
 
     if normalized in {"line", "chain"}:
-        pairs: list[tuple[str, str]] = []
+        line_pairs: list[tuple[str, str]] = []
         for idx in range(len(node_ids) - 1):
             src = node_ids[idx]
             dst = node_ids[idx + 1]
-            pairs.append((src, dst))
-            pairs.append((dst, src))
+            line_pairs.append((src, dst))
+            line_pairs.append((dst, src))
         return _pairs_to_edges(
-            pairs,
+            line_pairs,
             default_bandwidth=default_bandwidth,
             default_latency=default_latency,
         )
@@ -168,12 +168,12 @@ def _named_topology_edges(
         if len(node_ids) == 1:
             return []
         hub = node_ids[0]
-        pairs: list[tuple[str, str]] = []
+        star_pairs: list[tuple[str, str]] = []
         for dst in node_ids[1:]:
-            pairs.append((hub, dst))
-            pairs.append((dst, hub))
+            star_pairs.append((hub, dst))
+            star_pairs.append((dst, hub))
         return _pairs_to_edges(
-            pairs,
+            star_pairs,
             default_bandwidth=default_bandwidth,
             default_latency=default_latency,
         )
@@ -218,3 +218,13 @@ def _resolve_node_ref(node_ids: list[str], ref: object) -> str:
         raise ValueError(f"Node index '{ref}' is out of range.")
 
     raise TypeError("Node reference must be a node id string or integer index.")
+
+
+def _coerce_float(value: object, default: float) -> float:
+    """Convert optional edge attribute to float with deterministic fallback."""
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
