@@ -14,13 +14,30 @@ from pathlib import Path
 import re
 import shlex
 import subprocess
-import sys
 from threading import Lock, Thread
 from typing import ClassVar
 from urllib.parse import parse_qs, urlencode, urlparse
 from uuid import uuid4
 
 from project.agents import ResearcherAgent
+from project.web.commands import build_run_command as _build_run_command
+from project.web.i18n import (
+    ALGORITHM_LABELS,
+    ALGORITHM_OPTIONS,
+    DEFAULT_BATCH_SCENARIOS,
+    MODE_LABELS,
+    MODE_OPTIONS,
+    SCENARIO_LABELS,
+    SCENARIO_OPTIONS,
+    STATUS_LABELS,
+    catalog_label as _catalog_label,
+    chart_line_note as _chart_line_note,
+    default_select_label as _default_select_label,
+    insights_placeholder as _insights_placeholder,
+    insights_title as _insights_title,
+    normalize_lang,
+    tr as _tr,
+)
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
@@ -41,263 +58,6 @@ RUN_INIT_RE = re.compile(
     r"Simulation initialized:\s+(?:scenario=(?P<scenario>[\w\-]+)\s+)?"
     r"algorithm=(?P<algorithm>[\w\-]+)"
 )
-
-MODE_OPTIONS = (
-    "single",
-    "compare",
-    "batch",
-    "publication",
-    "ab-intelligence",
-    "ab-llm",
-    "repro-check",
-)
-ALGORITHM_OPTIONS = ("", "round-robin", "min-load", "greedy")
-SCENARIO_OPTIONS = (
-    "",
-    "static",
-    "dynamic-load",
-    "peak-load",
-    "node-failures",
-    "heterogeneous-tasks",
-    "mixed",
-)
-DEFAULT_BATCH_SCENARIOS = (
-    "static",
-    "dynamic-load",
-    "peak-load",
-    "node-failures",
-    "heterogeneous-tasks",
-)
-LANG_OPTIONS = ("en", "ru")
-
-MODE_LABELS: dict[str, dict[str, str]] = {
-    "en": {
-        "single": "Single",
-        "compare": "Compare",
-        "batch": "Batch",
-        "publication": "Publication",
-        "ab-intelligence": "A/B Intelligence",
-        "ab-llm": "A/B LLM",
-        "repro-check": "Repro Check",
-    },
-    "ru": {
-        "single": "Одиночный",
-        "compare": "Сравнение",
-        "batch": "Пакетный",
-        "publication": "Публикационный",
-        "ab-intelligence": "A/B Интеллект",
-        "ab-llm": "A/B LLM",
-        "repro-check": "Проверка воспроизводимости",
-    },
-}
-
-ALGORITHM_LABELS: dict[str, dict[str, str]] = {
-    "en": {
-        "round-robin": "Round-robin",
-        "min-load": "Min-load",
-        "greedy": "Greedy",
-    },
-    "ru": {
-        "round-robin": "Круговой (Round-robin)",
-        "min-load": "Минимальная нагрузка",
-        "greedy": "Жадный",
-    },
-}
-
-SCENARIO_LABELS: dict[str, dict[str, str]] = {
-    "en": {
-        "static": "Static",
-        "dynamic-load": "Dynamic Load",
-        "peak-load": "Peak Load",
-        "node-failures": "Node Failures",
-        "heterogeneous-tasks": "Heterogeneous Tasks",
-        "mixed": "Mixed",
-    },
-    "ru": {
-        "static": "Статический",
-        "dynamic-load": "Динамическая нагрузка",
-        "peak-load": "Пиковая нагрузка",
-        "node-failures": "Отказы узлов",
-        "heterogeneous-tasks": "Гетерогенные задачи",
-        "mixed": "Смешанный",
-    },
-}
-
-UI_TEXT: dict[str, dict[str, str]] = {
-    "en": {
-        "console_title": "Experimental Testbed Web Console",
-        "workspace": "Workspace",
-        "start_experiment": "Start Experiment",
-        "mode": "Mode",
-        "config_path": "Config path",
-        "algorithm": "Algorithm",
-        "scenario": "Scenario",
-        "llm_provider": "LLM provider",
-        "compare_algorithms": "Compare algorithms",
-        "batch_scenarios": "Batch scenarios",
-        "batch_algorithms": "Batch algorithms",
-        "batch_runs": "Batch runs",
-        "repro_runs": "Repro runs",
-        "study_seeds": "Study seeds",
-        "output_dir_override": "Output dir override",
-        "log_level": "Log level",
-        "disable_intelligence": "disable intelligence",
-        "disable_llm": "disable llm",
-        "no_plots": "no plots",
-        "no_csv": "no csv",
-        "batch_save_runs": "batch save runs",
-        "batch_keep_adaptive": "batch keep adaptive",
-        "study_quick": "publication quick",
-        "run": "Run",
-        "expected_runs_title": "Expected runs",
-        "expected_runs_formula": "Formula",
-        "expected_runs_fallback": "Fallback defaults are used for empty selections.",
-        "unknown": "unknown",
-        "mode_mapping": "Mode mapping",
-        "quick_links": "Quick Links",
-        "browse_outputs": "Browse outputs",
-        "browse_docs": "Browse docs",
-        "open_config": "Open config.yaml",
-        "health_check": "Health check",
-        "running_jobs": "Running Jobs",
-        "recent_jobs": "Recent Jobs",
-        "no_active_jobs": "No active jobs.",
-        "no_runs_started": "No runs started yet.",
-        "id": "id",
-        "status": "status",
-        "started": "started",
-        "finished": "finished",
-        "rc": "rc",
-        "command": "command",
-        "actions": "actions",
-        "open": "open",
-        "job": "Job",
-        "back_dashboard": "Back to dashboard",
-        "return_code": "Return code",
-        "stop_job": "Stop job",
-        "latency_avg": "Latency (avg)",
-        "throughput": "Throughput",
-        "average_load": "Average Load",
-        "queue_completed": "Queue / Completed",
-        "log": "Log",
-        "no_data_yet": "No data yet",
-        "queue": "Queue",
-        "completed": "Completed",
-        "browse": "Browse",
-        "download_as_is": "Download as-is",
-        "parent": ".. parent",
-        "type": "type",
-        "name": "name",
-        "size_bytes": "size (bytes)",
-        "empty": "(empty)",
-        "dir": "dir",
-        "file": "file",
-        "file_page": "File",
-        "back_folder": "Back to folder",
-        "download": "Download",
-        "preview": "Preview",
-        "path_not_exist": "Path does not exist.",
-        "file_not_found": "File not found.",
-        "job_not_found": "Job not found.",
-        "not_found": "Not found.",
-        "no_inline_preview": "No inline preview for this file type. Use download.",
-    },
-    "ru": {
-        "console_title": "Веб-консоль экспериментального стенда",
-        "workspace": "Рабочая директория",
-        "start_experiment": "Запуск эксперимента",
-        "mode": "Режим",
-        "config_path": "Путь к конфигу",
-        "algorithm": "Алгоритм",
-        "scenario": "Сценарий",
-        "llm_provider": "Провайдер LLM",
-        "compare_algorithms": "Алгоритмы сравнения",
-        "batch_scenarios": "Сценарии batch",
-        "batch_algorithms": "Алгоритмы batch",
-        "batch_runs": "Количество batch-прогонов",
-        "repro_runs": "Количество repro-прогонов",
-        "study_seeds": "Seeds исследования",
-        "output_dir_override": "Переопределить output dir",
-        "log_level": "Уровень логирования",
-        "disable_intelligence": "отключить интеллект",
-        "disable_llm": "отключить llm",
-        "no_plots": "без графиков",
-        "no_csv": "без csv",
-        "batch_save_runs": "сохранять batch-прогоны",
-        "batch_keep_adaptive": "оставить adaptive в batch",
-        "study_quick": "быстрый publication",
-        "run": "Запустить",
-        "expected_runs_title": "Ожидаемое число прогонов",
-        "expected_runs_formula": "Формула",
-        "expected_runs_fallback": "Для пустых выборов используются значения по умолчанию.",
-        "unknown": "неизвестно",
-        "mode_mapping": "Сопоставление режимов",
-        "quick_links": "Быстрые ссылки",
-        "browse_outputs": "Открыть outputs",
-        "browse_docs": "Открыть docs",
-        "open_config": "Открыть config.yaml",
-        "health_check": "Проверка health",
-        "running_jobs": "Активные задачи",
-        "recent_jobs": "Последние задачи",
-        "no_active_jobs": "Активных задач нет.",
-        "no_runs_started": "Запуски пока не выполнялись.",
-        "id": "id",
-        "status": "статус",
-        "started": "старт",
-        "finished": "финиш",
-        "rc": "код",
-        "command": "команда",
-        "actions": "действия",
-        "open": "открыть",
-        "job": "Задача",
-        "back_dashboard": "Назад на дашборд",
-        "return_code": "Код возврата",
-        "stop_job": "Остановить задачу",
-        "latency_avg": "Latency (средняя)",
-        "throughput": "Пропускная способность",
-        "average_load": "Средняя загрузка",
-        "queue_completed": "Очередь / Выполнено",
-        "log": "Лог",
-        "no_data_yet": "Данных пока нет",
-        "queue": "Очередь",
-        "completed": "Выполнено",
-        "browse": "Просмотр",
-        "download_as_is": "Скачать как есть",
-        "parent": ".. родительская папка",
-        "type": "тип",
-        "name": "имя",
-        "size_bytes": "размер (байт)",
-        "empty": "(пусто)",
-        "dir": "папка",
-        "file": "файл",
-        "file_page": "Файл",
-        "back_folder": "Назад к папке",
-        "download": "Скачать",
-        "preview": "Предпросмотр",
-        "path_not_exist": "Путь не существует.",
-        "file_not_found": "Файл не найден.",
-        "job_not_found": "Задача не найдена.",
-        "not_found": "Не найдено.",
-        "no_inline_preview": "Для этого типа файла нет предпросмотра. Используйте скачивание.",
-    },
-}
-
-STATUS_LABELS: dict[str, dict[str, str]] = {
-    "en": {
-        "queued": "queued",
-        "running": "running",
-        "success": "success",
-        "failed": "failed",
-        "stopped": "stopped",
-    },
-    "ru": {
-        "queued": "в очереди",
-        "running": "выполняется",
-        "success": "успешно",
-        "failed": "ошибка",
-        "stopped": "остановлено",
-    },
-}
 
 
 @dataclass(slots=True)
@@ -1581,7 +1341,7 @@ pollTimer = setInterval(pollJobData, 2000);
 
     def _start_run(self, form: dict[str, list[str]]) -> None:
         lang = _lang_from_form(form)
-        command = _build_run_command(form)
+        command = _build_run_command(form, default_config=DEFAULT_CONFIG)
         job = self.job_manager.create(command=command, cwd=WORKSPACE_ROOT)
         self._redirect(_with_lang("/job", lang, id=job.id))
 
@@ -1647,111 +1407,15 @@ def _first(mapping: dict[str, list[str]], key: str, default: str = "") -> str:
     return values[0]
 
 
-def _collect_multi_values(
-    mapping: dict[str, list[str]],
-    key: str,
-    *,
-    allowed: set[str] | None = None,
-) -> list[str]:
-    """Collect unique multi-select values (checkboxes or comma-separated fallback)."""
-    raw_values = list(mapping.get(key, []))
-    if not raw_values:
-        fallback = _first(mapping, key, "").strip()
-        if fallback:
-            raw_values = [fallback]
-
-    selected: list[str] = []
-    for raw in raw_values:
-        parts = str(raw).split(",")
-        for part in parts:
-            value = part.strip()
-            if not value:
-                continue
-            if allowed is not None and value not in allowed:
-                continue
-            if value not in selected:
-                selected.append(value)
-    return selected
-
-
-def _tr(lang: str, key: str) -> str:
-    """Translate UI key for selected language with fallback to English."""
-    table = UI_TEXT.get(lang, UI_TEXT["en"])
-    if key in table:
-        return table[key]
-    return UI_TEXT["en"].get(key, key)
-
-
-def _catalog_label(
-    labels: dict[str, dict[str, str]],
-    lang: str,
-    value: str,
-    fallback: str,
-) -> str:
-    """Get localized label for select options with English fallback."""
-    table = labels.get(lang, labels["en"])
-    if value in table:
-        return table[value]
-    return labels["en"].get(value, fallback)
-
-
-def _default_select_label(lang: str) -> str:
-    """Localized label for empty select value."""
-    if lang == "ru":
-        return "(по умолчанию)"
-    return "(default)"
-
-
-def _insights_title(lang: str) -> str:
-    """Localized title for researcher insights card."""
-    if lang == "ru":
-        return "Выводы исследовательского агента"
-    return "Researcher Insights"
-
-
-def _insights_placeholder(lang: str) -> str:
-    """Localized placeholder for insights list before enough data arrives."""
-    if lang == "ru":
-        return "Недостаточно данных для выводов."
-    return "Not enough data for conclusions yet."
-
-
-def _chart_line_note(lang: str, series: str) -> str:
-    """Localized explanatory text for each chart line."""
-    ru = lang == "ru"
-    notes_ru = {
-        "latency": "Цвет линии = отдельный прогон (легенда: сценарий/алгоритм); метрика: средняя задержка задач (ниже лучше).",
-        "throughput": "Цвет линии = отдельный прогон (легенда: сценарий/алгоритм); метрика: пропускная способность (выше лучше).",
-        "avg_load": "Цвет линии = отдельный прогон (легенда: сценарий/алгоритм); метрика: средняя загрузка узлов.",
-        "queue": "Цвет линии = отдельный прогон (легенда: сценарий/алгоритм); сплошная линия = размер очереди.",
-        "completed": "Тот же цвет прогона: пунктирная линия = выполненные задачи (накопительно).",
-    }
-    notes_en = {
-        "latency": "Line color = sub-run (legend: scenario/algorithm); metric: average task latency (lower is better).",
-        "throughput": "Line color = sub-run (legend: scenario/algorithm); metric: system throughput (higher is better).",
-        "avg_load": "Line color = sub-run (legend: scenario/algorithm); metric: average node load.",
-        "queue": "Line color = sub-run (legend: scenario/algorithm); solid line = queue size.",
-        "completed": "Same sub-run color: dashed line = completed tasks (cumulative).",
-    }
-    table = notes_ru if ru else notes_en
-    return table.get(series, series)
-
-
 def _lang_from_parsed(parsed) -> str:
     """Extract language from query string; default to English."""
     query = parse_qs(parsed.query)
-    lang = _first(query, "lang", "en").strip().lower()
-    if lang in LANG_OPTIONS:
-        return lang
-    return "en"
+    return normalize_lang(_first(query, "lang", "en"), default="en")
 
 
 def _lang_from_form(form: dict[str, list[str]]) -> str:
     """Extract language from posted form; default to English."""
-    lang = _first(form, "lang", "en").strip().lower()
-    if lang in LANG_OPTIONS:
-        return lang
-    return "en"
+    return normalize_lang(_first(form, "lang", "en"), default="en")
 
 
 def _with_lang(route: str, lang: str, include_lang: bool = True, **params: str) -> str:
@@ -1783,121 +1447,6 @@ def _language_switcher(lang: str, route: str, include_lang: bool = True, **param
         f"<a class='{en_class}' href='{escape(en_url)}'>ENG</a>"
         "</nav>"
     )
-
-
-def _is_checked(form: dict[str, list[str]], name: str) -> bool:
-    """Interpret checkbox field as boolean."""
-    value = _first(form, name, "")
-    return value.lower() in {"on", "1", "true", "yes"}
-
-
-def _safe_int(text: str, fallback: int, minimum: int | None = None) -> int:
-    """Parse integer with fallback and optional minimum."""
-    try:
-        value = int(text.strip())
-    except Exception:  # noqa: BLE001
-        value = fallback
-    if minimum is not None:
-        value = max(minimum, value)
-    return value
-
-
-def _build_run_command(form: dict[str, list[str]]) -> list[str]:
-    """Build CLI command from web form fields."""
-    config = _first(form, "config", DEFAULT_CONFIG).strip() or DEFAULT_CONFIG
-    mode = _first(form, "mode", "single").strip().lower()
-    mode = mode if mode in MODE_OPTIONS else "single"
-
-    command: list[str] = [
-        sys.executable,
-        "-m",
-        "project.experiments.run",
-        "--config",
-        config,
-    ]
-
-    algorithm = _first(form, "algorithm", "").strip()
-    if algorithm:
-        command.extend(["--algorithm", algorithm])
-
-    scenario = _first(form, "scenario", "").strip()
-    if scenario:
-        command.extend(["--scenario", scenario])
-
-    llm_provider = _first(form, "llm_provider", "").strip()
-    if llm_provider:
-        command.extend(["--llm-provider", llm_provider])
-
-    output_dir = _first(form, "output_dir", "").strip()
-    if output_dir:
-        command.extend(["--output-dir", output_dir])
-
-    log_level = _first(form, "log_level", "").strip()
-    if log_level:
-        command.extend(["--log-level", log_level])
-
-    if _is_checked(form, "disable_intelligence"):
-        command.append("--disable-intelligence")
-    if _is_checked(form, "disable_llm"):
-        command.append("--disable-llm")
-    if _is_checked(form, "no_plots"):
-        command.append("--no-plots")
-    if _is_checked(form, "no_csv"):
-        command.append("--no-csv")
-
-    if mode == "compare":
-        command.append("--compare")
-        compare_algorithms = _collect_multi_values(
-            form,
-            "compare_algorithms",
-            allowed={name for name in ALGORITHM_OPTIONS if name},
-        )
-        if compare_algorithms:
-            command.extend(["--compare-algorithms", ",".join(compare_algorithms)])
-
-    elif mode == "batch":
-        command.append("--batch")
-        batch_scenarios = _collect_multi_values(
-            form,
-            "batch_scenarios",
-            allowed={name for name in SCENARIO_OPTIONS if name},
-        )
-        if batch_scenarios:
-            command.extend(["--batch-scenarios", ",".join(batch_scenarios)])
-        batch_algorithms = _collect_multi_values(
-            form,
-            "batch_algorithms",
-            allowed={name for name in ALGORITHM_OPTIONS if name},
-        )
-        if batch_algorithms:
-            command.extend(["--batch-algorithms", ",".join(batch_algorithms)])
-        batch_runs = _safe_int(_first(form, "batch_runs", "3"), fallback=3, minimum=1)
-        command.extend(["--batch-runs", str(batch_runs)])
-        if _is_checked(form, "batch_save_runs"):
-            command.append("--batch-save-runs")
-        if _is_checked(form, "batch_keep_adaptive"):
-            command.append("--batch-keep-adaptive")
-
-    elif mode == "publication":
-        command.append("--publication-study")
-        if _is_checked(form, "study_quick"):
-            command.append("--study-quick")
-        study_seeds = _first(form, "study_seeds", "42-71").strip()
-        if study_seeds:
-            command.extend(["--study-seeds", study_seeds])
-
-    elif mode == "ab-intelligence":
-        command.append("--ab-intelligence")
-
-    elif mode == "ab-llm":
-        command.append("--ab-llm")
-
-    elif mode == "repro-check":
-        command.append("--repro-check")
-        repro_runs = _safe_int(_first(form, "repro_runs", "3"), fallback=3, minimum=2)
-        command.extend(["--repro-runs", str(repro_runs)])
-
-    return command
 
 
 def _resolve_path(raw: str) -> Path:
