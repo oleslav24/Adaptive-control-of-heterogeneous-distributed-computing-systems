@@ -53,5 +53,13 @@ def test_node_load_special_cases_for_inactive_and_zero_cpu() -> None:
     """Inactive node should report full load, zero-cpu active node should report 0."""
     inactive = Node(id="node-inactive", cpu=8.0, memory=16.0, gpu=0.0, is_active=False)
     zero_cpu = Node(id="node-zero", cpu=0.0, memory=16.0, gpu=0.0)
+    task = Task(
+        id="task-check",
+        cpu_required=1.0,
+        memory_required=1.0,
+        data_size=1.0,
+        deadline=2.0,
+    )
     assert inactive.load == 1.0
+    assert inactive.can_run(task) is False
     assert zero_cpu.load == 0.0

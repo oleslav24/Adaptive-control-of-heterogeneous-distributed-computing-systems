@@ -37,3 +37,26 @@ jobs:
       - name: Run smoke baseline against golden
         run: |
           python -B -m project.experiments.smoke --config config.yaml
+
+  mutation-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: smoke
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pytest ruff mypy
+
+      - name: Run mutation baseline gate
+        run: |
+          python -B -m project.quality.mutation_baseline --output docs/baselines/mutation_baseline.ci.json --fail-on-survivors

@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff
+        args: [--no-cache]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: mypy-targeted
+        name: mypy (targeted modules)
+        entry: >-
+          python -m mypy --no-sqlite-cache --cache-dir .mypy_cache_precommit
+          --follow-imports=skip project/core/models.py
+          project/algorithms/schedulers.py project/simulation/context.py
+          project/simulation/mas.py project/simulation/loop.py
+          project/experiments/manifest.py project/experiments/smoke.py
+        language: system
+        pass_filenames: false
+
+      - id: pytest-pre-push
+        name: pytest (pre-push)
+        entry: python -m pytest -q
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
