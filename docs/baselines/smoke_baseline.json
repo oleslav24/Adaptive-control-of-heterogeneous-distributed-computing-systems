@@ -1,0 +1,519 @@
+{
+  "cases": [
+    {
+      "case": "single",
+      "fingerprint": "37171a97757326a382650e257c025168b5a6a0acae63eb1628d09c54d6a1be78",
+      "manifest_validation": {
+        "errors": [],
+        "ok": true,
+        "path": "outputs\\sprint9-publication-ready-s10-smoke\\smoke\\smoke-single\\static\\min-load\\run_manifest.json"
+      },
+      "payload": {
+        "algorithm": "min-load",
+        "scenario": "static",
+        "summary": {
+          "algorithm": "min-load",
+          "avg_latency": 2.7,
+          "avg_load": 0.648439473802,
+          "completed_tasks": 10,
+          "deadline_violations": 0,
+          "generated_tasks": 13,
+          "mas_assignments": 14,
+          "mas_messages": 63,
+          "pending_tasks": 6,
+          "scenario": "static",
+          "throughput": 1.25
+        }
+      }
+    },
+    {
+      "case": "compare",
+      "fingerprint": "0d4c14f452db172b3220313a1a2d431784014470078211e117e50f87330f4ef6",
+      "manifest_validation": {
+        "errors": [],
+        "ok": true,
+        "paths": [
+          "outputs\\sprint9-publication-ready-s10-smoke\\smoke\\smoke-compare\\static\\round-robin\\run_manifest.json",
+          "outputs\\sprint9-publication-ready-s10-smoke\\smoke\\smoke-compare\\static\\min-load\\run_manifest.json",
+          "outputs\\sprint9-publication-ready-s10-smoke\\smoke\\smoke-compare\\static\\greedy\\run_manifest.json"
+        ]
+      },
+      "payload": [
+        {
+          "algorithm": "greedy",
+          "avg_latency": 2.8,
+          "avg_load": 0.72777488064,
+          "completed_tasks": 10,
+          "deadline_violations": 0,
+          "generated_tasks": 13,
+          "mas_assignments": 15,
+          "mas_messages": 48,
+          "pending_tasks": 6,
+          "scenario": "static",
+          "throughput": 1.25
+        },
+        {
+          "algorithm": "min-load",
+          "avg_latency": 2.8,
+          "avg_load": 0.72777488064,
+          "completed_tasks": 10,
+          "deadline_violations": 0,
+          "generated_tasks": 13,
+          "mas_assignments": 15,
+          "mas_messages": 48,
+          "pending_tasks": 6,
+          "scenario": "static",
+          "throughput": 1.25
+        },
+        {
+          "algorithm": "round-robin",
+          "avg_latency": 2.7,
+          "avg_load": 0.786270710943,
+          "completed_tasks": 10,
+          "deadline_violations": 0,
+          "generated_tasks": 13,
+          "mas_assignments": 15,
+          "mas_messages": 47,
+          "pending_tasks": 6,
+          "scenario": "static",
+          "throughput": 1.25
+        }
+      ]
+    },
+    {
+      "case": "batch",
+      "fingerprint": "1feca3d4d03c227ace13f5d8ff96497b2a37beb931dcd573437d5c367cbf12a7",
+      "manifest_validation": {
+        "errors": [],
+        "ok": true,
+        "path": "outputs\\sprint9-publication-ready-s10-smoke\\batch\\batch_manifest.json"
+      },
+      "payload": [
+        {
+          "algorithm": "greedy",
+          "avg_latency_mean": 2.8,
+          "avg_latency_std": 0.0,
+          "avg_load_mean": 0.7277748806,
+          "avg_load_std": 0.0,
+          "deadline_violations_mean": 0.0,
+          "pending_tasks_mean": 6.0,
+          "runs": 1,
+          "scenario": "dynamic-load",
+          "throughput_mean": 1.25,
+          "throughput_std": 0.0
+        },
+        {
+          "algorithm": "min-load",
+          "avg_latency_mean": 2.8,
+          "avg_latency_std": 0.0,
+          "avg_load_mean": 0.7277748806,
+          "avg_load_std": 0.0,
+          "deadline_violations_mean": 0.0,
+          "pending_tasks_mean": 6.0,
+          "runs": 1,
+          "scenario": "dynamic-load",
+          "throughput_mean": 1.25,
+          "throughput_std": 0.0
+        },
+        {
+          "algorithm": "round-robin",
+          "avg_latency_mean": 2.7,
+          "avg_latency_std": 0.0,
+          "avg_load_mean": 0.7862707109,
+          "avg_load_std": 0.0,
+          "deadline_violations_mean": 0.0,
+          "pending_tasks_mean": 6.0,
+          "runs": 1,
+          "scenario": "dynamic-load",
+          "throughput_mean": 1.25,
+          "throughput_std": 0.0
+        },
+        {
+          "algorithm": "greedy",
+          "avg_latency_mean": 2.8,
+          "avg_latency_std": 0.0,
+          "avg_load_mean": 0.7277748806,
+          "avg_load_std": 0.0,
+          "deadline_violations_mean": 0.0,
+          "pending_tasks_mean": 6.0,
+          "runs": 1,
+          "scenario": "static",
+          "throughput_mean": 1.25,
+          "throughput_std": 0.0
+        },
+        {
+          "algorithm": "min-load",
+          "avg_latency_mean": 2.8,
+          "avg_latency_std": 0.0,
+          "avg_load_mean": 0.7277748806,
+          "avg_load_std": 0.0,
+          "deadline_violations_mean": 0.0,
+          "pending_tasks_mean": 6.0,
+          "runs": 1,
+          "scenario": "static",
+          "throughput_mean": 1.25,
+          "throughput_std": 0.0
+        },
+        {
+          "algorithm": "round-robin",
+          "avg_latency_mean": 2.7,
+          "avg_latency_std": 0.0,
+          "avg_load_mean": 0.7862707109,
+          "avg_load_std": 0.0,
+          "deadline_violations_mean": 0.0,
+          "pending_tasks_mean": 6.0,
+          "runs": 1,
+          "scenario": "static",
+          "throughput_mean": 1.25,
+          "throughput_std": 0.0
+        }
+      ]
+    },
+    {
+      "case": "publication",
+      "fingerprint": "6a2835f5a43be2a526523c0e68b73bc47446e7ddf61322448eb3509ed4deca5a",
+      "manifest_validation": {
+        "errors": [],
+        "ok": true,
+        "path": "outputs\\sprint9-publication-ready-s10-smoke\\publication\\publication_manifest.json"
+      },
+      "payload": {
+        "hypotheses": [
+          {
+            "confirmed": true,
+            "criterion": "Adaptive methods reduce latency and load imbalance.",
+            "delta_adaptivity_llm_vs_algorithmic": null,
+            "delta_latency": 7.2162706949,
+            "delta_latency_dynamic": null,
+            "delta_latency_hybrid_vs_best_baseline": null,
+            "delta_latency_llm_vs_algorithmic": null,
+            "delta_load_imbalance": 0.2818095425,
+            "delta_stability_failures": null,
+            "delta_throughput_failures": null,
+            "hypothesis": "H1",
+            "title": "Adaptivity"
+          },
+          {
+            "confirmed": false,
+            "criterion": "MAS improves robustness and stability under failures.",
+            "delta_adaptivity_llm_vs_algorithmic": null,
+            "delta_latency": null,
+            "delta_latency_dynamic": null,
+            "delta_latency_hybrid_vs_best_baseline": null,
+            "delta_latency_llm_vs_algorithmic": null,
+            "delta_load_imbalance": null,
+            "delta_stability_failures": 0.0,
+            "delta_throughput_failures": 0.0,
+            "hypothesis": "H2",
+            "title": "Multi-agent Architecture"
+          },
+          {
+            "confirmed": false,
+            "criterion": "ML/ZNN improve decisions under dynamic load.",
+            "delta_adaptivity_llm_vs_algorithmic": null,
+            "delta_latency": null,
+            "delta_latency_dynamic": 0.0,
+            "delta_latency_hybrid_vs_best_baseline": null,
+            "delta_latency_llm_vs_algorithmic": null,
+            "delta_load_imbalance": null,
+            "delta_stability_failures": null,
+            "delta_throughput_failures": null,
+            "hypothesis": "H3",
+            "title": "Intelligent Methods (ML/ZNN)"
+          },
+          {
+            "confirmed": false,
+            "criterion": "Hybrid method outperforms standalone baselines.",
+            "delta_adaptivity_llm_vs_algorithmic": null,
+            "delta_latency": null,
+            "delta_latency_dynamic": null,
+            "delta_latency_hybrid_vs_best_baseline": 0.0,
+            "delta_latency_llm_vs_algorithmic": null,
+            "delta_load_imbalance": null,
+            "delta_stability_failures": null,
+            "delta_throughput_failures": null,
+            "hypothesis": "H4",
+            "title": "Hybrid vs Single Methods"
+          },
+          {
+            "confirmed": false,
+            "criterion": "LLM improves coordination and strategy flexibility.",
+            "delta_adaptivity_llm_vs_algorithmic": -3.2638128025,
+            "delta_latency": null,
+            "delta_latency_dynamic": null,
+            "delta_latency_hybrid_vs_best_baseline": null,
+            "delta_latency_llm_vs_algorithmic": -0.0193018556,
+            "delta_load_imbalance": null,
+            "delta_stability_failures": null,
+            "delta_throughput_failures": null,
+            "hypothesis": "H5",
+            "title": "LLM Agent"
+          }
+        ],
+        "summary": [
+          {
+            "avg_latency_mean": 2.995,
+            "load_imbalance_mean": 0.0,
+            "method": "mas-hybrid",
+            "n_runs": 2,
+            "scenario": "static",
+            "sla_violations_mean": 0.0,
+            "study_id": "E1_scalability",
+            "throughput_mean": 1.4285714286
+          },
+          {
+            "avg_latency_mean": 2.973,
+            "load_imbalance_mean": 0.0,
+            "method": "mas-hybrid",
+            "n_runs": 2,
+            "scenario": "static",
+            "sla_violations_mean": 0.0,
+            "study_id": "E1_scalability",
+            "throughput_mean": 7.1428571429
+          },
+          {
+            "avg_latency_mean": 3.015,
+            "load_imbalance_mean": 0.0,
+            "method": "mas-llm",
+            "n_runs": 2,
+            "scenario": "static",
+            "sla_violations_mean": 0.0,
+            "study_id": "E1_scalability",
+            "throughput_mean": 1.4285714286
+          },
+          {
+            "avg_latency_mean": 3.003,
+            "load_imbalance_mean": 0.0,
+            "method": "mas-llm",
+            "n_runs": 2,
+            "scenario": "static",
+            "sla_violations_mean": 0.0,
+            "study_id": "E1_scalability",
+            "throughput_mean": 7.1428571429
+          },
+          {
+            "avg_latency_mean": 5.125,
+            "load_imbalance_mean": 0.0,
+            "method": "min-load",
+            "n_runs": 2,
+            "scenario": "static",
+            "sla_violations_mean": 1.0,
+            "study_id": "E1_scalability",
+            "throughput_mean": 1.4285714286
+          },
+          {
+            "avg_latency_mean": 26.7570253302,
+            "load_imbalance_mean": 0.951944764,
+            "method": "min-load",
+            "n_runs": 2,
+            "scenario": "static",
+            "sla_violations_mean": 250.5,
+            "study_id": "E1_scalability",
+            "throughput_mean": 4.3428571429
+          },
+          {
+            "avg_latency_mean": 2.995,
+            "load_imbalance_mean": 0.0,
+            "method": "round-robin",
+            "n_runs": 2,
+            "scenario": "static",
+            "sla_violations_mean": 0.0,
+            "study_id": "E1_scalability",
+            "throughput_mean": 1.4285714286
+          },
+          {
+            "avg_latency_mean": 2.973,
+            "load_imbalance_mean": 0.0,
+            "method": "round-robin",
+            "n_runs": 2,
+            "scenario": "static",
+            "sla_violations_mean": 0.0,
+            "study_id": "E1_scalability",
+            "throughput_mean": 7.1428571429
+          },
+          {
+            "avg_latency_mean": 21.1790694685,
+            "load_imbalance_mean": 0.9580480696,
+            "method": "mas-basic",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 203.5,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 4.6203703704
+          },
+          {
+            "avg_latency_mean": 2.6897368918,
+            "load_imbalance_mean": 0.2195440975,
+            "method": "mas-hybrid",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 12.9259259259
+          },
+          {
+            "avg_latency_mean": 2.7090387475,
+            "load_imbalance_mean": 0.2195440975,
+            "method": "mas-llm",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 12.9259259259
+          },
+          {
+            "avg_latency_mean": 21.1790694685,
+            "load_imbalance_mean": 0.9580480696,
+            "method": "mas-ml",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 203.5,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 4.6203703704
+          },
+          {
+            "avg_latency_mean": 21.1790694685,
+            "load_imbalance_mean": 0.9580480696,
+            "method": "mas-znn",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 203.5,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 4.6203703704
+          },
+          {
+            "avg_latency_mean": 21.1790694685,
+            "load_imbalance_mean": 0.9580480696,
+            "method": "min-load",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 203.5,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 4.6203703704
+          },
+          {
+            "avg_latency_mean": 21.1790694685,
+            "load_imbalance_mean": 0.9580480696,
+            "method": "mas-basic",
+            "n_runs": 2,
+            "scenario": "node-failures",
+            "sla_violations_mean": 203.5,
+            "study_id": "E3_robustness",
+            "throughput_mean": 4.6203703704
+          },
+          {
+            "avg_latency_mean": 2.7465126753,
+            "load_imbalance_mean": 0.225248248,
+            "method": "mas-hybrid",
+            "n_runs": 2,
+            "scenario": "node-failures",
+            "sla_violations_mean": 0.0,
+            "study_id": "E3_robustness",
+            "throughput_mean": 10.5462962963
+          },
+          {
+            "avg_latency_mean": 21.1790694685,
+            "load_imbalance_mean": 0.9580480696,
+            "method": "min-load",
+            "n_runs": 2,
+            "scenario": "node-failures",
+            "sla_violations_mean": 203.5,
+            "study_id": "E3_robustness",
+            "throughput_mean": 4.6203703704
+          },
+          {
+            "avg_latency_mean": 2.7465126753,
+            "load_imbalance_mean": 0.225248248,
+            "method": "round-robin",
+            "n_runs": 2,
+            "scenario": "node-failures",
+            "sla_violations_mean": 0.0,
+            "study_id": "E3_robustness",
+            "throughput_mean": 10.5462962963
+          },
+          {
+            "avg_latency_mean": 16.0681383577,
+            "load_imbalance_mean": 0.8396430359,
+            "method": "greedy",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 391.5,
+            "study_id": "E4_hybrid_vs_classical",
+            "throughput_mean": 9.2407407407
+          },
+          {
+            "avg_latency_mean": 2.7465126753,
+            "load_imbalance_mean": 0.225248248,
+            "method": "mas-hybrid",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E4_hybrid_vs_classical",
+            "throughput_mean": 10.5462962963
+          },
+          {
+            "avg_latency_mean": 21.1790694685,
+            "load_imbalance_mean": 0.9580480696,
+            "method": "min-load",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 203.5,
+            "study_id": "E4_hybrid_vs_classical",
+            "throughput_mean": 4.6203703704
+          },
+          {
+            "avg_latency_mean": 2.7465126753,
+            "load_imbalance_mean": 0.225248248,
+            "method": "round-robin",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E4_hybrid_vs_classical",
+            "throughput_mean": 10.5462962963
+          },
+          {
+            "avg_latency_mean": 2.6897368918,
+            "load_imbalance_mean": 0.2195440975,
+            "method": "mas-hybrid",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E5_llm_vs_algorithmic",
+            "throughput_mean": 12.9259259259
+          },
+          {
+            "avg_latency_mean": 2.7090387475,
+            "load_imbalance_mean": 0.2195440975,
+            "method": "mas-llm",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E5_llm_vs_algorithmic",
+            "throughput_mean": 12.9259259259
+          },
+          {
+            "avg_latency_mean": 21.1790694685,
+            "load_imbalance_mean": 0.9580480696,
+            "method": "min-load",
+            "n_runs": 2,
+            "scenario": "peak-load",
+            "sla_violations_mean": 203.5,
+            "study_id": "E5_llm_vs_algorithmic",
+            "throughput_mean": 4.6203703704
+          }
+        ]
+      }
+    }
+  ],
+  "config_name": "sprint9-publication-ready",
+  "fingerprints": {
+    "batch": "1feca3d4d03c227ace13f5d8ff96497b2a37beb931dcd573437d5c367cbf12a7",
+    "compare": "0d4c14f452db172b3220313a1a2d431784014470078211e117e50f87330f4ef6",
+    "publication": "6a2835f5a43be2a526523c0e68b73bc47446e7ddf61322448eb3509ed4deca5a",
+    "single": "37171a97757326a382650e257c025168b5a6a0acae63eb1628d09c54d6a1be78"
+  },
+  "generated_at_utc": "2026-05-06T05:37:56.448956+00:00",
+  "overall_ok": true,
+  "schema_version": "sprint10-smoke-baseline-v1",
+  "smoke_config_name": "sprint9-publication-ready-s10-smoke"
+}

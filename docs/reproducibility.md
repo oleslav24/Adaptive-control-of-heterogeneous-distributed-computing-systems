@@ -36,6 +36,18 @@ Reproducibility check:
 python -m project.experiments.run --config config.yaml --repro-check --repro-runs 3
 ```
 
+Sprint 10 smoke baseline (single/compare/batch/publication quick):
+
+```bash
+python -m project.experiments.smoke --config config.yaml
+```
+
+Update golden baseline snapshot:
+
+```bash
+python -m project.experiments.smoke --config config.yaml --update-golden
+```
+
 ## Reproducibility Signals
 
 Each run exports:
@@ -48,6 +60,7 @@ Each run exports:
   - full config snapshot
 - deterministic `seed` in config (`simulation.seed`)
 - consistent CSV/JSON outputs for metrics
+- fingerprint comparison against `docs/baselines/smoke_baseline.json` via smoke runner
 
 Batch mode additionally exports:
 
