@@ -19,25 +19,32 @@ Establish a reliable automated test foundation before deeper refactoring of larg
 6. Static analysis gate:
    - `ruff` config: `pyproject.toml`
    - `mypy` config: `mypy.ini`
+7. Pre-commit hooks:
+   - `.pre-commit-config.yaml`
+8. Mutation-testing baseline harness:
+   - `project/quality/mutation_baseline.py`
+   - baseline report: `docs/baselines/mutation_baseline.json`
 
 ## Current quality gate commands
 
 ```bash
+$env:PRE_COMMIT_HOME=".precommit_cache"  # PowerShell
+python -m pre_commit install
+python -m pre_commit install --hook-type pre-push
+python -m pre_commit run --all-files
 python -m ruff check --no-cache project tests
 python -m mypy --no-sqlite-cache --cache-dir .mypy_cache_ci --follow-imports=skip project/core/models.py project/algorithms/schedulers.py project/simulation/context.py project/simulation/mas.py project/simulation/loop.py project/experiments/manifest.py project/experiments/smoke.py
 python -m pytest -q
 python -B -m project.experiments.smoke --config config.yaml
+python -B -m project.quality.mutation_baseline --output docs/baselines/mutation_baseline.json
 ```
 
 ## Current results
 
-1. `pytest`: 13 passed
+1. `pytest`: 16 passed
 2. smoke baseline: PASS (golden match)
+3. mutation baseline: 6/6 killed, mutation score = 1.000
 
 ## Scope note
 
-This is the first Sprint 11 increment.
-Next steps in Sprint 11:
-
-1. Expand integration tests around scenario events and batch runner invariants.
-2. Add static analysis gates (ruff/mypy) with a pragmatic initial rule set.
+Sprint 11 status: complete (current planned scope).

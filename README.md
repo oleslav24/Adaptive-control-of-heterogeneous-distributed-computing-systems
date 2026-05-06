@@ -31,11 +31,16 @@ python -m project.experiments.run --config config.yaml --batch --batch-scenarios
 python -m project.experiments.run --config config.yaml --repro-check --repro-runs 3
 python -m project.experiments.run --config config.yaml --publication-study
 python -m project.experiments.run --config config.yaml --publication-study --study-quick --study-seeds 42,43
+$env:PRE_COMMIT_HOME=".precommit_cache"  # PowerShell
+python -m pre_commit install
+python -m pre_commit install --hook-type pre-push
+python -m pre_commit run --all-files
 python -m ruff check --no-cache project tests
 python -m mypy --no-sqlite-cache --cache-dir .mypy_cache_ci --follow-imports=skip project/core/models.py project/algorithms/schedulers.py project/simulation/context.py project/simulation/mas.py project/simulation/loop.py project/experiments/manifest.py project/experiments/smoke.py
 python -m pytest -q
 python -m project.experiments.smoke --config config.yaml
 python -m project.experiments.smoke --config config.yaml --update-golden
+python -m project.quality.mutation_baseline --output docs/baselines/mutation_baseline.json
 python -m project.web.app --host 127.0.0.1 --port 8080
 ```
 

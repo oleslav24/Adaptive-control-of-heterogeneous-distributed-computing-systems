@@ -1,0 +1,115 @@
+{
+  "cases": [
+    {
+      "case_id": "SCHED_01",
+      "duration_seconds": 1.5783601999864914,
+      "return_code": 1,
+      "status": "KILLED",
+      "stderr_tail": "",
+      "stdout_tail": "        \"\"\"Greedy strategy should deterministically pick node with smaller greedy key.\"\"\"\n        strong = Node(id=\"strong\", cpu=16.0, memory=32.0, gpu=0.0, used_cpu=1.0, used_memory=1.0)\n        weak = Node(id=\"weak\", cpu=8.0, memory=12.0, gpu=0.0, used_cpu=1.0, used_memory=1.0)\n        selected, cursor = choose_node(\n            algorithm=\"greedy\",\n            task=_task(),\n            candidates=[strong, weak],\n            all_node_ids=[strong.id, weak.id],\n            node_bandwidth={strong.id: 1000.0, weak.id: 1000.0},\n            rr_cursor=5,\n        )\n>       assert selected is not None\nE       assert None is not None\n\ntests\\test_algorithms_schedulers.py:73: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_algorithms_schedulers.py::test_round_robin_uses_global_node_order_and_updates_cursor\nFAILED tests/test_algorithms_schedulers.py::test_min_load_prefers_higher_bandwidth_when_load_is_equal\nFAILED tests/test_algorithms_schedulers.py::test_greedy_selection_is_deterministic_with_residual_resource_score\n3 failed, 1 passed in 0.15s",
+      "target_file": "project/algorithms/schedulers.py",
+      "test_cmd": [
+        "C:\\Users\\oanta\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_algorithms_schedulers.py"
+      ]
+    },
+    {
+      "case_id": "SCHED_02",
+      "duration_seconds": 1.8337462000199594,
+      "return_code": 1,
+      "status": "KILLED",
+      "stderr_tail": "",
+      "stdout_tail": "        weak = Node(id=\"weak\", cpu=8.0, memory=12.0, gpu=0.0, used_cpu=1.0, used_memory=1.0)\n        selected, cursor = choose_node(\n            algorithm=\"greedy\",\n            task=_task(),\n            candidates=[strong, weak],\n            all_node_ids=[strong.id, weak.id],\n            node_bandwidth={strong.id: 1000.0, weak.id: 1000.0},\n            rr_cursor=5,\n        )\n        assert selected is not None\n        assert selected.id == \"weak\"\n>       assert cursor == 5\nE       assert 0 == 5\n\ntests\\test_algorithms_schedulers.py:75: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_algorithms_schedulers.py::test_round_robin_uses_global_node_order_and_updates_cursor\nFAILED tests/test_algorithms_schedulers.py::test_min_load_prefers_higher_bandwidth_when_load_is_equal\nFAILED tests/test_algorithms_schedulers.py::test_greedy_selection_is_deterministic_with_residual_resource_score\n3 failed, 1 passed in 0.20s",
+      "target_file": "project/algorithms/schedulers.py",
+      "test_cmd": [
+        "C:\\Users\\oanta\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_algorithms_schedulers.py"
+      ]
+    },
+    {
+      "case_id": "SCHED_03",
+      "duration_seconds": 2.454194699996151,
+      "return_code": 1,
+      "status": "KILLED",
+      "stderr_tail": "",
+      "stdout_tail": "        weak = Node(id=\"weak\", cpu=8.0, memory=12.0, gpu=0.0, used_cpu=1.0, used_memory=1.0)\n        selected, cursor = choose_node(\n            algorithm=\"greedy\",\n            task=_task(),\n            candidates=[strong, weak],\n            all_node_ids=[strong.id, weak.id],\n            node_bandwidth={strong.id: 1000.0, weak.id: 1000.0},\n            rr_cursor=5,\n        )\n        assert selected is not None\n>       assert selected.id == \"weak\"\nE       AssertionError: assert 'strong' == 'weak'\nE         \nE         - weak\nE         + strong\n\ntests\\test_algorithms_schedulers.py:74: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_algorithms_schedulers.py::test_greedy_selection_is_deterministic_with_residual_resource_score\n1 failed, 3 passed in 0.17s",
+      "target_file": "project/algorithms/schedulers.py",
+      "test_cmd": [
+        "C:\\Users\\oanta\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_algorithms_schedulers.py"
+      ]
+    },
+    {
+      "case_id": "SCHED_04",
+      "duration_seconds": 2.005461299966555,
+      "return_code": 1,
+      "status": "KILLED",
+      "stderr_tail": "",
+      "stdout_tail": "        \"\"\"Round-robin should follow sorted all-node ids and move cursor forward.\"\"\"\n        candidates = [\n            Node(id=\"node-b\", cpu=8.0, memory=8.0, gpu=0.0),\n            Node(id=\"node-c\", cpu=8.0, memory=8.0, gpu=0.0),\n        ]\n        selected, cursor = choose_node(\n            algorithm=\"round-robin\",\n            task=_task(),\n            candidates=candidates,\n            all_node_ids=[\"node-c\", \"node-a\", \"node-b\"],\n            node_bandwidth={},\n            rr_cursor=1,\n        )\n>       assert selected is not None\nE       assert None is not None\n\ntests\\test_algorithms_schedulers.py:39: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_algorithms_schedulers.py::test_round_robin_uses_global_node_order_and_updates_cursor\n1 failed, 3 passed in 0.14s",
+      "target_file": "project/algorithms/schedulers.py",
+      "test_cmd": [
+        "C:\\Users\\oanta\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_algorithms_schedulers.py"
+      ]
+    },
+    {
+      "case_id": "NODE_01",
+      "duration_seconds": 1.655282499967143,
+      "return_code": 1,
+      "status": "KILLED",
+      "stderr_tail": "",
+      "stdout_tail": "        big = Task(\n            id=\"big\",\n            cpu_required=7.0,\n            memory_required=13.0,\n            data_size=1.0,\n            deadline=10.0,\n        )\n    \n        assert node.can_run(small) is True\n        node.assign(small)\n        assert node.used_cpu == 2.0\n        assert node.used_memory == 4.0\n>       assert node.load == 0.25\nE       AssertionError: assert 1.0 == 0.25\nE        +  where 1.0 = Node(id='node-1', cpu=8.0, memory=16.0, gpu=0.0, used_cpu=2.0, used_memory=4.0, is_active=True, failed_since=None).load\n\ntests\\test_core_models.py:44: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_core_models.py::test_node_assign_release_and_can_run_follow_capacity_constraints\n1 failed, 2 passed in 0.13s",
+      "target_file": "project/core/models.py",
+      "test_cmd": [
+        "C:\\Users\\oanta\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_core_models.py"
+      ]
+    },
+    {
+      "case_id": "NODE_02",
+      "duration_seconds": 1.5367690000566654,
+      "return_code": 1,
+      "status": "KILLED",
+      "stderr_tail": "",
+      "stdout_tail": "        \"\"\"Inactive node should report full load, zero-cpu active node should report 0.\"\"\"\n        inactive = Node(id=\"node-inactive\", cpu=8.0, memory=16.0, gpu=0.0, is_active=False)\n        zero_cpu = Node(id=\"node-zero\", cpu=0.0, memory=16.0, gpu=0.0)\n        task = Task(\n            id=\"task-check\",\n            cpu_required=1.0,\n            memory_required=1.0,\n            data_size=1.0,\n            deadline=2.0,\n        )\n        assert inactive.load == 1.0\n>       assert inactive.can_run(task) is False\nE       AssertionError: assert True is False\nE        +  where True = can_run(Task(id='task-check', cpu_required=1.0, memory_required=1.0, data_size=1.0, deadline=2.0, arrival_time=0, duration=1, remaining_time=1, status='pending', assigned_node=None, start_time=None, finish_time=None))\nE        +    where can_run = Node(id='node-inactive', cpu=8.0, memory=16.0, gpu=0.0, used_cpu=0.0, used_memory=0.0, is_active=False, failed_since=None).can_run\n\ntests\\test_core_models.py:64: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_core_models.py::test_node_load_special_cases_for_inactive_and_zero_cpu\n1 failed, 2 passed in 0.13s",
+      "target_file": "project/core/models.py",
+      "test_cmd": [
+        "C:\\Users\\oanta\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_core_models.py"
+      ]
+    }
+  ],
+  "created_at_utc": "2026-05-06T12:31:15.733911+00:00",
+  "suite": "sprint11-lightweight-mutation-baseline",
+  "summary": {
+    "errors": 0,
+    "killed": 6,
+    "mutation_score": 1.0,
+    "survived": 0,
+    "total_cases": 6
+  }
+}
