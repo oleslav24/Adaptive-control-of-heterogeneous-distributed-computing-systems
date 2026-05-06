@@ -23,9 +23,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m pip install pytest
+          python -m pip install pytest ruff mypy
 
-      - name: Run unit tests
+      - name: Run static checks
+        run: |
+          python -m ruff check --no-cache project tests
+          python -m mypy --no-sqlite-cache --cache-dir .mypy_cache_ci --follow-imports=skip project/core/models.py project/algorithms/schedulers.py project/simulation/context.py project/simulation/mas.py project/simulation/loop.py project/experiments/manifest.py project/experiments/smoke.py
+
+      - name: Run tests
         run: |
           python -m pytest -q
 
