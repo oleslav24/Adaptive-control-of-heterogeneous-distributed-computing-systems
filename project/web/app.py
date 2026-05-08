@@ -3,25 +3,19 @@
 from __future__ import annotations
 
 from argparse import ArgumentParser
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from html import escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
-import mimetypes
 from pathlib import Path
-import shlex
-import subprocess
-from threading import Lock, Thread
 from typing import ClassVar
 from urllib.parse import parse_qs, urlparse
-from uuid import uuid4
 
-from project.agents import ResearcherAgent
 from project.web.commands import build_run_command as _build_run_command
 from project.web.file_views import (
-    build_preview_html as _build_preview_html,
+    build_directory_body as _build_directory_body,
+    build_file_body as _build_file_body,
+    read_download_payload as _read_download_payload,
     rel_workspace as _rel_workspace,
     resolve_path as _resolve_path,
 )
@@ -33,7 +27,6 @@ from project.web.i18n import (
     MODE_OPTIONS,
     SCENARIO_LABELS,
     SCENARIO_OPTIONS,
-    STATUS_LABELS,
     catalog_label as _catalog_label,
     chart_line_note as _chart_line_note,
     default_select_label as _default_select_label,
@@ -46,7 +39,9 @@ from project.web.job_views import (
     job_row_html as _job_row_html,
     status_badge as _status_badge,
 )
-from project.web.metrics_parser import extract_metrics_from_logs as _extract_metrics_from_logs
+from project.web.layout import render_layout as _render_layout
+from project.web.jobs import JobManager, RunJob
+from project.web.payloads import job_payload as _job_payload
 from project.web.routing import (
     first as _first,
     lang_from_form as _lang_from_form,
@@ -60,120 +55,6 @@ WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = "config.yaml"
 DEFAULT_PORT = 8080
 DEFAULT_HOST = "127.0.0.1"
-MAX_LOG_LINES = 4000
-RESEARCHER_AGENT = ResearcherAgent()
-
-
-@dataclass(slots=True)
-class RunJob:
-    """Background experiment process state."""
-
-    id: str
-    command: list[str]
-    cwd: Path
-    status: str = "queued"  # queued | running | success | failed | stopped
-    started_at: datetime | None = None
-    finished_at: datetime | None = None
-    return_code: int | None = None
-    log_lines: list[str] = field(default_factory=list)
-    process: subprocess.Popen[str] | None = field(default=None, repr=False)
-    _lock: Lock = field(default_factory=Lock, repr=False)
-
-    def command_text(self) -> str:
-        """Render command as shell-like string."""
-        return " ".join(shlex.quote(part) for part in self.command)
-
-    def append_log(self, line: str) -> None:
-        """Append one log line and trim history to cap."""
-        with self._lock:
-            self.log_lines.append(line.rstrip("\n"))
-            if len(self.log_lines) > MAX_LOG_LINES:
-                over = len(self.log_lines) - MAX_LOG_LINES
-                del self.log_lines[:over]
-
-    def stop(self) -> bool:
-        """Request process termination if still running."""
-        with self._lock:
-            process = self.process
-        if process is None or process.poll() is not None:
-            return False
-        process.terminate()
-        return True
-
-
-class JobManager:
-    """Thread-safe registry and executor for background experiment jobs."""
-
-    def __init__(self) -> None:
-        self._jobs: dict[str, RunJob] = {}
-        self._lock = Lock()
-
-    def create(self, command: list[str], cwd: Path) -> RunJob:
-        """Create and launch background job for command."""
-        job = RunJob(
-            id=uuid4().hex[:10],
-            command=list(command),
-            cwd=cwd,
-        )
-        with self._lock:
-            self._jobs[job.id] = job
-        thread = Thread(target=self._run_job, args=(job,), daemon=True)
-        thread.start()
-        return job
-
-    def list_jobs(self) -> list[RunJob]:
-        """Return jobs sorted by newest start/finish timestamp."""
-        with self._lock:
-            jobs = list(self._jobs.values())
-        return sorted(
-            jobs,
-            key=lambda item: item.started_at or item.finished_at or datetime.min.replace(tzinfo=timezone.utc),
-            reverse=True,
-        )
-
-    def get(self, job_id: str) -> RunJob | None:
-        """Get one job by identifier."""
-        with self._lock:
-            return self._jobs.get(job_id)
-
-    def _run_job(self, job: RunJob) -> None:
-        """Worker routine that executes command and captures logs."""
-        job.status = "running"
-        job.started_at = datetime.now(timezone.utc)
-        process: subprocess.Popen[str] | None = None
-        try:
-            process = subprocess.Popen(
-                job.command,
-                cwd=str(job.cwd),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                bufsize=1,
-            )
-            with job._lock:
-                job.process = process
-            if process.stdout is not None:
-                for line in process.stdout:
-                    job.append_log(line)
-            code = process.wait()
-            job.return_code = code
-            if code == 0:
-                job.status = "success"
-            else:
-                # Distinguish regular failures from manual stop if possible.
-                if job.status != "stopped":
-                    job.status = "failed"
-        except Exception as exc:  # noqa: BLE001
-            job.append_log(f"[web-ui] runner error: {exc!r}")
-            job.return_code = -1
-            if job.status != "stopped":
-                job.status = "failed"
-        finally:
-            with job._lock:
-                job.process = None
-            job.finished_at = datetime.now(timezone.utc)
 
 
 class ExperimentWebServer(ThreadingHTTPServer):
@@ -1252,70 +1133,12 @@ pollTimer = setInterval(pollJobData, 2000);
             return
 
         rel = _rel_workspace(path)
-        parent_link = ""
-        if path != WORKSPACE_ROOT:
-            parent_link = (
-                f"<p><a href='{escape(_with_lang('/files', lang, path=_rel_workspace(path.parent)))}'>{escape(_tr(lang, 'parent'))}</a></p>"
-            )
-
         if path.is_dir():
-            rows: list[str] = []
-            items = sorted(path.iterdir(), key=lambda item: (item.is_file(), item.name.lower()))
-            for item in items:
-                item_rel = _rel_workspace(item)
-                if item.is_dir():
-                    rows.append(
-                        "<tr>"
-                        f"<td>{escape(_tr(lang, 'dir'))}</td><td><a href='{escape(_with_lang('/files', lang, path=item_rel))}'>{escape(item.name)}</a></td>"
-                        "<td>-</td>"
-                        "</tr>"
-                    )
-                else:
-                    size = item.stat().st_size
-                    rows.append(
-                        "<tr>"
-                        f"<td>{escape(_tr(lang, 'file'))}</td><td><a href='{escape(_with_lang('/files', lang, path=item_rel))}'>{escape(item.name)}</a></td>"
-                        f"<td>{size}</td>"
-                        "</tr>"
-                    )
-            table_body = "".join(rows) or f"<tr><td colspan='3'>{escape(_tr(lang, 'empty'))}</td></tr>"
-            switcher = _language_switcher(
-                lang,
-                "/files",
-                path=rel,
-            )
-            body = f"""
-<header class="topbar">
-  <div>{switcher}</div>
-</header>
-<h1>{escape(_tr(lang, "browse"))}: <code>{escape(rel)}</code></h1>
-<p><a href="{escape(_with_lang('/', lang))}">{escape(_tr(lang, "back_dashboard"))}</a> | <a href="{escape(_with_lang('/download', lang, path=rel))}">{escape(_tr(lang, "download_as_is"))}</a></p>
-{parent_link}
-<table>
-  <thead><tr><th>{escape(_tr(lang, "type"))}</th><th>{escape(_tr(lang, "name"))}</th><th>{escape(_tr(lang, "size_bytes"))}</th></tr></thead>
-  <tbody>{table_body}</tbody>
-</table>
-"""
+            body = _build_directory_body(path, rel, lang, workspace_root=WORKSPACE_ROOT)
             self._send_html(HTTPStatus.OK, _render_layout(f"{_tr(lang, 'browse')}: {rel}", body, lang=lang))
             return
 
-        download_url = _with_lang("/download", lang, path=rel)
-        preview_html = _build_preview_html(path, rel, lang)
-        switcher = _language_switcher(
-            lang,
-            "/files",
-            path=rel,
-        )
-        body = f"""
-<header class="topbar">
-  <div>{switcher}</div>
-</header>
-<h1>{escape(_tr(lang, "file_page"))}: <code>{escape(rel)}</code></h1>
-<p><a href="{escape(_with_lang('/', lang))}">{escape(_tr(lang, "back_dashboard"))}</a> |
-<a href="{escape(_with_lang('/files', lang, path=_rel_workspace(path.parent)))}">{escape(_tr(lang, "back_folder"))}</a> |
-<a href="{escape(download_url)}">{escape(_tr(lang, "download"))}</a></p>
-{preview_html}
-"""
+        body = _build_file_body(path, rel, lang, workspace_root=WORKSPACE_ROOT)
         self._send_html(HTTPStatus.OK, _render_layout(f"{_tr(lang, 'file_page')}: {rel}", body, lang=lang))
 
     def _serve_download(self, parsed) -> None:
@@ -1330,9 +1153,7 @@ pollTimer = setInterval(pollJobData, 2000);
         if not path.exists() or path.is_dir():
             self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "file_not_found"))
             return
-        mime_type, _ = mimetypes.guess_type(path.name)
-        content_type = mime_type or "application/octet-stream"
-        data = path.read_bytes()
+        content_type, data = _read_download_payload(path)
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
@@ -1401,341 +1222,6 @@ pollTimer = setInterval(pollJobData, 2000);
     def log_message(self, format: str, *args) -> None:
         """Silence routine access logs to keep console output clean."""
         return
-
-
-def _job_payload(job: RunJob, lang: str) -> dict[str, object]:
-    """Serialize job state for live UI polling endpoint."""
-    with job._lock:
-        lines = list(job.log_lines)
-    metrics = _extract_metrics_from_logs(lines)
-    analysis_metrics: dict[str, list[float | int]] = {
-        "time": list(metrics.get("time", [])),
-        "queue": list(metrics.get("queue", [])),
-        "completed": list(metrics.get("completed", [])),
-        "latency": list(metrics.get("latency", [])),
-        "throughput": list(metrics.get("throughput", [])),
-        "avg_load": list(metrics.get("avg_load", [])),
-    }
-    run_segments = metrics.get("runs", [])
-    if isinstance(run_segments, list):
-        for run in run_segments:
-            if not isinstance(run, dict):
-                continue
-            scenario_token = str(run.get("scenario", "")).strip()
-            algorithm_token = str(run.get("algorithm", "")).strip()
-            run["scenario_label"] = (
-                _catalog_label(SCENARIO_LABELS, lang, scenario_token, scenario_token)
-                if scenario_token
-                else _tr(lang, "unknown")
-            )
-            run["algorithm_label"] = (
-                _catalog_label(ALGORITHM_LABELS, lang, algorithm_token, algorithm_token)
-                if algorithm_token
-                else _tr(lang, "unknown")
-            )
-    if isinstance(run_segments, list) and run_segments:
-        last = run_segments[-1]
-        if isinstance(last, dict):
-            analysis_metrics = {
-                "time": list(last.get("time", [])),
-                "queue": list(last.get("queue", [])),
-                "completed": list(last.get("completed", [])),
-                "latency": list(last.get("latency", [])),
-                "throughput": list(last.get("throughput", [])),
-                "avg_load": list(last.get("avg_load", [])),
-            }
-    insights = RESEARCHER_AGENT.analyze_metrics(
-        analysis_metrics,
-        lang=lang,
-        status=job.status,
-        max_items=6,
-    )
-    return {
-        "id": job.id,
-        "status": job.status,
-        "status_badge_html": _status_badge(job.status, lang),
-        "started_at": _fmt_dt(job.started_at),
-        "finished_at": _fmt_dt(job.finished_at),
-        "return_code": job.return_code,
-        "command": job.command_text(),
-        "log_text": "\n".join(lines),
-        "metrics": metrics,
-        "insights": insights,
-        "lang": lang,
-    }
-
-
-def _render_layout(title: str, body: str, auto_refresh_seconds: int = 0, lang: str = "en") -> str:
-    """Render full HTML layout around body content."""
-    refresh = (
-        f"<meta http-equiv='refresh' content='{auto_refresh_seconds}' />"
-        if auto_refresh_seconds > 0
-        else ""
-    )
-    return f"""<!doctype html>
-<html lang="{escape(lang)}">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{escape(title)}</title>
-  {refresh}
-  <style>
-    :root {{
-      --bg: #f4f7fb;
-      --card: #ffffff;
-      --line: #d9e2ec;
-      --text: #102a43;
-      --muted: #486581;
-      --accent: #1565c0;
-    }}
-    body {{
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 100%);
-      color: var(--text);
-    }}
-    h1, h2 {{ margin-top: 0; }}
-    a {{ color: var(--accent); text-decoration: none; }}
-    a:hover {{ text-decoration: underline; }}
-    .grid {{
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 16px;
-      align-items: start;
-    }}
-    .card {{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin: 14px;
-      box-shadow: 0 4px 12px rgba(16, 42, 67, 0.05);
-    }}
-    form label {{
-      display: block;
-      margin-top: 10px;
-      margin-bottom: 4px;
-      font-weight: 600;
-      color: var(--muted);
-    }}
-    input, select, button {{
-      width: 100%;
-      box-sizing: border-box;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      font-size: 14px;
-    }}
-    button {{
-      margin-top: 12px;
-      cursor: pointer;
-      border: none;
-      color: #fff;
-      background: #0b7285;
-      font-weight: 700;
-    }}
-    button:hover {{ background: #095c6b; }}
-    .checks {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 10px;
-    }}
-    .checks label {{
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 500;
-    }}
-    .checks input {{
-      width: auto;
-      margin: 0;
-    }}
-    .choice-flags {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px 10px;
-      margin-top: 6px;
-      margin-bottom: 6px;
-      padding: 8px 10px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #f8fafc;
-    }}
-    .choice-flags label {{
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 500;
-      color: #334e68;
-    }}
-    .choice-flags input {{
-      width: auto;
-      margin: 0;
-    }}
-    table {{
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }}
-    th, td {{
-      border-bottom: 1px solid var(--line);
-      padding: 8px 6px;
-      text-align: left;
-      vertical-align: top;
-    }}
-    th {{
-      background: #f0f4f8;
-      color: #243b53;
-    }}
-    .badge {{
-      display: inline-block;
-      color: #fff;
-      border-radius: 999px;
-      padding: 2px 10px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }}
-    .log {{
-      background: #0f172a;
-      color: #d1e3ff;
-      border-radius: 10px;
-      padding: 12px;
-      max-height: 65vh;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 12px;
-      line-height: 1.45;
-    }}
-    .preview {{
-      max-width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-    }}
-    .hint {{
-      color: var(--muted);
-      font-size: 12px;
-    }}
-    .is-hidden {{
-      display: none !important;
-    }}
-    .run-estimator {{
-      margin-top: 12px;
-      padding: 10px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #f8fafc;
-    }}
-    .run-estimator-title {{
-      margin: 0 0 4px 0;
-      font-size: 13px;
-      font-weight: 700;
-      color: #243b53;
-    }}
-    .run-estimator .hint {{
-      margin: 2px 0;
-    }}
-    .insights-list {{
-      margin: 0;
-      padding-left: 18px;
-      line-height: 1.5;
-      color: var(--text);
-    }}
-    .insights-list li {{
-      margin: 8px 0;
-    }}
-    .chart-grid {{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      align-items: stretch;
-    }}
-    .chart-canvas {{
-      width: 100%;
-      min-height: 240px;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      background: #ffffff;
-      display: block;
-    }}
-    .chart-note {{
-      margin: 8px 0 0 0;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.4;
-    }}
-    .run-legend {{
-      margin-top: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px 10px;
-    }}
-    .run-legend-item {{
-      display: inline-flex;
-      align-items: center;
-      font-size: 12px;
-      color: #334e68;
-    }}
-    .run-legend-swatch {{
-      width: 14px;
-      height: 10px;
-      border-radius: 2px;
-      margin-right: 6px;
-      display: inline-block;
-    }}
-    .topbar {{
-      display: flex;
-      justify-content: flex-end;
-      margin: 10px 14px 0 14px;
-    }}
-    .lang-switch {{
-      display: inline-flex;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      overflow: hidden;
-      background: #fff;
-    }}
-    .lang-link {{
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: #334e68;
-      text-decoration: none;
-      border-right: 1px solid var(--line);
-    }}
-    .lang-link:last-child {{
-      border-right: none;
-    }}
-    .lang-link.active {{
-      background: #1565c0;
-      color: #ffffff;
-    }}
-    @media (max-width: 1024px) {{
-      .grid {{
-        grid-template-columns: 1fr;
-      }}
-      .checks {{
-        grid-template-columns: 1fr;
-      }}
-      .choice-flags {{
-        grid-template-columns: 1fr;
-      }}
-      .chart-grid {{
-        grid-template-columns: 1fr;
-      }}
-    }}
-  </style>
-</head>
-<body>
-{body}
-</body>
-</html>
-"""
 
 
 def _build_parser() -> ArgumentParser:

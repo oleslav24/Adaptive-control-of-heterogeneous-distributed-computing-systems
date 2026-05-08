@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import mimetypes
 from html import escape
 from pathlib import Path
 
 from project.web.i18n import tr
-from project.web.routing import with_lang
+from project.web.routing import language_switcher, with_lang
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
@@ -76,3 +77,94 @@ def build_preview_html(
         "</div>"
     )
 
+
+def build_directory_body(
+    path: Path,
+    rel: str,
+    lang: str,
+    *,
+    workspace_root: Path = WORKSPACE_ROOT,
+) -> str:
+    """Render directory listing body for `/files` route."""
+    resolved_workspace = workspace_root.resolve()
+    parent_link = ""
+    if path.resolve() != resolved_workspace:
+        parent_rel = rel_workspace(path.parent, workspace_root=workspace_root)
+        parent_url = with_lang("/files", lang, path=parent_rel)
+        parent_link = (
+            f"<p><a href='{escape(parent_url)}'>{escape(tr(lang, 'parent'))}</a></p>"
+        )
+
+    rows: list[str] = []
+    items = sorted(path.iterdir(), key=lambda item: (item.is_file(), item.name.lower()))
+    for item in items:
+        item_rel = rel_workspace(item, workspace_root=workspace_root)
+        if item.is_dir():
+            item_url = with_lang("/files", lang, path=item_rel)
+            rows.append(
+                "<tr>"
+                f"<td>{escape(tr(lang, 'dir'))}</td><td><a href='{escape(item_url)}'>{escape(item.name)}</a></td>"
+                "<td>-</td>"
+                "</tr>"
+            )
+            continue
+        size = item.stat().st_size
+        item_url = with_lang("/files", lang, path=item_rel)
+        rows.append(
+            "<tr>"
+            f"<td>{escape(tr(lang, 'file'))}</td><td><a href='{escape(item_url)}'>{escape(item.name)}</a></td>"
+            f"<td>{size}</td>"
+            "</tr>"
+        )
+
+    table_body = "".join(rows) or f"<tr><td colspan='3'>{escape(tr(lang, 'empty'))}</td></tr>"
+    switcher = language_switcher(lang, "/files", path=rel)
+    download_as_is_url = with_lang("/download", lang, path=rel)
+    back_dashboard_url = with_lang("/", lang)
+    return f"""
+<header class="topbar">
+  <div>{switcher}</div>
+</header>
+<h1>{escape(tr(lang, "browse"))}: <code>{escape(rel)}</code></h1>
+<p><a href="{escape(back_dashboard_url)}">{escape(tr(lang, "back_dashboard"))}</a> | <a href="{escape(download_as_is_url)}">{escape(tr(lang, "download_as_is"))}</a></p>
+{parent_link}
+<table>
+  <thead><tr><th>{escape(tr(lang, "type"))}</th><th>{escape(tr(lang, "name"))}</th><th>{escape(tr(lang, "size_bytes"))}</th></tr></thead>
+  <tbody>{table_body}</tbody>
+</table>
+"""
+
+
+def build_file_body(
+    path: Path,
+    rel: str,
+    lang: str,
+    *,
+    workspace_root: Path = WORKSPACE_ROOT,
+) -> str:
+    """Render file detail body for `/files` route."""
+    download_url = with_lang("/download", lang, path=rel)
+    preview_html = build_preview_html(path, rel, lang)
+    switcher = language_switcher(lang, "/files", path=rel)
+    back_dashboard_url = with_lang("/", lang)
+    back_folder_url = with_lang(
+        "/files",
+        lang,
+        path=rel_workspace(path.parent, workspace_root=workspace_root),
+    )
+    return f"""
+<header class="topbar">
+  <div>{switcher}</div>
+</header>
+<h1>{escape(tr(lang, "file_page"))}: <code>{escape(rel)}</code></h1>
+<p><a href="{escape(back_dashboard_url)}">{escape(tr(lang, "back_dashboard"))}</a> |
+<a href="{escape(back_folder_url)}">{escape(tr(lang, "back_folder"))}</a> |
+<a href="{escape(download_url)}">{escape(tr(lang, "download"))}</a></p>
+{preview_html}
+"""
+
+
+def read_download_payload(path: Path) -> tuple[str, bytes]:
+    """Read file bytes and infer content type for `/download` route."""
+    mime_type, _ = mimetypes.guess_type(path.name)
+    return mime_type or "application/octet-stream", path.read_bytes()
