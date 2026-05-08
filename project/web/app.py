@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import parse_qs, urlparse
 
-from project.agents import ResearcherAgent
 from project.web.commands import build_run_command as _build_run_command
 from project.web.file_views import (
     build_preview_html as _build_preview_html,
@@ -40,8 +39,8 @@ from project.web.job_views import (
     status_badge as _status_badge,
 )
 from project.web.layout import render_layout as _render_layout
-from project.web.metrics_parser import extract_metrics_from_logs as _extract_metrics_from_logs
 from project.web.jobs import JobManager, RunJob
+from project.web.payloads import job_payload as _job_payload
 from project.web.routing import (
     first as _first,
     lang_from_form as _lang_from_form,
@@ -55,7 +54,6 @@ WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = "config.yaml"
 DEFAULT_PORT = 8080
 DEFAULT_HOST = "127.0.0.1"
-RESEARCHER_AGENT = ResearcherAgent()
 
 
 class ExperimentWebServer(ThreadingHTTPServer):
@@ -1283,68 +1281,6 @@ pollTimer = setInterval(pollJobData, 2000);
     def log_message(self, format: str, *args) -> None:
         """Silence routine access logs to keep console output clean."""
         return
-
-
-def _job_payload(job: RunJob, lang: str) -> dict[str, object]:
-    """Serialize job state for live UI polling endpoint."""
-    with job._lock:
-        lines = list(job.log_lines)
-    metrics = _extract_metrics_from_logs(lines)
-    analysis_metrics: dict[str, list[float | int]] = {
-        "time": list(metrics.get("time", [])),
-        "queue": list(metrics.get("queue", [])),
-        "completed": list(metrics.get("completed", [])),
-        "latency": list(metrics.get("latency", [])),
-        "throughput": list(metrics.get("throughput", [])),
-        "avg_load": list(metrics.get("avg_load", [])),
-    }
-    run_segments = metrics.get("runs", [])
-    if isinstance(run_segments, list):
-        for run in run_segments:
-            if not isinstance(run, dict):
-                continue
-            scenario_token = str(run.get("scenario", "")).strip()
-            algorithm_token = str(run.get("algorithm", "")).strip()
-            run["scenario_label"] = (
-                _catalog_label(SCENARIO_LABELS, lang, scenario_token, scenario_token)
-                if scenario_token
-                else _tr(lang, "unknown")
-            )
-            run["algorithm_label"] = (
-                _catalog_label(ALGORITHM_LABELS, lang, algorithm_token, algorithm_token)
-                if algorithm_token
-                else _tr(lang, "unknown")
-            )
-    if isinstance(run_segments, list) and run_segments:
-        last = run_segments[-1]
-        if isinstance(last, dict):
-            analysis_metrics = {
-                "time": list(last.get("time", [])),
-                "queue": list(last.get("queue", [])),
-                "completed": list(last.get("completed", [])),
-                "latency": list(last.get("latency", [])),
-                "throughput": list(last.get("throughput", [])),
-                "avg_load": list(last.get("avg_load", [])),
-            }
-    insights = RESEARCHER_AGENT.analyze_metrics(
-        analysis_metrics,
-        lang=lang,
-        status=job.status,
-        max_items=6,
-    )
-    return {
-        "id": job.id,
-        "status": job.status,
-        "status_badge_html": _status_badge(job.status, lang),
-        "started_at": _fmt_dt(job.started_at),
-        "finished_at": _fmt_dt(job.finished_at),
-        "return_code": job.return_code,
-        "command": job.command_text(),
-        "log_text": "\n".join(lines),
-        "metrics": metrics,
-        "insights": insights,
-        "lang": lang,
-    }
 
 
 def _build_parser() -> ArgumentParser:
