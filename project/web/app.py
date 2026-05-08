@@ -20,6 +20,11 @@ from uuid import uuid4
 
 from project.agents import ResearcherAgent
 from project.web.commands import build_run_command as _build_run_command
+from project.web.file_views import (
+    build_preview_html as _build_preview_html,
+    rel_workspace as _rel_workspace,
+    resolve_path as _resolve_path,
+)
 from project.web.i18n import (
     ALGORITHM_LABELS,
     ALGORITHM_OPTIONS,
@@ -51,7 +56,6 @@ DEFAULT_CONFIG = "config.yaml"
 DEFAULT_PORT = 8080
 DEFAULT_HOST = "127.0.0.1"
 MAX_LOG_LINES = 4000
-MAX_PREVIEW_CHARS = 120_000
 RESEARCHER_AGENT = ResearcherAgent()
 
 
@@ -1394,28 +1398,6 @@ pollTimer = setInterval(pollJobData, 2000);
         return
 
 
-def _resolve_path(raw: str) -> Path:
-    """Resolve user path and ensure it stays inside workspace root."""
-    candidate = (raw or "").strip()
-    if not candidate:
-        path = WORKSPACE_ROOT / "outputs"
-    else:
-        path = Path(candidate)
-        if not path.is_absolute():
-            path = WORKSPACE_ROOT / path
-    resolved = path.resolve()
-    try:
-        resolved.relative_to(WORKSPACE_ROOT)
-    except ValueError as exc:
-        raise ValueError("Path must stay within workspace root.") from exc
-    return resolved
-
-
-def _rel_workspace(path: Path) -> str:
-    """Return path relative to workspace using forward slashes."""
-    return path.resolve().relative_to(WORKSPACE_ROOT).as_posix()
-
-
 def _fmt_dt(value: datetime | None) -> str:
     """Format datetime for UI tables."""
     if value is None:
@@ -1516,37 +1498,6 @@ def _job_payload(job: RunJob, lang: str) -> dict[str, object]:
         "insights": insights,
         "lang": lang,
     }
-
-
-def _build_preview_html(path: Path, rel: str, lang: str) -> str:
-    """Build safe preview block for common file types."""
-    suffix = path.suffix.lower()
-    download_url = _with_lang("/download", lang, path=rel)
-
-    if suffix in {".png", ".jpg", ".jpeg", ".gif", ".svg"}:
-        return (
-            "<div class='card'>"
-            f"<h2>{escape(_tr(lang, 'preview'))}</h2>"
-            f"<img src='{escape(download_url)}' alt='{escape(path.name)}' class='preview' />"
-            "</div>"
-        )
-
-    if suffix in {".txt", ".log", ".md", ".json", ".csv", ".yaml", ".yml"}:
-        text = path.read_text(encoding="utf-8", errors="replace")
-        if len(text) > MAX_PREVIEW_CHARS:
-            text = text[:MAX_PREVIEW_CHARS] + "\n... [truncated]"
-        return (
-            "<div class='card'>"
-            f"<h2>{escape(_tr(lang, 'preview'))}</h2>"
-            f"<pre class='log'>{escape(text)}</pre>"
-            "</div>"
-        )
-
-    return (
-        "<div class='card'>"
-        f"<p>{escape(_tr(lang, 'no_inline_preview'))}</p>"
-        "</div>"
-    )
 
 
 def _render_layout(title: str, body: str, auto_refresh_seconds: int = 0, lang: str = "en") -> str:
