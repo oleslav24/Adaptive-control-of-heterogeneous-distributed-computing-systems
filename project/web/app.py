@@ -41,6 +41,11 @@ from project.web.i18n import (
     insights_title as _insights_title,
     tr as _tr,
 )
+from project.web.job_views import (
+    fmt_dt as _fmt_dt,
+    job_row_html as _job_row_html,
+    status_badge as _status_badge,
+)
 from project.web.metrics_parser import extract_metrics_from_logs as _extract_metrics_from_logs
 from project.web.routing import (
     first as _first,
@@ -1396,46 +1401,6 @@ pollTimer = setInterval(pollJobData, 2000);
     def log_message(self, format: str, *args) -> None:
         """Silence routine access logs to keep console output clean."""
         return
-
-
-def _fmt_dt(value: datetime | None) -> str:
-    """Format datetime for UI tables."""
-    if value is None:
-        return "-"
-    return value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-
-
-def _status_badge(status: str, lang: str = "en") -> str:
-    """Render status as colored badge."""
-    color = {
-        "queued": "#6b7280",
-        "running": "#2563eb",
-        "success": "#16a34a",
-        "failed": "#dc2626",
-        "stopped": "#b45309",
-    }.get(status, "#6b7280")
-    label = STATUS_LABELS.get(lang, STATUS_LABELS["en"]).get(status, status)
-    return (
-        f"<span class='badge' style='background:{color}'>"
-        f"{escape(label)}</span>"
-    )
-
-
-def _job_row_html(job: RunJob, lang: str) -> str:
-    """Render one row of job list table."""
-    command = escape(job.command_text())
-    open_url = _with_lang("/job", lang, id=job.id)
-    return (
-        "<tr>"
-        f"<td><a href='{escape(open_url)}'><code>{escape(job.id)}</code></a></td>"
-        f"<td>{_status_badge(job.status, lang)}</td>"
-        f"<td>{escape(_fmt_dt(job.started_at))}</td>"
-        f"<td>{escape(_fmt_dt(job.finished_at))}</td>"
-        f"<td><code>{escape(str(job.return_code))}</code></td>"
-        f"<td><code>{command}</code></td>"
-        f"<td><a href='{escape(open_url)}'>{escape(_tr(lang, 'open'))}</a></td>"
-        "</tr>"
-    )
 
 
 def _job_payload(job: RunJob, lang: str) -> dict[str, object]:
