@@ -15,7 +15,7 @@ import shlex
 import subprocess
 from threading import Lock, Thread
 from typing import ClassVar
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import parse_qs, urlparse
 from uuid import uuid4
 
 from project.agents import ResearcherAgent
@@ -34,10 +34,16 @@ from project.web.i18n import (
     default_select_label as _default_select_label,
     insights_placeholder as _insights_placeholder,
     insights_title as _insights_title,
-    normalize_lang,
     tr as _tr,
 )
 from project.web.metrics_parser import extract_metrics_from_logs as _extract_metrics_from_logs
+from project.web.routing import (
+    first as _first,
+    lang_from_form as _lang_from_form,
+    lang_from_parsed as _lang_from_parsed,
+    language_switcher as _language_switcher,
+    with_lang as _with_lang,
+)
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
@@ -1386,56 +1392,6 @@ pollTimer = setInterval(pollJobData, 2000);
     def log_message(self, format: str, *args) -> None:
         """Silence routine access logs to keep console output clean."""
         return
-
-
-def _first(mapping: dict[str, list[str]], key: str, default: str = "") -> str:
-    """Read first value from parsed query/form mapping."""
-    values = mapping.get(key, [])
-    if not values:
-        return default
-    return values[0]
-
-
-def _lang_from_parsed(parsed) -> str:
-    """Extract language from query string; default to English."""
-    query = parse_qs(parsed.query)
-    return normalize_lang(_first(query, "lang", "en"), default="en")
-
-
-def _lang_from_form(form: dict[str, list[str]]) -> str:
-    """Extract language from posted form; default to English."""
-    return normalize_lang(_first(form, "lang", "en"), default="en")
-
-
-def _with_lang(route: str, lang: str, include_lang: bool = True, **params: str) -> str:
-    """Build URL with language and optional query params."""
-    payload: dict[str, str] = {}
-    if include_lang:
-        payload["lang"] = lang
-    for key, value in params.items():
-        if value is None:
-            continue
-        text = str(value)
-        if not text:
-            continue
-        payload[key] = text
-    if not payload:
-        return route
-    return f"{route}?{urlencode(payload)}"
-
-
-def _language_switcher(lang: str, route: str, include_lang: bool = True, **params: str) -> str:
-    """Render language toggle links for current page."""
-    ru_url = _with_lang(route, "ru", include_lang=include_lang, **params)
-    en_url = _with_lang(route, "en", include_lang=include_lang, **params)
-    ru_class = "lang-link active" if lang == "ru" else "lang-link"
-    en_class = "lang-link active" if lang == "en" else "lang-link"
-    return (
-        "<nav class='lang-switch'>"
-        f"<a class='{ru_class}' href='{escape(ru_url)}'>RUS</a>"
-        f"<a class='{en_class}' href='{escape(en_url)}'>ENG</a>"
-        "</nav>"
-    )
 
 
 def _resolve_path(raw: str) -> Path:
