@@ -7,14 +7,15 @@ from html import escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
-import mimetypes
 from pathlib import Path
 from typing import ClassVar
 from urllib.parse import parse_qs, urlparse
 
 from project.web.commands import build_run_command as _build_run_command
 from project.web.file_views import (
-    build_preview_html as _build_preview_html,
+    build_directory_body as _build_directory_body,
+    build_file_body as _build_file_body,
+    read_download_payload as _read_download_payload,
     rel_workspace as _rel_workspace,
     resolve_path as _resolve_path,
 )
@@ -1132,70 +1133,12 @@ pollTimer = setInterval(pollJobData, 2000);
             return
 
         rel = _rel_workspace(path)
-        parent_link = ""
-        if path != WORKSPACE_ROOT:
-            parent_link = (
-                f"<p><a href='{escape(_with_lang('/files', lang, path=_rel_workspace(path.parent)))}'>{escape(_tr(lang, 'parent'))}</a></p>"
-            )
-
         if path.is_dir():
-            rows: list[str] = []
-            items = sorted(path.iterdir(), key=lambda item: (item.is_file(), item.name.lower()))
-            for item in items:
-                item_rel = _rel_workspace(item)
-                if item.is_dir():
-                    rows.append(
-                        "<tr>"
-                        f"<td>{escape(_tr(lang, 'dir'))}</td><td><a href='{escape(_with_lang('/files', lang, path=item_rel))}'>{escape(item.name)}</a></td>"
-                        "<td>-</td>"
-                        "</tr>"
-                    )
-                else:
-                    size = item.stat().st_size
-                    rows.append(
-                        "<tr>"
-                        f"<td>{escape(_tr(lang, 'file'))}</td><td><a href='{escape(_with_lang('/files', lang, path=item_rel))}'>{escape(item.name)}</a></td>"
-                        f"<td>{size}</td>"
-                        "</tr>"
-                    )
-            table_body = "".join(rows) or f"<tr><td colspan='3'>{escape(_tr(lang, 'empty'))}</td></tr>"
-            switcher = _language_switcher(
-                lang,
-                "/files",
-                path=rel,
-            )
-            body = f"""
-<header class="topbar">
-  <div>{switcher}</div>
-</header>
-<h1>{escape(_tr(lang, "browse"))}: <code>{escape(rel)}</code></h1>
-<p><a href="{escape(_with_lang('/', lang))}">{escape(_tr(lang, "back_dashboard"))}</a> | <a href="{escape(_with_lang('/download', lang, path=rel))}">{escape(_tr(lang, "download_as_is"))}</a></p>
-{parent_link}
-<table>
-  <thead><tr><th>{escape(_tr(lang, "type"))}</th><th>{escape(_tr(lang, "name"))}</th><th>{escape(_tr(lang, "size_bytes"))}</th></tr></thead>
-  <tbody>{table_body}</tbody>
-</table>
-"""
+            body = _build_directory_body(path, rel, lang, workspace_root=WORKSPACE_ROOT)
             self._send_html(HTTPStatus.OK, _render_layout(f"{_tr(lang, 'browse')}: {rel}", body, lang=lang))
             return
 
-        download_url = _with_lang("/download", lang, path=rel)
-        preview_html = _build_preview_html(path, rel, lang)
-        switcher = _language_switcher(
-            lang,
-            "/files",
-            path=rel,
-        )
-        body = f"""
-<header class="topbar">
-  <div>{switcher}</div>
-</header>
-<h1>{escape(_tr(lang, "file_page"))}: <code>{escape(rel)}</code></h1>
-<p><a href="{escape(_with_lang('/', lang))}">{escape(_tr(lang, "back_dashboard"))}</a> |
-<a href="{escape(_with_lang('/files', lang, path=_rel_workspace(path.parent)))}">{escape(_tr(lang, "back_folder"))}</a> |
-<a href="{escape(download_url)}">{escape(_tr(lang, "download"))}</a></p>
-{preview_html}
-"""
+        body = _build_file_body(path, rel, lang, workspace_root=WORKSPACE_ROOT)
         self._send_html(HTTPStatus.OK, _render_layout(f"{_tr(lang, 'file_page')}: {rel}", body, lang=lang))
 
     def _serve_download(self, parsed) -> None:
@@ -1210,9 +1153,7 @@ pollTimer = setInterval(pollJobData, 2000);
         if not path.exists() or path.is_dir():
             self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "file_not_found"))
             return
-        mime_type, _ = mimetypes.guess_type(path.name)
-        content_type = mime_type or "application/octet-stream"
-        data = path.read_bytes()
+        content_type, data = _read_download_payload(path)
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
