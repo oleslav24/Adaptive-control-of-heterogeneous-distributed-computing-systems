@@ -7,8 +7,12 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import ClassVar
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
+from project.web.dispatch import (
+    resolve_get_action as _resolve_get_action,
+    resolve_post_action as _resolve_post_action,
+)
 from project.web.dashboard_routes import build_dashboard_response as _build_dashboard_response
 from project.web.file_routes import (
     build_download_response as _build_download_response,
@@ -21,7 +25,10 @@ from project.web.job_page_routes import build_job_page_response as _build_job_pa
 from project.web.job_routes import build_job_data_response as _build_job_data_response
 from project.web.jobs import JobManager, RunJob
 from project.web.payloads import job_payload as _job_payload
-from project.web.route_responses import RouteResponse as _RouteResponse
+from project.web.route_responses import (
+    RouteResponse as _RouteResponse,
+    text_response as _text_response,
+)
 from project.web.run_routes import (
     build_start_run_response as _build_start_run_response,
     build_stop_run_response as _build_stop_run_response,
@@ -54,39 +61,39 @@ class WebHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         """Route GET requests."""
         parsed = urlparse(self.path)
-        if parsed.path == "/":
-            self._serve_dashboard(parsed)
+        action = _resolve_get_action(parsed.path)
+        get_handlers = {
+            "dashboard": self._serve_dashboard,
+            "job": self._serve_job,
+            "job_data": self._serve_job_data,
+            "files": self._serve_files,
+            "download": self._serve_download,
+        }
+        handler = get_handlers.get(action or "")
+        if handler is not None:
+            handler(parsed)
             return
-        if parsed.path == "/job":
-            self._serve_job(parsed)
-            return
-        if parsed.path == "/job-data":
-            self._serve_job_data(parsed)
-            return
-        if parsed.path == "/files":
-            self._serve_files(parsed)
-            return
-        if parsed.path == "/download":
-            self._serve_download(parsed)
-            return
-        if parsed.path == "/health":
-            self._send_text(HTTPStatus.OK, "ok")
+        if action == "health":
+            self._send_route_response(_text_response(HTTPStatus.OK, "ok"))
             return
         lang = _lang_from_parsed(parsed)
-        self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "not_found"))
+        self._send_route_response(_text_response(HTTPStatus.NOT_FOUND, _tr(lang, "not_found")))
 
     def do_POST(self) -> None:  # noqa: N802
         """Route POST requests."""
         parsed = urlparse(self.path)
         form = self._parse_form()
-        if parsed.path == "/run":
-            self._start_run(form)
-            return
-        if parsed.path == "/stop":
-            self._stop_run(form)
+        action = _resolve_post_action(parsed.path)
+        post_handlers = {
+            "run": self._start_run,
+            "stop": self._stop_run,
+        }
+        handler = post_handlers.get(action or "")
+        if handler is not None:
+            handler(form)
             return
         lang = _lang_from_form(form)
-        self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "not_found"))
+        self._send_route_response(_text_response(HTTPStatus.NOT_FOUND, _tr(lang, "not_found")))
 
     def _serve_dashboard(self, parsed) -> None:
         response = _build_dashboard_response(
@@ -135,14 +142,6 @@ class WebHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0") or 0)
         raw = self.rfile.read(length).decode("utf-8", errors="replace")
         return parse_qs(raw, keep_blank_values=True)
-
-    def _send_text(self, status: HTTPStatus, text: str) -> None:
-        data = text.encode("utf-8")
-        self.send_response(int(status))
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
 
     def _send_route_response(self, response: _RouteResponse) -> None:
         """Send normalized route response payload."""
