@@ -9,34 +9,13 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import parse_qs, urlparse
 
-from project.web.dispatch import (
-    resolve_get_action as _resolve_get_action,
-    resolve_post_action as _resolve_post_action,
-)
-from project.web.dashboard_routes import build_dashboard_response as _build_dashboard_response
-from project.web.file_routes import (
-    build_download_response as _build_download_response,
-    build_files_response as _build_files_response,
-)
-from project.web.i18n import (
-    tr as _tr,
-)
-from project.web.job_page_routes import build_job_page_response as _build_job_page_response
-from project.web.job_routes import build_job_data_response as _build_job_data_response
 from project.web.jobs import JobManager, RunJob
 from project.web.payloads import job_payload as _job_payload
-from project.web.route_responses import (
-    RouteResponse as _RouteResponse,
-    text_response as _text_response,
+from project.web.request_handlers import (
+    build_get_response as _build_get_response,
+    build_post_response as _build_post_response,
 )
-from project.web.run_routes import (
-    build_start_run_response as _build_start_run_response,
-    build_stop_run_response as _build_stop_run_response,
-)
-from project.web.routing import (
-    lang_from_form as _lang_from_form,
-    lang_from_parsed as _lang_from_parsed,
-)
+from project.web.route_responses import RouteResponse as _RouteResponse
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
@@ -61,81 +40,26 @@ class WebHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         """Route GET requests."""
         parsed = urlparse(self.path)
-        action = _resolve_get_action(parsed.path)
-        get_handlers = {
-            "dashboard": self._serve_dashboard,
-            "job": self._serve_job,
-            "job_data": self._serve_job_data,
-            "files": self._serve_files,
-            "download": self._serve_download,
-        }
-        handler = get_handlers.get(action or "")
-        if handler is not None:
-            handler(parsed)
-            return
-        if action == "health":
-            self._send_route_response(_text_response(HTTPStatus.OK, "ok"))
-            return
-        lang = _lang_from_parsed(parsed)
-        self._send_route_response(_text_response(HTTPStatus.NOT_FOUND, _tr(lang, "not_found")))
+        response = _build_get_response(
+            parsed,
+            self.job_manager,
+            workspace_root=WORKSPACE_ROOT,
+            default_config=DEFAULT_CONFIG,
+            payload_builder=_job_payload,
+        )
+        self._send_route_response(response)
 
     def do_POST(self) -> None:  # noqa: N802
         """Route POST requests."""
         parsed = urlparse(self.path)
         form = self._parse_form()
-        action = _resolve_post_action(parsed.path)
-        post_handlers = {
-            "run": self._start_run,
-            "stop": self._stop_run,
-        }
-        handler = post_handlers.get(action or "")
-        if handler is not None:
-            handler(form)
-            return
-        lang = _lang_from_form(form)
-        self._send_route_response(_text_response(HTTPStatus.NOT_FOUND, _tr(lang, "not_found")))
-
-    def _serve_dashboard(self, parsed) -> None:
-        response = _build_dashboard_response(
+        response = _build_post_response(
             parsed,
-            self.job_manager,
-            workspace_root=WORKSPACE_ROOT,
-            default_config=DEFAULT_CONFIG,
-        )
-        self._send_route_response(response)
-
-    def _serve_job(self, parsed) -> None:
-        response = _build_job_page_response(parsed, self.job_manager)
-        self._send_route_response(response)
-
-    def _serve_job_data(self, parsed) -> None:
-        """Return JSON payload with live job status, logs, and chart metrics."""
-        response = _build_job_data_response(
-            parsed,
-            self.job_manager,
-            payload_builder=_job_payload,
-        )
-        self._send_route_response(response)
-
-    def _serve_files(self, parsed) -> None:
-        response = _build_files_response(parsed, workspace_root=WORKSPACE_ROOT)
-        self._send_route_response(response)
-
-    def _serve_download(self, parsed) -> None:
-        response = _build_download_response(parsed, workspace_root=WORKSPACE_ROOT)
-        self._send_route_response(response)
-
-    def _start_run(self, form: dict[str, list[str]]) -> None:
-        response = _build_start_run_response(
             form,
             self.job_manager,
             workspace_root=WORKSPACE_ROOT,
             default_config=DEFAULT_CONFIG,
         )
-        self._send_route_response(response)
-
-    def _stop_run(self, form: dict[str, list[str]]) -> None:
-        response = _build_stop_run_response(form, self.job_manager)
         self._send_route_response(response)
 
     def _parse_form(self) -> dict[str, list[str]]:
