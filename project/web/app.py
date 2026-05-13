@@ -13,7 +13,6 @@ from urllib.parse import parse_qs, urlparse
 
 from project.web.commands import build_run_command as _build_run_command
 from project.web.file_routes import (
-    RouteResponse as _RouteResponse,
     build_download_response as _build_download_response,
     build_files_response as _build_files_response,
 )
@@ -37,9 +36,11 @@ from project.web.job_views import (
     job_row_html as _job_row_html,
     status_badge as _status_badge,
 )
+from project.web.job_routes import build_job_data_response as _build_job_data_response
 from project.web.layout import render_layout as _render_layout
 from project.web.jobs import JobManager, RunJob
 from project.web.payloads import job_payload as _job_payload
+from project.web.route_responses import RouteResponse as _RouteResponse
 from project.web.routing import (
     first as _first,
     lang_from_form as _lang_from_form,
@@ -1107,14 +1108,12 @@ pollTimer = setInterval(pollJobData, 2000);
 
     def _serve_job_data(self, parsed) -> None:
         """Return JSON payload with live job status, logs, and chart metrics."""
-        query = parse_qs(parsed.query)
-        lang = _lang_from_parsed(parsed)
-        job_id = _first(query, "id", "")
-        job = self.job_manager.get(job_id)
-        if job is None:
-            self._send_json(HTTPStatus.NOT_FOUND, {"error": _tr(lang, "job_not_found")})
-            return
-        self._send_json(HTTPStatus.OK, _job_payload(job, lang))
+        response = _build_job_data_response(
+            parsed,
+            self.job_manager,
+            payload_builder=_job_payload,
+        )
+        self._send_route_response(response)
 
     def _serve_files(self, parsed) -> None:
         response = _build_files_response(parsed, workspace_root=WORKSPACE_ROOT)
@@ -1160,16 +1159,6 @@ pollTimer = setInterval(pollJobData, 2000);
         data = html.encode("utf-8")
         self.send_response(int(status))
         self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-
-    def _send_json(self, status: HTTPStatus, payload: dict[str, object]) -> None:
-        """Send JSON response with UTF-8 encoding."""
-        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(int(status))
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
