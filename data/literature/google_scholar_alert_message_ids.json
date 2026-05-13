@@ -1,13 +1,23 @@
 {
   "created_at": "2026-05-03",
   "source": "Gmail Google Scholar Alerts",
-  "query": "from:scholaralerts-noreply@google.com after:2024/10/23 before:2026/05/04 {\"task offloading\" \"resource allocation\" \"edge computing\" \"mobile edge\" \"MEC\" \"federated learning\" \"reinforcement learning\" \"distributed computing\" \"heterogeneous\"}",
+  "query": "from:scholaralerts-noreply@google.com after:2024/10/23 before:2026/05/14 {\"task offloading\" \"resource allocation\" \"edge computing\" \"mobile edge\" \"MEC\" \"federated learning\" \"reinforcement learning\" \"distributed computing\" \"heterogeneous\"}",
   "notes": [
-    "Stable date-bounded thematic search returned 150 message ids.",
+    "Stable date-bounded thematic search returned 150 message ids for the initial 2026-05-03 pass.",
+    "Incremental 2026-05-13 pass added 9 newer Scholar Alert messages after the last processed 2026-04-25 message.",
     "The same query with is:unread currently returns 147 ids; 3 ids in this date range are already read or were no longer tagged UNREAD.",
     "Bulk body reads from the Gmail connector can be truncated, so body URL extraction should be performed in small batches or one message at a time."
   ],
   "message_ids": [
+    "19e1d25ec2130551",
+    "19e1535311e91fa9",
+    "19e0db142672a03f",
+    "19dfab08e8c5eb4e",
+    "19df2add5bc4e417",
+    "19de1e9212733f8f",
+    "19ddadb38169bdb0",
+    "19dd320f8692e634",
+    "19dcb6271e75474e",
     "19dc50ada4d40f15",
     "19db68220d5862f5",
     "19a9c2f5d423b9ec",
