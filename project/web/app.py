@@ -7,9 +7,9 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import ClassVar
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
-from project.web.dashboard_views import build_dashboard_html as _build_dashboard_html
+from project.web.dashboard_routes import build_dashboard_response as _build_dashboard_response
 from project.web.file_routes import (
     build_download_response as _build_download_response,
     build_files_response as _build_files_response,
@@ -17,7 +17,7 @@ from project.web.file_routes import (
 from project.web.i18n import (
     tr as _tr,
 )
-from project.web.job_page_views import build_job_page_html as _build_job_page_html
+from project.web.job_page_routes import build_job_page_response as _build_job_page_response
 from project.web.job_routes import build_job_data_response as _build_job_data_response
 from project.web.jobs import JobManager, RunJob
 from project.web.payloads import job_payload as _job_payload
@@ -27,7 +27,6 @@ from project.web.run_routes import (
     build_stop_run_response as _build_stop_run_response,
 )
 from project.web.routing import (
-    first as _first,
     lang_from_form as _lang_from_form,
     lang_from_parsed as _lang_from_parsed,
 )
@@ -90,26 +89,17 @@ class WebHandler(BaseHTTPRequestHandler):
         self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "not_found"))
 
     def _serve_dashboard(self, parsed) -> None:
-        lang = _lang_from_parsed(parsed)
-        jobs = self.job_manager.list_jobs()
-        html = _build_dashboard_html(
-            lang,
-            jobs,
+        response = _build_dashboard_response(
+            parsed,
+            self.job_manager,
             workspace_root=WORKSPACE_ROOT,
             default_config=DEFAULT_CONFIG,
         )
-        self._send_html(HTTPStatus.OK, html)
+        self._send_route_response(response)
 
     def _serve_job(self, parsed) -> None:
-        query = parse_qs(parsed.query)
-        lang = _lang_from_parsed(parsed)
-        job_id = _first(query, "id", "")
-        job = self.job_manager.get(job_id)
-        if job is None:
-            self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "job_not_found"))
-            return
-        html = _build_job_page_html(job, lang)
-        self._send_html(HTTPStatus.OK, html)
+        response = _build_job_page_response(parsed, self.job_manager)
+        self._send_route_response(response)
 
     def _serve_job_data(self, parsed) -> None:
         """Return JSON payload with live job status, logs, and chart metrics."""
@@ -150,14 +140,6 @@ class WebHandler(BaseHTTPRequestHandler):
         data = text.encode("utf-8")
         self.send_response(int(status))
         self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-
-    def _send_html(self, status: HTTPStatus, html: str) -> None:
-        data = html.encode("utf-8")
-        self.send_response(int(status))
-        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
