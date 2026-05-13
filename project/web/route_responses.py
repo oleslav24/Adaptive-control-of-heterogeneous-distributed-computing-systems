@@ -52,3 +52,17 @@ def json_response(
         body=json.dumps(payload, ensure_ascii=ensure_ascii).encode("utf-8"),
         headers=headers,
     )
+
+
+def redirect_response(
+    location: str,
+    *,
+    status: HTTPStatus = HTTPStatus.SEE_OTHER,
+) -> RouteResponse:
+    """Build redirect response payload with `Location` header."""
+    return RouteResponse(
+        status=status,
+        content_type="text/plain; charset=utf-8",
+        body=b"",
+        headers={"Location": location},
+    )

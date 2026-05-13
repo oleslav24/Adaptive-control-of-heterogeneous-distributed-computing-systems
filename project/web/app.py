@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import parse_qs, urlparse
 
-from project.web.commands import build_run_command as _build_run_command
 from project.web.dashboard_views import build_dashboard_html as _build_dashboard_html
 from project.web.file_routes import (
     build_download_response as _build_download_response,
@@ -23,11 +22,14 @@ from project.web.job_routes import build_job_data_response as _build_job_data_re
 from project.web.jobs import JobManager, RunJob
 from project.web.payloads import job_payload as _job_payload
 from project.web.route_responses import RouteResponse as _RouteResponse
+from project.web.run_routes import (
+    build_start_run_response as _build_start_run_response,
+    build_stop_run_response as _build_stop_run_response,
+)
 from project.web.routing import (
     first as _first,
     lang_from_form as _lang_from_form,
     lang_from_parsed as _lang_from_parsed,
-    with_lang as _with_lang,
 )
 
 
@@ -127,23 +129,17 @@ class WebHandler(BaseHTTPRequestHandler):
         self._send_route_response(response)
 
     def _start_run(self, form: dict[str, list[str]]) -> None:
-        lang = _lang_from_form(form)
-        command = _build_run_command(form, default_config=DEFAULT_CONFIG)
-        job = self.job_manager.create(command=command, cwd=WORKSPACE_ROOT)
-        self._redirect(_with_lang("/job", lang, id=job.id))
+        response = _build_start_run_response(
+            form,
+            self.job_manager,
+            workspace_root=WORKSPACE_ROOT,
+            default_config=DEFAULT_CONFIG,
+        )
+        self._send_route_response(response)
 
     def _stop_run(self, form: dict[str, list[str]]) -> None:
-        lang = _lang_from_form(form)
-        job_id = _first(form, "id", "")
-        job = self.job_manager.get(job_id)
-        if job is None:
-            self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "job_not_found"))
-            return
-        stopped = job.stop()
-        if stopped:
-            job.status = "stopped"
-            job.append_log("[web-ui] stop requested.")
-        self._redirect(_with_lang("/job", lang, id=job_id))
+        response = _build_stop_run_response(form, self.job_manager)
+        self._send_route_response(response)
 
     def _parse_form(self) -> dict[str, list[str]]:
         length = int(self.headers.get("Content-Length", "0") or 0)
@@ -175,11 +171,6 @@ class WebHandler(BaseHTTPRequestHandler):
             self.send_header(name, value)
         self.end_headers()
         self.wfile.write(response.body)
-
-    def _redirect(self, location: str) -> None:
-        self.send_response(HTTPStatus.SEE_OTHER)
-        self.send_header("Location", location)
-        self.end_headers()
 
     def log_message(self, format: str, *args) -> None:
         """Silence routine access logs to keep console output clean."""
