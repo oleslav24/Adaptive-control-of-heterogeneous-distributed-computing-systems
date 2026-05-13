@@ -12,12 +12,10 @@ from typing import ClassVar
 from urllib.parse import parse_qs, urlparse
 
 from project.web.commands import build_run_command as _build_run_command
-from project.web.file_views import (
-    build_directory_body as _build_directory_body,
-    build_file_body as _build_file_body,
-    read_download_payload as _read_download_payload,
-    rel_workspace as _rel_workspace,
-    resolve_path as _resolve_path,
+from project.web.file_routes import (
+    RouteResponse as _RouteResponse,
+    build_download_response as _build_download_response,
+    build_files_response as _build_files_response,
 )
 from project.web.i18n import (
     ALGORITHM_LABELS,
@@ -1119,50 +1117,12 @@ pollTimer = setInterval(pollJobData, 2000);
         self._send_json(HTTPStatus.OK, _job_payload(job, lang))
 
     def _serve_files(self, parsed) -> None:
-        query = parse_qs(parsed.query)
-        lang = _lang_from_parsed(parsed)
-        raw_path = _first(query, "path", "outputs")
-        try:
-            path = _resolve_path(raw_path)
-        except ValueError as exc:
-            self._send_text(HTTPStatus.BAD_REQUEST, str(exc))
-            return
-
-        if not path.exists():
-            self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "path_not_exist"))
-            return
-
-        rel = _rel_workspace(path)
-        if path.is_dir():
-            body = _build_directory_body(path, rel, lang, workspace_root=WORKSPACE_ROOT)
-            self._send_html(HTTPStatus.OK, _render_layout(f"{_tr(lang, 'browse')}: {rel}", body, lang=lang))
-            return
-
-        body = _build_file_body(path, rel, lang, workspace_root=WORKSPACE_ROOT)
-        self._send_html(HTTPStatus.OK, _render_layout(f"{_tr(lang, 'file_page')}: {rel}", body, lang=lang))
+        response = _build_files_response(parsed, workspace_root=WORKSPACE_ROOT)
+        self._send_route_response(response)
 
     def _serve_download(self, parsed) -> None:
-        query = parse_qs(parsed.query)
-        lang = _lang_from_parsed(parsed)
-        raw_path = _first(query, "path", "")
-        try:
-            path = _resolve_path(raw_path)
-        except ValueError as exc:
-            self._send_text(HTTPStatus.BAD_REQUEST, str(exc))
-            return
-        if not path.exists() or path.is_dir():
-            self._send_text(HTTPStatus.NOT_FOUND, _tr(lang, "file_not_found"))
-            return
-        content_type, data = _read_download_payload(path)
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(data)))
-        self.send_header(
-            "Content-Disposition",
-            f"inline; filename={path.name}",
-        )
-        self.end_headers()
-        self.wfile.write(data)
+        response = _build_download_response(parsed, workspace_root=WORKSPACE_ROOT)
+        self._send_route_response(response)
 
     def _start_run(self, form: dict[str, list[str]]) -> None:
         lang = _lang_from_form(form)
@@ -1213,6 +1173,16 @@ pollTimer = setInterval(pollJobData, 2000);
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _send_route_response(self, response: _RouteResponse) -> None:
+        """Send normalized route response payload."""
+        self.send_response(int(response.status))
+        self.send_header("Content-Type", response.content_type)
+        self.send_header("Content-Length", str(len(response.body)))
+        for name, value in response.headers.items():
+            self.send_header(name, value)
+        self.end_headers()
+        self.wfile.write(response.body)
 
     def _redirect(self, location: str) -> None:
         self.send_response(HTTPStatus.SEE_OTHER)
