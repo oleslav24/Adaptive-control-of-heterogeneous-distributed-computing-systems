@@ -122,6 +122,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of repeated runs for --repro-check.",
     )
     parser.add_argument(
+        "--replay-manifest",
+        default=None,
+        help="Path to run manifest JSON used to replay and verify deterministic outputs.",
+    )
+    parser.add_argument(
+        "--replay-runs",
+        type=int,
+        default=3,
+        help="Number of repeated runs for --replay-manifest verification.",
+    )
+    parser.add_argument(
         "--publication-study",
         action="store_true",
         help="Run publication pipeline (E1-E5, H1-H5, stats, plots, report).",
@@ -142,4 +153,3 @@ def build_parser() -> argparse.ArgumentParser:
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments for experiment execution modes."""
     return build_parser().parse_args(list(argv) if argv is not None else None)
-

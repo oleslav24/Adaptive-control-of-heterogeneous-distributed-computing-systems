@@ -32,6 +32,7 @@ from project.experiments.mode_advanced import (
     run_intelligence_ab_mode,
     run_llm_ab_mode,
     run_publication_mode,
+    run_replay_manifest_mode,
     run_repro_check_mode,
 )
 from project.experiments.mode_single_compare import run_comparison_mode, run_single_mode
@@ -71,6 +72,7 @@ def _build_mode_handlers() -> dict[str, ModeHandler]:
     """Create mode-to-handler dispatch table."""
     return {
         "publication-study": _handle_publication_mode,
+        "replay-manifest": _handle_replay_manifest_mode,
         "ab-llm": _handle_ab_llm_mode,
         "ab-intelligence": _handle_ab_intelligence_mode,
         "compare": _handle_compare_mode,
@@ -91,6 +93,15 @@ def _handle_publication_mode(config: ExperimentConfig, args: Namespace, cli_args
         cli_args=cli_args,
     )
     _print_publication_result(config.name, seeds, result)
+
+
+def _handle_replay_manifest_mode(_config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute deterministic replay mode using source run manifest."""
+    run_replay_manifest_mode(
+        manifest_path=str(args.replay_manifest),
+        runs=max(2, int(args.replay_runs)),
+        cli_args=cli_args,
+    )
 
 
 def _handle_ab_llm_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:

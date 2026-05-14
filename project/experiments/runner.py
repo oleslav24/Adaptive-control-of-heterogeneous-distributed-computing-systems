@@ -11,6 +11,7 @@ import pandas as pd
 from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig
 from project.experiments.controller import Experiment
+from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest
 from project.metrics import (
     persist_batch_observability,
@@ -186,7 +187,7 @@ class ExperimentRunner:
     ) -> dict[str, str]:
         """Persist aggregated batch tables/plots and return artifact map."""
         out_dir = Path(self.config.observability.output_dir) / self.config.name / "batch"
-        return persist_batch_observability(
+        artifact_paths = persist_batch_observability(
             runs_df=runs_df,
             summary_df=summary_df,
             ranking_df=ranking_df,
@@ -200,6 +201,13 @@ class ExperimentRunner:
             plot_formats=self.config.observability.plot_formats,
             batch_manifest=batch_manifest,
         )
+        if artifact_paths:
+            integrity_path = write_artifact_integrity_file(
+                out_dir / "artifact_integrity.json",
+                artifact_paths,
+            )
+            artifact_paths["artifact_integrity_json"] = integrity_path
+        return artifact_paths
 
 
 def _build_batch_summary(runs_df: pd.DataFrame) -> pd.DataFrame:

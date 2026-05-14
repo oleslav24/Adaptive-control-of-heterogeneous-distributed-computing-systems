@@ -8,6 +8,7 @@ from pathlib import Path
 from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig
 from project.core.models import SystemState
+from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest
 from project.metrics import persist_observability
 
@@ -43,7 +44,7 @@ def persist_run_artifacts(
         cli_args=list(cli_args or []),
         extra=extra or {},
     )
-    return persist_observability(
+    artifact_paths = persist_observability(
         state=state,
         output_dir=output_dir,
         save_csv=config.observability.save_csv,
@@ -54,4 +55,10 @@ def persist_run_artifacts(
         plot_formats=config.observability.plot_formats,
         run_manifest=run_manifest,
     )
-
+    if artifact_paths:
+        integrity_path = write_artifact_integrity_file(
+            output_dir / "artifact_integrity.json",
+            artifact_paths,
+        )
+        artifact_paths["artifact_integrity_json"] = integrity_path
+    return artifact_paths

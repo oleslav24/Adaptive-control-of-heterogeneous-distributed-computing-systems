@@ -18,6 +18,8 @@ def test_parse_args_defaults() -> None:
     assert args.batch_runs == 3
     assert args.repro_check is False
     assert args.repro_runs == 3
+    assert args.replay_manifest is None
+    assert args.replay_runs == 3
     assert args.publication_study is False
     assert args.study_seeds == "42-71"
     assert args.study_quick is False
@@ -84,6 +86,10 @@ def test_parse_args_ab_publication_and_repro_flags() -> None:
             "--repro-check",
             "--repro-runs",
             "9",
+            "--replay-manifest",
+            "outputs/demo/run_manifest.json",
+            "--replay-runs",
+            "5",
             "--publication-study",
             "--study-seeds",
             "1,2,3",
@@ -96,7 +102,8 @@ def test_parse_args_ab_publication_and_repro_flags() -> None:
     assert args.compare_algorithms == "min-load,greedy"
     assert args.repro_check is True
     assert args.repro_runs == 9
+    assert args.replay_manifest == "outputs/demo/run_manifest.json"
+    assert args.replay_runs == 5
     assert args.publication_study is True
     assert args.study_seeds == "1,2,3"
     assert args.study_quick is True
-

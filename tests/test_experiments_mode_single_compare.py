@@ -15,6 +15,7 @@ from project.core.config import (
     SimulationConfig,
 )
 from project.core.models import Task
+from project.experiments.integrity import verify_artifact_integrity_file
 from project.experiments.mode_single_compare import run_comparison_mode, run_single_mode
 
 
@@ -80,6 +81,12 @@ def test_run_single_mode_returns_state_and_artifact_map() -> None:
     assert Path(artifacts["run_manifest_json"]).exists()
     assert "summary_json" in artifacts
     assert Path(artifacts["summary_json"]).exists()
+    assert "artifact_integrity_json" in artifacts
+    integrity_path = Path(artifacts["artifact_integrity_json"])
+    assert integrity_path.exists()
+    ok, errors = verify_artifact_integrity_file(integrity_path)
+    assert ok is True
+    assert errors == []
 
 
 def test_run_comparison_mode_writes_csv_and_manifest() -> None:
@@ -94,6 +101,10 @@ def test_run_comparison_mode_writes_csv_and_manifest() -> None:
     comparison_dir = output_dir / config.name / config.scenario
     comparison_csv = comparison_dir / "comparison.csv"
     comparison_manifest = comparison_dir / "comparison_manifest.json"
+    comparison_integrity = comparison_dir / "comparison_artifact_integrity.json"
     assert comparison_csv.exists()
     assert comparison_manifest.exists()
-
+    assert comparison_integrity.exists()
+    ok, errors = verify_artifact_integrity_file(comparison_integrity)
+    assert ok is True
+    assert errors == []

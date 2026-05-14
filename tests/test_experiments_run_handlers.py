@@ -19,6 +19,8 @@ def _args(**overrides: object) -> Namespace:
         "batch_save_runs": False,
         "batch_keep_adaptive": False,
         "repro_runs": 3,
+        "replay_manifest": None,
+        "replay_runs": 3,
         "study_seeds": "42-71",
         "study_quick": False,
         "no_plots": False,
@@ -161,6 +163,25 @@ def test_handle_repro_mode_uses_minimum_two_runs(monkeypatch) -> None:
     assert calls["runs"] == 2
 
 
+def test_handle_replay_mode_uses_minimum_two_runs(monkeypatch) -> None:
+    """Replay handler should clamp runs and pass source manifest path."""
+    calls: dict[str, object] = {}
+
+    def _fake_run_replay_manifest_mode(*, manifest_path: str, runs: int, cli_args: list[str]) -> None:
+        calls["manifest_path"] = manifest_path
+        calls["runs"] = runs
+        calls["cli_args"] = list(cli_args)
+
+    monkeypatch.setattr(run, "run_replay_manifest_mode", _fake_run_replay_manifest_mode)
+    run._handle_replay_manifest_mode(
+        _config(),
+        _args(replay_manifest="outputs/demo/run_manifest.json", replay_runs=1),
+        ["--replay-manifest", "outputs/demo/run_manifest.json"],
+    )
+    assert calls["manifest_path"] == "outputs/demo/run_manifest.json"
+    assert calls["runs"] == 2
+
+
 def test_handle_single_mode_routes_result_to_printer(monkeypatch) -> None:
     """Single handler should call single-mode runner and printer with outputs."""
     calls: dict[str, object] = {}
@@ -183,4 +204,3 @@ def test_handle_single_mode_routes_result_to_printer(monkeypatch) -> None:
     run._handle_single_mode(_config(), _args(), ["--config", "config.yaml"])
     assert calls["print_state"] is fake_state
     assert calls["print_artifacts"] == fake_artifacts
-

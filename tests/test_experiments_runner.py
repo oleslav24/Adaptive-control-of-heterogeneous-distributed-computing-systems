@@ -17,6 +17,7 @@ from project.core.config import (
     SimulationConfig,
 )
 from project.core.models import Task
+from project.experiments.integrity import verify_artifact_integrity_file
 from project.experiments.runner import BatchRunSpec, ExperimentRunner
 
 
@@ -82,6 +83,10 @@ def test_batch_runner_total_runs_and_manifest_consistency() -> None:
         manifest = json.load(f)
     assert manifest["extra"]["total_runs"] == expected_runs
     assert manifest["extra"]["strict_algorithm_comparison"] is True
+    assert "artifact_integrity_json" in result.output_paths
+    ok, errors = verify_artifact_integrity_file(result.output_paths["artifact_integrity_json"])
+    assert ok is True
+    assert errors == []
 
 
 def test_batch_runner_strict_mode_disables_intelligence_and_llm() -> None:
