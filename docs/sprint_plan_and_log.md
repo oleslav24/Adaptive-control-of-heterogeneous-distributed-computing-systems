@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 12:23:22 +07:00  
+Last updated: 2026-05-14 12:25:06 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -21,7 +21,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 11 | Quality gates | Expanded tests + static checks + mutation baseline | Closed |
 | 12 | Web modular refactor | Web app decomposition into tested modules | Closed |
 | 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | In progress (slices complete, pending merge) |
-| 14 | Publication pipeline hardening | `publication.py` split + statistics validation | In progress |
+| 14 | Publication pipeline hardening | `publication.py` split + statistics validation | In progress (slices complete, pending merge) |
 | 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Planned |
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Planned |
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Planned |
@@ -199,11 +199,11 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 | Task | Description | Status |
 |---|---|---|
-| 14.1 | Decompose `project/experiments/publication.py` into cohesive modules | In progress (slice 1 done) |
+| 14.1 | Decompose `project/experiments/publication.py` into cohesive modules | Done |
 | 14.2 | Add strict validation for statistical outputs (mean/std/CI) | Done |
 | 14.3 | Add hypothesis result contract checks (H1-H5) | Done |
 | 14.4 | Add deterministic fixtures for publication scenarios | Done |
-| 14.5 | Add regression tests for publication artifacts | Planned |
+| 14.5 | Add regression tests for publication artifacts | Done |
 
 ### Sprint 15 - Reproducibility contract hardening
 
@@ -277,3 +277,10 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-14 12:17:50 | 14.2 Add strict validation for summary statistics | OK (`publication_validation` added and enforced in pipeline) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 12:20:30 | 14.3 Add hypothesis table contract validation (H1-H5) | OK (H1-H5 schema/value checks added and enforced in pipeline) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 12:23:22 | 14.4 Add deterministic publication scenario fixtures | OK (`publication_scenarios` extracted + deterministic task/scenario fixture tests) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 12:25:06 | 14.5 Add publication artifact regression tests | OK (CSV/JSON/report artifact persistence checks added) | targeted + full pytest pass | current slice commit |
+
+## Remaining Work To Close Sprint 14
+
+1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
+2. Merge PR to `main`.
+3. Update `Sprint Closure Register` row for Sprint 14 with close timestamp and merge evidence.
