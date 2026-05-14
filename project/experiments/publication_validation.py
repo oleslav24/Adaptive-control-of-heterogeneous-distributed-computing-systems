@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import math
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 
@@ -93,6 +94,62 @@ def validate_summary_statistics(summary: pd.DataFrame) -> SummaryValidationResul
     )
 
 
+def validate_hypotheses_table(hypotheses: pd.DataFrame) -> SummaryValidationResult:
+    """Validate hypotheses table schema and H1-H5 contract."""
+    errors: list[str] = []
+    if hypotheses.empty:
+        errors.append("Hypotheses table is empty.")
+        return SummaryValidationResult(ok=False, errors=errors, row_count=0)
+
+    required_columns = {"hypothesis", "title", "criterion", "confirmed"}
+    missing = sorted(required_columns - set(hypotheses.columns))
+    for column in missing:
+        errors.append(f"Missing required column '{column}'.")
+    if missing:
+        return SummaryValidationResult(ok=False, errors=errors, row_count=int(len(hypotheses)))
+
+    required_hypotheses = {"H1", "H2", "H3", "H4", "H5"}
+    seen = [str(value).strip() for value in hypotheses["hypothesis"].tolist()]
+    seen_set = set(seen)
+    missing_h = sorted(required_hypotheses - seen_set)
+    extra_h = sorted(seen_set - required_hypotheses)
+    if missing_h:
+        errors.append(f"Missing hypotheses rows: {', '.join(missing_h)}.")
+    if extra_h:
+        errors.append(f"Unexpected hypothesis rows: {', '.join(extra_h)}.")
+    if len(seen) != len(seen_set):
+        errors.append("Duplicate hypothesis identifiers are not allowed.")
+
+    hypothesis_metric_columns: dict[str, list[str]] = {
+        "H1": ["delta_latency", "delta_load_imbalance"],
+        "H2": ["delta_throughput_failures", "delta_stability_failures"],
+        "H3": ["delta_latency_dynamic"],
+        "H4": ["delta_latency_hybrid_vs_best_baseline"],
+        "H5": ["delta_adaptivity_llm_vs_algorithmic", "delta_latency_llm_vs_algorithmic"],
+    }
+
+    indexed = hypotheses.set_index("hypothesis", drop=False)
+    for hypothesis, columns in hypothesis_metric_columns.items():
+        if hypothesis not in indexed.index:
+            continue
+        row = indexed.loc[hypothesis]
+        confirmed = row.get("confirmed")
+        if not isinstance(confirmed, (bool, np.bool_)):
+            errors.append(f"Row {hypothesis}: 'confirmed' must be boolean.")
+        for column in columns:
+            if column not in hypotheses.columns:
+                errors.append(f"Row {hypothesis}: missing metric column '{column}'.")
+                continue
+            if _as_float(row.get(column)) is None:
+                errors.append(f"Row {hypothesis}: metric '{column}' must be finite numeric.")
+
+    return SummaryValidationResult(
+        ok=not errors,
+        errors=errors,
+        row_count=int(len(hypotheses)),
+    )
+
+
 def _as_float(value: Any) -> float | None:
     """Convert value to finite float or return None."""
     try:
@@ -102,4 +159,3 @@ def _as_float(value: Any) -> float | None:
     if not math.isfinite(parsed):
         return None
     return parsed
-

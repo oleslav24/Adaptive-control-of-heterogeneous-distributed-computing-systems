@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import pandas as pd
 
-from project.experiments.publication_validation import validate_summary_statistics
+from project.experiments.publication_validation import (
+    validate_hypotheses_table,
+    validate_summary_statistics,
+)
 
 
 def _valid_summary_row(n_runs: int = 3) -> dict[str, object]:
@@ -66,3 +69,73 @@ def test_validate_summary_statistics_reports_contract_errors() -> None:
     assert any("negative ci95" in err for err in result.errors)
     assert any("violates CI bounds" in err for err in result.errors)
     assert any("must have std=0 and ci95=0 when n_runs=1" in err for err in result.errors)
+
+
+def _valid_hypotheses_df() -> pd.DataFrame:
+    """Build valid H1-H5 hypothesis table for validator tests."""
+    return pd.DataFrame(
+        [
+            {
+                "hypothesis": "H1",
+                "title": "Adaptivity",
+                "criterion": "c",
+                "delta_latency": 0.2,
+                "delta_load_imbalance": 0.1,
+                "confirmed": True,
+            },
+            {
+                "hypothesis": "H2",
+                "title": "MAS",
+                "criterion": "c",
+                "delta_throughput_failures": 0.3,
+                "delta_stability_failures": 0.15,
+                "confirmed": True,
+            },
+            {
+                "hypothesis": "H3",
+                "title": "ML/ZNN",
+                "criterion": "c",
+                "delta_latency_dynamic": 0.05,
+                "confirmed": True,
+            },
+            {
+                "hypothesis": "H4",
+                "title": "Hybrid",
+                "criterion": "c",
+                "delta_latency_hybrid_vs_best_baseline": 0.07,
+                "confirmed": True,
+            },
+            {
+                "hypothesis": "H5",
+                "title": "LLM",
+                "criterion": "c",
+                "delta_adaptivity_llm_vs_algorithmic": 0.12,
+                "delta_latency_llm_vs_algorithmic": 0.04,
+                "confirmed": False,
+            },
+        ]
+    )
+
+
+def test_validate_hypotheses_table_ok() -> None:
+    """Hypotheses validator should pass for complete H1-H5 table."""
+    result = validate_hypotheses_table(_valid_hypotheses_df())
+    assert result.ok is True
+    assert result.errors == []
+    assert result.row_count == 5
+
+
+def test_validate_hypotheses_table_reports_contract_errors() -> None:
+    """Hypotheses validator should fail on schema and value violations."""
+    bad = _valid_hypotheses_df().copy()
+    bad["confirmed"] = bad["confirmed"].astype(object)
+    bad.loc[0, "hypothesis"] = "HX"
+    bad.loc[1, "confirmed"] = "yes"
+    bad.loc[2, "delta_latency_dynamic"] = float("nan")
+    bad = bad.drop(columns=["delta_latency_hybrid_vs_best_baseline"])
+    result = validate_hypotheses_table(bad)
+    assert result.ok is False
+    assert any("Missing hypotheses rows" in err for err in result.errors)
+    assert any("Unexpected hypothesis rows" in err for err in result.errors)
+    assert any("missing metric column 'delta_latency_hybrid_vs_best_baseline'" in err for err in result.errors)
+    assert any("'confirmed' must be boolean" in err for err in result.errors)
