@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import argparse
+from argparse import Namespace
 from dataclasses import replace
 import logging
 import os
@@ -19,11 +19,24 @@ os.environ.setdefault("MPLCONFIGDIR", str(_MPL_DIR))
 from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig, load_config
 from project.core.models import SystemState
-from project.experiments.controller import Experiment
-from project.experiments.manifest import build_run_manifest, write_manifest
-from project.experiments.publication import StudyResult, run_publication_pipeline
-from project.experiments.runner import BatchRunResult, BatchRunSpec, ExperimentRunner
-from project.metrics import persist_observability, summarize_state
+from project.experiments.cli import parse_args
+from project.experiments.common import slug, with_algorithm
+from project.experiments.dispatch import (
+    MODE_FINISH_MESSAGES,
+    ModeHandler,
+    dispatch_mode,
+    resolve_mode,
+)
+from project.experiments.mode_advanced import (
+    run_batch_mode,
+    run_intelligence_ab_mode,
+    run_llm_ab_mode,
+    run_publication_mode,
+    run_repro_check_mode,
+)
+from project.experiments.mode_single_compare import run_comparison_mode, run_single_mode
+from project.experiments.publication import StudyResult
+from project.experiments.runner import BatchRunResult, BatchRunSpec
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,139 +49,6 @@ DEFAULT_BATCH_SCENARIOS = [
 ]
 
 
-def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments for experiment execution modes."""
-    parser = argparse.ArgumentParser(description="Run experimental testbed simulation.")
-    parser.add_argument(
-        "--config",
-        default="config.yaml",
-        help="Path to experiment config file.",
-    )
-    parser.add_argument(
-        "--algorithm",
-        default=None,
-        help="Scheduling algorithm: round-robin, min-load, greedy.",
-    )
-    parser.add_argument(
-        "--scenario",
-        default=None,
-        help="Scenario: static, dynamic-load, peak-load, node-failures, heterogeneous-tasks, mixed.",
-    )
-    parser.add_argument(
-        "--disable-intelligence",
-        action="store_true",
-        help="Disable prediction/ML/ZNN layer for this run.",
-    )
-    parser.add_argument(
-        "--disable-llm",
-        action="store_true",
-        help="Disable LLM agent for this run.",
-    )
-    parser.add_argument(
-        "--llm-provider",
-        default=None,
-        help="Override LLM provider: auto, openai, mock.",
-    )
-    parser.add_argument(
-        "--ab-llm",
-        action="store_true",
-        help="Run A/B comparison: baseline algorithms vs LLM-guided control.",
-    )
-    parser.add_argument(
-        "--ab-intelligence",
-        action="store_true",
-        help="Run A/B comparison: without intelligence vs with intelligence.",
-    )
-    parser.add_argument(
-        "--compare",
-        action="store_true",
-        help="Run comparison for algorithms from config optimization.compare_algorithms.",
-    )
-    parser.add_argument(
-        "--batch",
-        action="store_true",
-        help="Run batch matrix: scenarios x algorithms x repeats.",
-    )
-    parser.add_argument(
-        "--batch-scenarios",
-        default=None,
-        help="Comma-separated list of scenarios for batch run.",
-    )
-    parser.add_argument(
-        "--batch-algorithms",
-        default=None,
-        help="Comma-separated list of algorithms for batch run.",
-    )
-    parser.add_argument(
-        "--batch-runs",
-        type=int,
-        default=3,
-        help="Number of repeats per scenario/algorithm in batch run.",
-    )
-    parser.add_argument(
-        "--batch-save-runs",
-        action="store_true",
-        help="Persist full observability artifacts for each batch run.",
-    )
-    parser.add_argument(
-        "--batch-keep-adaptive",
-        action="store_true",
-        help="Keep adaptive intelligence and LLM behavior in batch mode.",
-    )
-    parser.add_argument(
-        "--compare-algorithms",
-        default=None,
-        help="Comma-separated list of algorithms for comparison.",
-    )
-    parser.add_argument(
-        "--output-dir",
-        default=None,
-        help="Override output directory for logs, CSV, JSON, and plots.",
-    )
-    parser.add_argument(
-        "--log-level",
-        default=None,
-        help="Override log level (DEBUG, INFO, WARNING, ERROR).",
-    )
-    parser.add_argument(
-        "--no-csv",
-        action="store_true",
-        help="Disable CSV export for this run.",
-    )
-    parser.add_argument(
-        "--no-plots",
-        action="store_true",
-        help="Disable plot export for this run.",
-    )
-    parser.add_argument(
-        "--repro-check",
-        action="store_true",
-        help="Run the same configuration multiple times and verify reproducibility.",
-    )
-    parser.add_argument(
-        "--repro-runs",
-        type=int,
-        default=3,
-        help="Number of repeated runs for --repro-check.",
-    )
-    parser.add_argument(
-        "--publication-study",
-        action="store_true",
-        help="Run publication pipeline (E1-E5, H1-H5, stats, plots, report).",
-    )
-    parser.add_argument(
-        "--study-seeds",
-        default="42-71",
-        help="Seeds for publication study: comma list (42,43,44) or range (42-71).",
-    )
-    parser.add_argument(
-        "--study-quick",
-        action="store_true",
-        help="Run reduced publication pipeline for quick verification.",
-    )
-    return parser.parse_args()
-
-
 def main() -> None:
     """Dispatch execution into selected run mode and print summary outputs."""
     args = parse_args()
@@ -176,258 +56,67 @@ def main() -> None:
     config = _apply_runtime_overrides(load_config(args.config), args)
     log_path = _configure_logging(config)
     LOGGER.info("Run started: experiment=%s", config.name)
-
-    if args.publication_study:
-        seeds = _parse_study_seeds(args.study_seeds)
-        result = run_publication_pipeline(
-            config,
-            seeds=seeds,
-            quick=bool(args.study_quick),
-            save_plots=not bool(args.no_plots),
-            cli_args=cli_args,
-        )
-        _print_publication_result(config.name, seeds, result)
-        LOGGER.info("Publication study finished. Log: %s", log_path)
-        return
-
-    if args.ab_llm:
-        _run_llm_ab(config, cli_args)
-        LOGGER.info("A/B LLM run finished. Log: %s", log_path)
-        return
-
-    if args.ab_intelligence:
-        _run_intelligence_ab(config, cli_args)
-        LOGGER.info("A/B intelligence run finished. Log: %s", log_path)
-        return
-
-    if args.compare:
-        algorithms = _parse_compare_algorithms(args.compare_algorithms)
-        if not algorithms:
-            algorithms = config.optimization.compare_algorithms
-        _run_comparison(config, algorithms, cli_args)
-        LOGGER.info("Comparison run finished. Log: %s", log_path)
-        return
-
-    if args.batch:
-        _run_batch(config, args, cli_args)
-        LOGGER.info("Batch run finished. Log: %s", log_path)
-        return
-
-    if args.repro_check:
-        _run_repro_check(config, max(2, int(args.repro_runs)), cli_args)
-        LOGGER.info("Reproducibility check finished. Log: %s", log_path)
-        return
-
-    final_state = Experiment(config=config).run()
-    artifacts = _persist_run_artifacts(config, final_state, mode="single", cli_args=cli_args)
-    _print_single_result(config.name, final_state, artifacts)
-    LOGGER.info("Single run finished. Log: %s", log_path)
-
-
-def _run_comparison(config: ExperimentConfig, algorithms: list[str], cli_args: list[str]) -> None:
-    """Run same scenario with multiple algorithms and export comparison table."""
-    print(f"Experiment '{config.name}' comparison")
-    print(
-        "scenario | algorithm | completed | pending | deadline_violations | latency | throughput | avg_load"
-    )
-    print("-" * 118)
-
-    rows: list[dict[str, object]] = []
-    for algorithm in algorithms:
-        scenario_config = _with_algorithm(config, algorithm)
-        scenario_config = replace(
-            scenario_config,
-            intelligence=replace(scenario_config.intelligence, adaptive_algorithm=False),
-            llm=replace(scenario_config.llm, enabled=False),
-        )
-        state = Experiment(config=scenario_config).run()
-        rows.append(summarize_state(state))
-        _persist_run_artifacts(
-            scenario_config,
-            state,
-            mode="comparison",
-            cli_args=cli_args,
-            extra={"comparison_algorithm": algorithm},
-        )
-        print(
-            f"{state.scenario} | {state.selected_algorithm} | {state.completed_tasks} | {state.pending_tasks} | "
-            f"{state.deadline_violations} | {state.avg_latency:.3f} | "
-            f"{state.throughput:.3f} | {state.avg_load:.3f}"
-        )
-
-    comparison_df = pd.DataFrame(rows)
-    comparison_dir = Path(config.observability.output_dir) / config.name / _slug(config.scenario)
-    comparison_dir.mkdir(parents=True, exist_ok=True)
-    comparison_csv = comparison_dir / "comparison.csv"
-    comparison_df.to_csv(comparison_csv, index=False)
-    print(f"Comparison CSV: {comparison_csv}")
-
-    manifest_path = comparison_dir / "comparison_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=config,
-            mode="comparison",
-            cli_args=cli_args,
-            extra={
-                "algorithms": algorithms,
-                "rows": comparison_df.to_dict(orient="records"),
-                "comparison_csv": str(comparison_csv),
-            },
-        ),
-    )
-    print(f"Comparison manifest: {manifest_path}")
-
-
-def _run_intelligence_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
-    """Run A/B experiment with intelligence layer disabled vs enabled."""
-    baseline_config = replace(
-        config,
-        intelligence=replace(config.intelligence, enabled=False, adaptive_algorithm=False),
-    )
-    smart_config = replace(
-        config,
-        intelligence=replace(config.intelligence, enabled=True),
-    )
-    baseline_state = Experiment(config=baseline_config).run()
-    smart_state = Experiment(config=smart_config).run()
-    _persist_run_artifacts(
-        baseline_config,
-        baseline_state,
-        mode="ab-intelligence",
+    mode = resolve_mode(args)
+    dispatch_mode(
+        mode=mode,
+        handlers=_build_mode_handlers(),
+        config=config,
+        args=args,
         cli_args=cli_args,
-        extra={"mode": "baseline"},
     )
-    _persist_run_artifacts(
-        smart_config,
-        smart_state,
-        mode="ab-intelligence",
-        cli_args=cli_args,
-        extra={"mode": "intelligent"},
-    )
-
-    print(f"Experiment '{config.name}' intelligence A/B")
-    print("mode | algorithm | completed | pending | latency | throughput | avg_load")
-    print("-" * 86)
-    print(
-        f"baseline | {baseline_state.selected_algorithm} | {baseline_state.completed_tasks} | "
-        f"{baseline_state.pending_tasks} | {baseline_state.avg_latency:.3f} | "
-        f"{baseline_state.throughput:.3f} | {baseline_state.avg_load:.3f}"
-    )
-    print(
-        f"intelligent | {smart_state.selected_algorithm} | {smart_state.completed_tasks} | "
-        f"{smart_state.pending_tasks} | {smart_state.avg_latency:.3f} | "
-        f"{smart_state.throughput:.3f} | {smart_state.avg_load:.3f}"
-    )
-
-    improvement_latency = baseline_state.avg_latency - smart_state.avg_latency
-    improvement_throughput = smart_state.throughput - baseline_state.throughput
-    print(
-        f"Delta: latency={improvement_latency:+.3f}, throughput={improvement_throughput:+.3f}"
-    )
-
-    rows = [
-        {"mode": "baseline", **summarize_state(baseline_state)},
-        {"mode": "intelligent", **summarize_state(smart_state)},
-    ]
-    ab_df = pd.DataFrame(rows)
-    ab_dir = Path(config.observability.output_dir) / config.name / _slug(config.scenario)
-    ab_dir.mkdir(parents=True, exist_ok=True)
-    ab_csv = ab_dir / "intelligence_ab.csv"
-    ab_df.to_csv(ab_csv, index=False)
-    print(f"A/B CSV: {ab_csv}")
-
-    manifest_path = ab_dir / "intelligence_ab_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=config,
-            mode="ab-intelligence",
-            cli_args=cli_args,
-            extra={"rows": ab_df.to_dict(orient="records"), "ab_csv": str(ab_csv)},
-        ),
-    )
-    print(f"A/B manifest: {manifest_path}")
+    LOGGER.info("%s. Log: %s", MODE_FINISH_MESSAGES[mode], log_path)
 
 
-def _run_llm_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
-    """Run A/B experiment with and without LLM agent influence."""
-    baseline_config = replace(
+def _build_mode_handlers() -> dict[str, ModeHandler]:
+    """Create mode-to-handler dispatch table."""
+    return {
+        "publication-study": _handle_publication_mode,
+        "ab-llm": _handle_ab_llm_mode,
+        "ab-intelligence": _handle_ab_intelligence_mode,
+        "compare": _handle_compare_mode,
+        "batch": _handle_batch_mode,
+        "repro-check": _handle_repro_check_mode,
+        "single": _handle_single_mode,
+    }
+
+
+def _handle_publication_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute publication-study mode."""
+    seeds = _parse_study_seeds(args.study_seeds)
+    result = run_publication_mode(
         config,
-        intelligence=replace(config.intelligence, adaptive_algorithm=False),
-        llm=replace(config.llm, enabled=False),
-    )
-    llm_config = replace(
-        config,
-        llm=replace(config.llm, enabled=True),
-    )
-    baseline_state = Experiment(config=baseline_config).run()
-    llm_state = Experiment(config=llm_config).run()
-    _persist_run_artifacts(
-        baseline_config,
-        baseline_state,
-        mode="ab-llm",
+        seeds=seeds,
+        quick=bool(args.study_quick),
+        save_plots=not bool(args.no_plots),
         cli_args=cli_args,
-        extra={"mode": "baseline"},
     )
-    _persist_run_artifacts(
-        llm_config,
-        llm_state,
-        mode="ab-llm",
-        cli_args=cli_args,
-        extra={"mode": "llm"},
-    )
-
-    print(f"Experiment '{config.name}' LLM A/B")
-    print(
-        "mode | algorithm | llm_source | completed | pending | latency | throughput | avg_load"
-    )
-    print("-" * 102)
-    print(
-        f"baseline | {baseline_state.selected_algorithm} | {baseline_state.llm_source} | "
-        f"{baseline_state.completed_tasks} | {baseline_state.pending_tasks} | "
-        f"{baseline_state.avg_latency:.3f} | {baseline_state.throughput:.3f} | "
-        f"{baseline_state.avg_load:.3f}"
-    )
-    print(
-        f"llm | {llm_state.selected_algorithm} | {llm_state.llm_source} | "
-        f"{llm_state.completed_tasks} | {llm_state.pending_tasks} | "
-        f"{llm_state.avg_latency:.3f} | {llm_state.throughput:.3f} | "
-        f"{llm_state.avg_load:.3f}"
-    )
-
-    improvement_latency = baseline_state.avg_latency - llm_state.avg_latency
-    improvement_throughput = llm_state.throughput - baseline_state.throughput
-    print(
-        f"Delta: latency={improvement_latency:+.3f}, throughput={improvement_throughput:+.3f}"
-    )
-
-    rows = [
-        {"mode": "baseline", **summarize_state(baseline_state)},
-        {"mode": "llm", **summarize_state(llm_state)},
-    ]
-    ab_df = pd.DataFrame(rows)
-    ab_dir = Path(config.observability.output_dir) / config.name / _slug(config.scenario)
-    ab_dir.mkdir(parents=True, exist_ok=True)
-    ab_csv = ab_dir / "llm_ab.csv"
-    ab_df.to_csv(ab_csv, index=False)
-    print(f"LLM A/B CSV: {ab_csv}")
-
-    manifest_path = ab_dir / "llm_ab_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=config,
-            mode="ab-llm",
-            cli_args=cli_args,
-            extra={"rows": ab_df.to_dict(orient="records"), "ab_csv": str(ab_csv)},
-        ),
-    )
-    print(f"LLM A/B manifest: {manifest_path}")
+    _print_publication_result(config.name, seeds, result)
 
 
-def _run_batch(config: ExperimentConfig, args: argparse.Namespace, cli_args: list[str]) -> None:
-    """Run scenario/algorithm matrix and print aggregated winners."""
+def _handle_ab_llm_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:
+    """Execute A/B LLM mode."""
+    run_llm_ab_mode(config, cli_args)
+
+
+def _handle_ab_intelligence_mode(
+    config: ExperimentConfig,
+    _args: Namespace,
+    cli_args: list[str],
+) -> None:
+    """Execute A/B intelligence mode."""
+    run_intelligence_ab_mode(config, cli_args)
+
+
+def _handle_compare_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute algorithm comparison mode."""
+    algorithms = _parse_compare_algorithms(args.compare_algorithms)
+    if not algorithms:
+        algorithms = config.optimization.compare_algorithms
+    run_comparison_mode(config, algorithms, cli_args)
+
+
+def _handle_batch_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute batch matrix mode."""
     scenarios = _parse_batch_scenarios(args.batch_scenarios)
     algorithms = _parse_compare_algorithms(args.batch_algorithms)
     if not algorithms:
@@ -440,102 +129,25 @@ def _run_batch(config: ExperimentConfig, args: argparse.Namespace, cli_args: lis
         persist_individual_runs=bool(args.batch_save_runs),
         strict_algorithm_comparison=not bool(args.batch_keep_adaptive),
     )
-    result = ExperimentRunner(config=config).run_batch(spec, cli_args=cli_args)
+    result = run_batch_mode(config, spec=spec, cli_args=cli_args)
     _print_batch_result(config.name, spec, result)
 
 
-def _run_repro_check(config: ExperimentConfig, runs: int, cli_args: list[str]) -> None:
-    """Repeat identical run several times and verify deterministic outputs."""
-    rows: list[dict[str, object]] = []
-    for idx in range(runs):
-        state = Experiment(config=config).run()
-        rows.append({"run": idx + 1, **summarize_state(state)})
-
-    repro_df = pd.DataFrame(rows)
-    out_dir = (
-        Path(config.observability.output_dir)
-        / config.name
-        / _slug(config.scenario)
-        / config.optimization.algorithm
-    )
-    out_dir.mkdir(parents=True, exist_ok=True)
-    repro_csv = out_dir / "repro_check.csv"
-    repro_df.to_csv(repro_csv, index=False)
-
-    reproducible, details = _evaluate_reproducibility(repro_df)
-    print(f"Experiment '{config.name}' reproducibility check")
-    print(f"Scenario: {config.scenario}")
-    print(f"Algorithm: {config.optimization.algorithm}")
-    print(f"Runs: {runs}")
-    print(f"Reproducible: {reproducible}")
-    print("Runs table:")
-    print(repro_df.to_string(index=False, float_format=lambda value: f"{value:.3f}"))
-    print("Details:")
-    for line in details:
-        print(f"- {line}")
-    print(f"Repro CSV: {repro_csv}")
-
-    manifest_path = out_dir / "repro_check_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=config,
-            mode="repro-check",
-            cli_args=cli_args,
-            extra={
-                "runs": runs,
-                "reproducible": reproducible,
-                "details": details,
-                "repro_csv": str(repro_csv),
-            },
-        ),
-    )
-    print(f"Repro manifest: {manifest_path}")
+def _handle_repro_check_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute reproducibility check mode."""
+    run_repro_check_mode(config, max(2, int(args.repro_runs)), cli_args)
 
 
-def _evaluate_reproducibility(repro_df: pd.DataFrame) -> tuple[bool, list[str]]:
-    """Evaluate equality of key metrics across repeated runs."""
-    if repro_df.empty:
-        return False, ["No runs were executed."]
-
-    strict_columns = [
-        "completed_tasks",
-        "pending_tasks",
-        "deadline_violations",
-        "generated_tasks",
-        "scenario",
-        "algorithm",
-    ]
-    float_columns = ["avg_latency", "throughput", "avg_load"]
-    baseline = repro_df.iloc[0]
-
-    details: list[str] = []
-    reproducible = True
-    for column in strict_columns:
-        if column not in repro_df.columns:
-            continue
-        if not (repro_df[column] == baseline[column]).all():
-            reproducible = False
-            details.append(f"Mismatch in '{column}'.")
-
-    tolerance = 1e-9
-    for column in float_columns:
-        if column not in repro_df.columns:
-            continue
-        max_diff = float((repro_df[column] - float(baseline[column])).abs().max())
-        if max_diff > tolerance:
-            reproducible = False
-            details.append(f"Mismatch in '{column}' (max diff {max_diff:.12f}).")
-
-    if reproducible:
-        details.append("All tracked metrics are identical across repeated runs.")
-    return reproducible, details
+def _handle_single_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:
+    """Execute single run mode."""
+    final_state, artifacts = run_single_mode(config, cli_args)
+    _print_single_result(config.name, final_state, artifacts)
 
 
-def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace) -> ExperimentConfig:
+def _apply_runtime_overrides(config: ExperimentConfig, args: Namespace) -> ExperimentConfig:
     """Apply CLI overrides to loaded experiment configuration."""
     if args.algorithm:
-        config = _with_algorithm(config, args.algorithm)
+        config = with_algorithm(config, args.algorithm)
     if args.scenario:
         config = replace(config, scenario=str(args.scenario).strip())
     if args.disable_intelligence:
@@ -563,45 +175,6 @@ def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace)
     return replace(config, observability=observability)
 
 
-def _persist_run_artifacts(
-    config: ExperimentConfig,
-    state: SystemState,
-    mode: str = "single",
-    cli_args: list[str] | None = None,
-    extra: dict[str, object] | None = None,
-) -> dict[str, str]:
-    """Persist observability artifacts for a single run flavor."""
-    output_dir = (
-        Path(config.observability.output_dir)
-        / config.name
-        / _slug(config.scenario)
-        / state.selected_algorithm
-    )
-    run_manifest = build_run_manifest(
-        config=config,
-        mode=mode,
-        cli_args=list(cli_args or []),
-        extra=extra or {},
-    )
-    return persist_observability(
-        state=state,
-        output_dir=output_dir,
-        save_csv=config.observability.save_csv,
-        save_plots=config.observability.save_plots,
-        save_json=config.observability.save_json,
-        plot_profile=config.observability.plot_profile,
-        plot_dpi=config.observability.plot_dpi,
-        plot_formats=config.observability.plot_formats,
-        run_manifest=run_manifest,
-    )
-
-
-def _with_algorithm(config: ExperimentConfig, algorithm: str) -> ExperimentConfig:
-    """Return config copy with normalized scheduling algorithm."""
-    optimization = replace(config.optimization, algorithm=normalize_algorithm(algorithm))
-    return replace(config, optimization=optimization)
-
-
 def _parse_compare_algorithms(raw: str | None) -> list[str]:
     """Parse comma-separated algorithm list from CLI."""
     if not raw:
@@ -620,7 +193,7 @@ def _parse_batch_scenarios(raw: str | None) -> list[str]:
         return list(DEFAULT_BATCH_SCENARIOS)
     parsed: list[str] = []
     for item in raw.split(","):
-        name = _slug(item)
+        name = slug(item)
         if name and name not in parsed:
             parsed.append(name)
     return parsed or list(DEFAULT_BATCH_SCENARIOS)
@@ -807,11 +380,6 @@ def _configure_logging(config: ExperimentConfig) -> Path:
         force=True,
     )
     return log_path
-
-
-def _slug(value: str) -> str:
-    """Normalize free-form labels into filesystem-friendly token."""
-    return str(value).strip().lower().replace("_", "-").replace(" ", "-")
 
 
 if __name__ == "__main__":

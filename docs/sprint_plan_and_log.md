@@ -1,25 +1,31 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 10:14:40 +07:00  
+Last updated: 2026-05-14 11:35:10 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
 
-| Sprint | Goal | Definition of Done (short) |
-|---|---|---|
-| 0 | Preparation and architecture skeleton | Project bootstraps, empty simulation loop |
-| 1 | Simulation core | Tasks execute, state updates each tick |
-| 2 | Base MAS | Agents coordinate task distribution |
-| 3 | Control algorithms | >=3 algorithms, configurable switching |
-| 4 | Metrics and observability | Metrics, logs, CSV, plots |
-| 5 | Dynamic scenarios | >=3 scenarios, adaptive reactions |
-| 6 | Intelligent methods (ML/ZNN) | Forecast is used and improves metrics |
-| 7 | LLM agent integration | LLM affects control and is compared vs algorithms |
-| 8 | Experimental module | Batch experiment runner + comparison tables |
-| 9 | Publication-level finish | Reproducibility and clean code baseline |
-| 10 | Stabilization baseline | Smoke regression + manifest validation |
-| 11 | Quality gates | Expanded tests + static checks + mutation baseline |
-| 12 | Web modular refactor | Web app decomposition into tested modules |
+| Sprint | Goal | Definition of Done (short) | Status |
+|---|---|---|---|
+| 0 | Preparation and architecture skeleton | Project bootstraps, empty simulation loop | Historical completed |
+| 1 | Simulation core | Tasks execute, state updates each tick | Historical completed |
+| 2 | Base MAS | Agents coordinate task distribution | Historical completed |
+| 3 | Control algorithms | >=3 algorithms, configurable switching | Historical completed |
+| 4 | Metrics and observability | Metrics, logs, CSV, plots | Historical completed |
+| 5 | Dynamic scenarios | >=3 scenarios, adaptive reactions | Historical completed |
+| 6 | Intelligent methods (ML/ZNN) | Forecast is used and improves metrics | Historical completed |
+| 7 | LLM agent integration | LLM affects control and is compared vs algorithms | Historical completed |
+| 8 | Experimental module | Batch experiment runner + comparison tables | Historical completed |
+| 9 | Publication-level finish | Reproducibility and clean code baseline | Historical completed |
+| 10 | Stabilization baseline | Smoke regression + manifest validation | Closed |
+| 11 | Quality gates | Expanded tests + static checks + mutation baseline | Closed |
+| 12 | Web modular refactor | Web app decomposition into tested modules | Closed |
+| 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | In progress (slices complete, pending merge) |
+| 14 | Publication pipeline hardening | `publication.py` split + statistics validation | Planned |
+| 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Planned |
+| 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Planned |
+| 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Planned |
+| 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Planned |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -47,6 +53,193 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 10 | Closed | 2026-05-06 18:30:02 +07:00 | commit `2426af1`, merged via PR #3 |
 | 11 | Closed | 2026-05-06 19:38:10 +07:00 | commit `5a09403` |
 | 12 | Closed | 2026-05-14 10:14:40 +07:00 | merged to `main` via PRs #10-#15, tip merge commit `c892939` |
+| 13 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` |
+| 14 | Planned | n/a | n/a |
+| 15 | Planned | n/a | n/a |
+| 16 | Planned | n/a | n/a |
+| 17 | Planned | n/a | n/a |
+| 18 | Planned | n/a | n/a |
+
+## Detailed Sprint Backlog And Status
+
+### Sprint 0 - Preparation and architecture
+
+| Task | Description | Status |
+|---|---|---|
+| 0.1 | Create project structure (`core/agents/algorithms/simulation/experiments/metrics`) | Done (historical) |
+| 0.2 | Define base interfaces: `Node`, `Task`, `Agent`, `SystemState` | Done (historical) |
+| 0.3 | Add experiment configuration (`config.yaml`) | Done (historical) |
+| 0.4 | Setup Python environment and `requirements.txt` | Done (historical) |
+
+### Sprint 1 - Simulation core
+
+| Task | Description | Status |
+|---|---|---|
+| 1.1 | Implement `Node` resources and load model | Done (historical) |
+| 1.2 | Implement `Task` requirements and deadline model | Done (historical) |
+| 1.3 | Implement network graph via `networkx` | Done (historical) |
+| 1.4 | Implement task queue | Done (historical) |
+| 1.5 | Implement `SystemState` | Done (historical) |
+| 1.6 | Implement base loop (`generate -> assign -> update`) | Done (historical) |
+
+### Sprint 2 - Base MAS
+
+| Task | Description | Status |
+|---|---|---|
+| 2.1 | Implement base `Agent` class | Done (historical) |
+| 2.2 | Implement `MonitoringAgent` | Done (historical) |
+| 2.3 | Implement `ComputeAgent` | Done (historical) |
+| 2.4 | Implement `NetworkAgent` | Done (historical) |
+| 2.5 | Implement `QoSAgent` | Done (historical) |
+| 2.6 | Implement agent communication (`agent.send(message)`) | Done (historical) |
+
+### Sprint 3 - Control algorithms
+
+| Task | Description | Status |
+|---|---|---|
+| 3.1 | Implement round-robin scheduler | Done (historical) |
+| 3.2 | Implement min-load scheduler | Done (historical) |
+| 3.3 | Implement greedy scheduler | Done (historical) |
+| 3.4 | Implement `OptimizationAgent` | Done (historical) |
+| 3.5 | Support algorithm switching via config | Done (historical) |
+
+### Sprint 4 - Metrics and observability
+
+| Task | Description | Status |
+|---|---|---|
+| 4.1 | Implement metrics: latency / throughput / load | Done (historical) |
+| 4.2 | Implement logging | Done (historical) |
+| 4.3 | Save results to CSV | Done (historical) |
+| 4.4 | Add visualization via `matplotlib` | Done (historical) |
+
+### Sprint 5 - Dynamics and scenarios
+
+| Task | Description | Status |
+|---|---|---|
+| 5.1 | Dynamic load scenario | Done (historical) |
+| 5.2 | Peak load scenario | Done (historical) |
+| 5.3 | Node failure scenario | Done (historical) |
+| 5.4 | Heterogeneous tasks scenario | Done (historical) |
+
+### Sprint 6 - Intelligent methods (ML/ZNN)
+
+| Task | Description | Status |
+|---|---|---|
+| 6.1 | Implement `PredictionAgent` | Done (historical) |
+| 6.2 | Add simple regression model | Done (historical) |
+| 6.3 | Add simplified ZNN module | Done (historical) |
+| 6.4 | Integrate intelligence output into control | Done (historical) |
+
+### Sprint 7 - LLM agent integration
+
+| Task | Description | Status |
+|---|---|---|
+| 7.1 | Convert state to text payload | Done (historical) |
+| 7.2 | Add prompt template | Done (historical) |
+| 7.3 | Integrate with LLM API client | Done (historical) |
+| 7.4 | Generate control decisions from LLM | Done (historical) |
+| 7.5 | Add action policy guard / clamping | Done (historical) |
+
+### Sprint 8 - Experimental module
+
+| Task | Description | Status |
+|---|---|---|
+| 8.1 | Implement experiment runner | Done (historical) |
+| 8.2 | Implement batch execution | Done (historical) |
+| 8.3 | Implement algorithm comparison | Done (historical) |
+| 8.4 | Implement consolidated result output | Done (historical) |
+
+### Sprint 9 - Publication-level finalization
+
+| Task | Description | Status |
+|---|---|---|
+| 9.1 | Documentation baseline | Done (historical) |
+| 9.2 | Seed fixation and reproducibility practices | Done (historical) |
+| 9.3 | Result export pathways | Done (historical) |
+| 9.4 | Publication-ready plotting profiles | Done (historical) |
+
+### Sprint 10 - Stabilization baseline
+
+| Task | Description | Status |
+|---|---|---|
+| 10.1 | Smoke runner for main execution modes | Done |
+| 10.2 | Golden smoke baseline snapshots | Done |
+| 10.3 | Manifest schema validation | Done |
+| 10.4 | CI smoke workflow | Done |
+
+### Sprint 11 - Quality gates
+
+| Task | Description | Status |
+|---|---|---|
+| 11.1 | Expand unit and integration test coverage | Done |
+| 11.2 | Add static gates (`ruff`, `mypy`) | Done |
+| 11.3 | Add pre-commit hooks | Done |
+| 11.4 | Add mutation baseline harness | Done |
+
+### Sprint 12 - Web modular refactor
+
+| Task | Description | Status |
+|---|---|---|
+| 12.1 | Split large `project/web/app.py` into route/view/helper modules | Done |
+| 12.2 | Add unit tests for extracted modules | Done |
+| 12.3 | Add end-to-end web flow integration tests | Done |
+| 12.4 | Close sprint in governance log | Done |
+
+### Sprint 13 - Experiments orchestration refactor (next)
+
+| Task | Description | Status |
+|---|---|---|
+| 13.1 | Extract CLI parser/schema from `project/experiments/run.py` | Done |
+| 13.2 | Extract run mode dispatch table and handlers | Done |
+| 13.3 | Split single/compare execution paths into dedicated modules | Done |
+| 13.4 | Split batch/repro/AB/publication mode handlers | Done |
+| 13.5 | Add integration tests per mode + update docs | Done |
+
+### Sprint 14 - Publication pipeline hardening
+
+| Task | Description | Status |
+|---|---|---|
+| 14.1 | Decompose `project/experiments/publication.py` into cohesive modules | Planned |
+| 14.2 | Add strict validation for statistical outputs (mean/std/CI) | Planned |
+| 14.3 | Add hypothesis result contract checks (H1-H5) | Planned |
+| 14.4 | Add deterministic fixtures for publication scenarios | Planned |
+| 14.5 | Add regression tests for publication artifacts | Planned |
+
+### Sprint 15 - Reproducibility contract hardening
+
+| Task | Description | Status |
+|---|---|---|
+| 15.1 | Strengthen run/batch/publication manifest schema and versioning | Planned |
+| 15.2 | Add deterministic replay command and verification report | Planned |
+| 15.3 | Add artifact integrity checks (hashes for manifests/results) | Planned |
+| 15.4 | Document reproducibility SOP end-to-end | Planned |
+
+### Sprint 16 - Web production hardening
+
+| Task | Description | Status |
+|---|---|---|
+| 16.1 | Add resilient job supervision and timeout/error surfacing in UI | Planned |
+| 16.2 | Add server-side request validation and safer defaults | Planned |
+| 16.3 | Add diagnostics endpoints/log bundle export for failed runs | Planned |
+| 16.4 | Add web-level regression tests for key user flows | Planned |
+
+### Sprint 17 - Scalability and performance
+
+| Task | Description | Status |
+|---|---|---|
+| 17.1 | Add profiling harness for large-scale runs (nodes/tasks sweeps) | Planned |
+| 17.2 | Optimize hot paths in simulation loop and metrics pipeline | Planned |
+| 17.3 | Add performance budgets and threshold checks in CI | Planned |
+| 17.4 | Publish scalability report templates and baseline numbers | Planned |
+
+### Sprint 18 - Release candidate for paper/monograph
+
+| Task | Description | Status |
+|---|---|---|
+| 18.1 | Finalize release checklist and freeze config profiles | Planned |
+| 18.2 | Produce reproducible experiment bundle for publication appendix | Planned |
+| 18.3 | Final QA pass across CLI/Web/repro/publication flows | Planned |
+| 18.4 | Prepare final docs package (architecture, methods, threats to validity) | Planned |
 
 ## Active Sprint Slice Log (Sprint 12)
 
@@ -60,6 +253,18 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-13 19:10:03 | Add explicit sprint plan/log governance file | OK (process compliance) | docs only | `920472f` |
 | 2026-05-14 09:57:53 | Add end-to-end web integration tests (critical routes + job lifecycle) | OK (DoD closure coverage) | targeted + full pytest pass | `b186445` |
 
-## Remaining Work To Close Sprint 12
+## Active Sprint Slice Log (Sprint 13)
 
-1. Completed.
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-14 11:18:42 | 13.1 Extract CLI parser/schema from `run.py` | OK (parser extracted to dedicated module) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 11:24:36 | 13.2 Extract run mode dispatch table and handlers | OK (main dispatch chain replaced by mode table) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 11:29:15 | 13.3 Split single/compare execution paths into dedicated modules | OK (`mode_single_compare` + shared `common` helpers extracted) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 11:33:12 | 13.4 Split batch/repro/AB/publication mode handlers | OK (`mode_advanced` extracted and wired into dispatcher) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 11:35:10 | 13.5 Add integration tests per mode + update docs | OK (handler wiring tests added for all run modes) | targeted + full pytest pass | current slice commit |
+
+## Remaining Work To Close Sprint 13
+
+1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
+2. Merge PR to `main`.
+3. Update `Sprint Closure Register` row for Sprint 13 with close timestamp and merge evidence.
