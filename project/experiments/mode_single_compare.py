@@ -11,6 +11,7 @@ from project.core.config import ExperimentConfig
 from project.core.models import SystemState
 from project.experiments.common import persist_run_artifacts, slug, with_algorithm
 from project.experiments.controller import Experiment
+from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest, write_manifest
 from project.metrics import summarize_state
 
@@ -79,4 +80,11 @@ def run_comparison_mode(
         ),
     )
     print(f"Comparison manifest: {manifest_path}")
-
+    integrity_path = write_artifact_integrity_file(
+        comparison_dir / "comparison_artifact_integrity.json",
+        {
+            "comparison_csv": str(comparison_csv),
+            "comparison_manifest_json": str(manifest_path),
+        },
+    )
+    print(f"Comparison artifact integrity: {integrity_path}")

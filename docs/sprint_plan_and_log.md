@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 15:18:06 +07:00  
+Last updated: 2026-05-14 15:48:12 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -211,7 +211,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 |---|---|---|
 | 15.1 | Strengthen run/batch/publication manifest schema and versioning | Done |
 | 15.2 | Add deterministic replay command and verification report | Done |
-| 15.3 | Add artifact integrity checks (hashes for manifests/results) | Planned |
+| 15.3 | Add artifact integrity checks (hashes for manifests/results) | Done |
 | 15.4 | Document reproducibility SOP end-to-end | Planned |
 
 ### Sprint 16 - Web production hardening
@@ -291,3 +291,4 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 |---|---|---|---|---|
 | 2026-05-14 12:27:09 | 15.1 Strengthen manifest schema and versioning | OK (`manifest_schema` + `manifest_schema_version` contract enforced and tested) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 15:18:06 | 15.2 Add deterministic replay command and verification report | OK (`--replay-manifest` mode added with validated replay + JSON verification report artifacts) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 15:48:12 | 15.3 Add artifact integrity checks (hashes for manifests/results) | OK (`artifact_integrity` module + SHA-256 reports integrated into single/batch/publication/repro/replay paths) | targeted + full pytest pass | current slice commit |

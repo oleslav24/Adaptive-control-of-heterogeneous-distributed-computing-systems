@@ -18,6 +18,7 @@ from project.core.config import (
     SimulationConfig,
 )
 from project.core.models import Task
+from project.experiments.integrity import verify_artifact_integrity_file
 from project.experiments.mode_advanced import run_replay_manifest_mode
 from project.experiments.mode_single_compare import run_single_mode
 
@@ -91,9 +92,14 @@ def test_run_replay_manifest_mode_generates_verification_artifacts() -> None:
     replay_csv = replay_dir / "replay_runs.csv"
     replay_report = replay_dir / "replay_verification_report.json"
     replay_manifest = replay_dir / "replay_manifest.json"
+    replay_integrity = replay_dir / "replay_artifact_integrity.json"
     assert replay_csv.exists()
     assert replay_report.exists()
     assert replay_manifest.exists()
+    assert replay_integrity.exists()
+    ok, errors = verify_artifact_integrity_file(replay_integrity)
+    assert ok is True
+    assert errors == []
 
     with replay_report.open("r", encoding="utf-8") as f:
         payload = json.load(f)

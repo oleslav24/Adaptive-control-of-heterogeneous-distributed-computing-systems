@@ -15,6 +15,7 @@ import pandas as pd
 from project.core.config import ExperimentConfig, load_config
 from project.experiments.common import persist_run_artifacts, slug
 from project.experiments.controller import Experiment
+from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import (
     build_run_manifest,
     validate_run_manifest,
@@ -125,6 +126,14 @@ def run_replay_manifest_mode(
             },
         ),
     )
+    integrity_path = write_artifact_integrity_file(
+        replay_dir / "replay_artifact_integrity.json",
+        {
+            "replay_csv": str(replay_csv),
+            "replay_report_json": str(report_path),
+            "replay_manifest_json": str(replay_manifest_path),
+        },
+    )
 
     print(f"Replay verification source: {source_manifest_path}")
     print(f"Scenario: {config.scenario}")
@@ -143,6 +152,7 @@ def run_replay_manifest_mode(
     print(f"Replay CSV: {replay_csv}")
     print(f"Replay report: {report_path}")
     print(f"Replay manifest: {replay_manifest_path}")
+    print(f"Replay artifact integrity: {integrity_path}")
 
 
 def run_intelligence_ab_mode(config: ExperimentConfig, cli_args: list[str]) -> None:
@@ -214,6 +224,14 @@ def run_intelligence_ab_mode(config: ExperimentConfig, cli_args: list[str]) -> N
         ),
     )
     print(f"A/B manifest: {manifest_path}")
+    integrity_path = write_artifact_integrity_file(
+        ab_dir / "intelligence_ab_artifact_integrity.json",
+        {
+            "ab_csv": str(ab_csv),
+            "ab_manifest_json": str(manifest_path),
+        },
+    )
+    print(f"A/B artifact integrity: {integrity_path}")
 
 
 def run_llm_ab_mode(config: ExperimentConfig, cli_args: list[str]) -> None:
@@ -290,6 +308,14 @@ def run_llm_ab_mode(config: ExperimentConfig, cli_args: list[str]) -> None:
         ),
     )
     print(f"LLM A/B manifest: {manifest_path}")
+    integrity_path = write_artifact_integrity_file(
+        ab_dir / "llm_ab_artifact_integrity.json",
+        {
+            "ab_csv": str(ab_csv),
+            "ab_manifest_json": str(manifest_path),
+        },
+    )
+    print(f"LLM A/B artifact integrity: {integrity_path}")
 
 
 def run_repro_check_mode(config: ExperimentConfig, runs: int, cli_args: list[str]) -> None:
@@ -339,6 +365,14 @@ def run_repro_check_mode(config: ExperimentConfig, runs: int, cli_args: list[str
         ),
     )
     print(f"Repro manifest: {manifest_path}")
+    integrity_path = write_artifact_integrity_file(
+        out_dir / "repro_check_artifact_integrity.json",
+        {
+            "repro_csv": str(repro_csv),
+            "repro_manifest_json": str(manifest_path),
+        },
+    )
+    print(f"Repro artifact integrity: {integrity_path}")
 
 
 def _evaluate_reproducibility(repro_df: pd.DataFrame) -> tuple[bool, list[str]]:

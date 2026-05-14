@@ -15,6 +15,7 @@ from project.core.config import (
     ExperimentConfig,
 )
 from project.experiments.controller import Experiment
+from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest, write_manifest
 from project.experiments.publication_catalog import (
     METHOD_CATALOG,
@@ -170,6 +171,10 @@ def run_publication_pipeline(
         quick_mode=quick,
     )
     output_paths["publication_report_md"] = str(report_path)
+    output_paths["artifact_integrity_json"] = write_artifact_integrity_file(
+        output_dir / "artifact_integrity.json",
+        output_paths,
+    )
 
     return StudyResult(
         output_dir=output_dir,
