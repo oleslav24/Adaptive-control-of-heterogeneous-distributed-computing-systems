@@ -22,7 +22,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 12 | Web modular refactor | Web app decomposition into tested modules | Closed |
 | 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | In progress (slices complete, pending merge) |
 | 14 | Publication pipeline hardening | `publication.py` split + statistics validation | In progress (slices complete, pending merge) |
-| 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | In progress |
+| 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | In progress (slices complete, pending merge) |
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Planned |
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Planned |
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Planned |
@@ -55,7 +55,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 12 | Closed | 2026-05-14 10:14:40 +07:00 | merged to `main` via PRs #10-#15, tip merge commit `c892939` |
 | 13 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` |
 | 14 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` (until Sprint 13 merge) |
-| 15 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` |
+| 15 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` (slices 15.1-15.4 complete) |
 | 16 | Planned | n/a | n/a |
 | 17 | Planned | n/a | n/a |
 | 18 | Planned | n/a | n/a |
