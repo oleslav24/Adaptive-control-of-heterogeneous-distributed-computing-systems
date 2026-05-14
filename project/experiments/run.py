@@ -20,6 +20,7 @@ from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig, load_config
 from project.core.models import SystemState
 from project.experiments.cli import parse_args
+from project.experiments.common import persist_run_artifacts, slug, with_algorithm
 from project.experiments.controller import Experiment
 from project.experiments.dispatch import (
     MODE_FINISH_MESSAGES,
@@ -28,9 +29,10 @@ from project.experiments.dispatch import (
     resolve_mode,
 )
 from project.experiments.manifest import build_run_manifest, write_manifest
+from project.experiments.mode_single_compare import run_comparison_mode, run_single_mode
 from project.experiments.publication import StudyResult, run_publication_pipeline
 from project.experiments.runner import BatchRunResult, BatchRunSpec, ExperimentRunner
-from project.metrics import persist_observability, summarize_state
+from project.metrics import summarize_state
 
 LOGGER = logging.getLogger(__name__)
 
@@ -106,7 +108,7 @@ def _handle_compare_mode(config: ExperimentConfig, args: Namespace, cli_args: li
     algorithms = _parse_compare_algorithms(args.compare_algorithms)
     if not algorithms:
         algorithms = config.optimization.compare_algorithms
-    _run_comparison(config, algorithms, cli_args)
+    run_comparison_mode(config, algorithms, cli_args)
 
 
 def _handle_batch_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
@@ -121,64 +123,8 @@ def _handle_repro_check_mode(config: ExperimentConfig, args: Namespace, cli_args
 
 def _handle_single_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:
     """Execute single run mode."""
-    final_state = Experiment(config=config).run()
-    artifacts = _persist_run_artifacts(config, final_state, mode="single", cli_args=cli_args)
+    final_state, artifacts = run_single_mode(config, cli_args)
     _print_single_result(config.name, final_state, artifacts)
-
-
-def _run_comparison(config: ExperimentConfig, algorithms: list[str], cli_args: list[str]) -> None:
-    """Run same scenario with multiple algorithms and export comparison table."""
-    print(f"Experiment '{config.name}' comparison")
-    print(
-        "scenario | algorithm | completed | pending | deadline_violations | latency | throughput | avg_load"
-    )
-    print("-" * 118)
-
-    rows: list[dict[str, object]] = []
-    for algorithm in algorithms:
-        scenario_config = _with_algorithm(config, algorithm)
-        scenario_config = replace(
-            scenario_config,
-            intelligence=replace(scenario_config.intelligence, adaptive_algorithm=False),
-            llm=replace(scenario_config.llm, enabled=False),
-        )
-        state = Experiment(config=scenario_config).run()
-        rows.append(summarize_state(state))
-        _persist_run_artifacts(
-            scenario_config,
-            state,
-            mode="comparison",
-            cli_args=cli_args,
-            extra={"comparison_algorithm": algorithm},
-        )
-        print(
-            f"{state.scenario} | {state.selected_algorithm} | {state.completed_tasks} | {state.pending_tasks} | "
-            f"{state.deadline_violations} | {state.avg_latency:.3f} | "
-            f"{state.throughput:.3f} | {state.avg_load:.3f}"
-        )
-
-    comparison_df = pd.DataFrame(rows)
-    comparison_dir = Path(config.observability.output_dir) / config.name / _slug(config.scenario)
-    comparison_dir.mkdir(parents=True, exist_ok=True)
-    comparison_csv = comparison_dir / "comparison.csv"
-    comparison_df.to_csv(comparison_csv, index=False)
-    print(f"Comparison CSV: {comparison_csv}")
-
-    manifest_path = comparison_dir / "comparison_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=config,
-            mode="comparison",
-            cli_args=cli_args,
-            extra={
-                "algorithms": algorithms,
-                "rows": comparison_df.to_dict(orient="records"),
-                "comparison_csv": str(comparison_csv),
-            },
-        ),
-    )
-    print(f"Comparison manifest: {manifest_path}")
 
 
 def _run_intelligence_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
@@ -193,14 +139,14 @@ def _run_intelligence_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
     )
     baseline_state = Experiment(config=baseline_config).run()
     smart_state = Experiment(config=smart_config).run()
-    _persist_run_artifacts(
+    persist_run_artifacts(
         baseline_config,
         baseline_state,
         mode="ab-intelligence",
         cli_args=cli_args,
         extra={"mode": "baseline"},
     )
-    _persist_run_artifacts(
+    persist_run_artifacts(
         smart_config,
         smart_state,
         mode="ab-intelligence",
@@ -233,7 +179,7 @@ def _run_intelligence_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
         {"mode": "intelligent", **summarize_state(smart_state)},
     ]
     ab_df = pd.DataFrame(rows)
-    ab_dir = Path(config.observability.output_dir) / config.name / _slug(config.scenario)
+    ab_dir = Path(config.observability.output_dir) / config.name / slug(config.scenario)
     ab_dir.mkdir(parents=True, exist_ok=True)
     ab_csv = ab_dir / "intelligence_ab.csv"
     ab_df.to_csv(ab_csv, index=False)
@@ -265,14 +211,14 @@ def _run_llm_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
     )
     baseline_state = Experiment(config=baseline_config).run()
     llm_state = Experiment(config=llm_config).run()
-    _persist_run_artifacts(
+    persist_run_artifacts(
         baseline_config,
         baseline_state,
         mode="ab-llm",
         cli_args=cli_args,
         extra={"mode": "baseline"},
     )
-    _persist_run_artifacts(
+    persist_run_artifacts(
         llm_config,
         llm_state,
         mode="ab-llm",
@@ -309,7 +255,7 @@ def _run_llm_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
         {"mode": "llm", **summarize_state(llm_state)},
     ]
     ab_df = pd.DataFrame(rows)
-    ab_dir = Path(config.observability.output_dir) / config.name / _slug(config.scenario)
+    ab_dir = Path(config.observability.output_dir) / config.name / slug(config.scenario)
     ab_dir.mkdir(parents=True, exist_ok=True)
     ab_csv = ab_dir / "llm_ab.csv"
     ab_df.to_csv(ab_csv, index=False)
@@ -357,7 +303,7 @@ def _run_repro_check(config: ExperimentConfig, runs: int, cli_args: list[str]) -
     out_dir = (
         Path(config.observability.output_dir)
         / config.name
-        / _slug(config.scenario)
+        / slug(config.scenario)
         / config.optimization.algorithm
     )
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -434,10 +380,10 @@ def _evaluate_reproducibility(repro_df: pd.DataFrame) -> tuple[bool, list[str]]:
     return reproducible, details
 
 
-def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace) -> ExperimentConfig:
+def _apply_runtime_overrides(config: ExperimentConfig, args: Namespace) -> ExperimentConfig:
     """Apply CLI overrides to loaded experiment configuration."""
     if args.algorithm:
-        config = _with_algorithm(config, args.algorithm)
+        config = with_algorithm(config, args.algorithm)
     if args.scenario:
         config = replace(config, scenario=str(args.scenario).strip())
     if args.disable_intelligence:
@@ -465,45 +411,6 @@ def _apply_runtime_overrides(config: ExperimentConfig, args: argparse.Namespace)
     return replace(config, observability=observability)
 
 
-def _persist_run_artifacts(
-    config: ExperimentConfig,
-    state: SystemState,
-    mode: str = "single",
-    cli_args: list[str] | None = None,
-    extra: dict[str, object] | None = None,
-) -> dict[str, str]:
-    """Persist observability artifacts for a single run flavor."""
-    output_dir = (
-        Path(config.observability.output_dir)
-        / config.name
-        / _slug(config.scenario)
-        / state.selected_algorithm
-    )
-    run_manifest = build_run_manifest(
-        config=config,
-        mode=mode,
-        cli_args=list(cli_args or []),
-        extra=extra or {},
-    )
-    return persist_observability(
-        state=state,
-        output_dir=output_dir,
-        save_csv=config.observability.save_csv,
-        save_plots=config.observability.save_plots,
-        save_json=config.observability.save_json,
-        plot_profile=config.observability.plot_profile,
-        plot_dpi=config.observability.plot_dpi,
-        plot_formats=config.observability.plot_formats,
-        run_manifest=run_manifest,
-    )
-
-
-def _with_algorithm(config: ExperimentConfig, algorithm: str) -> ExperimentConfig:
-    """Return config copy with normalized scheduling algorithm."""
-    optimization = replace(config.optimization, algorithm=normalize_algorithm(algorithm))
-    return replace(config, optimization=optimization)
-
-
 def _parse_compare_algorithms(raw: str | None) -> list[str]:
     """Parse comma-separated algorithm list from CLI."""
     if not raw:
@@ -522,7 +429,7 @@ def _parse_batch_scenarios(raw: str | None) -> list[str]:
         return list(DEFAULT_BATCH_SCENARIOS)
     parsed: list[str] = []
     for item in raw.split(","):
-        name = _slug(item)
+        name = slug(item)
         if name and name not in parsed:
             parsed.append(name)
     return parsed or list(DEFAULT_BATCH_SCENARIOS)
@@ -709,11 +616,6 @@ def _configure_logging(config: ExperimentConfig) -> Path:
         force=True,
     )
     return log_path
-
-
-def _slug(value: str) -> str:
-    """Normalize free-form labels into filesystem-friendly token."""
-    return str(value).strip().lower().replace("_", "-").replace(" ", "-")
 
 
 if __name__ == "__main__":
