@@ -101,6 +101,7 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "batch_algorithms": "Batch algorithms",
         "batch_runs": "Batch runs",
         "repro_runs": "Repro runs",
+        "job_timeout_seconds": "Job timeout (sec)",
         "study_seeds": "Study seeds",
         "output_dir_override": "Output dir override",
         "log_level": "Log level",
@@ -137,6 +138,7 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "job": "Job",
         "back_dashboard": "Back to dashboard",
         "return_code": "Return code",
+        "status_details": "Status details",
         "stop_job": "Stop job",
         "latency_avg": "Latency (avg)",
         "throughput": "Throughput",
@@ -252,6 +254,7 @@ STATUS_LABELS: dict[str, dict[str, str]] = {
         "success": "success",
         "failed": "failed",
         "stopped": "stopped",
+        "timeout": "timeout",
     },
     "ru": {
         "queued": "в очереди",
@@ -331,4 +334,3 @@ def chart_line_note(lang: str, series: str) -> str:
     }
     table = notes_ru if lang == "ru" else notes_en
     return table.get(series, series)
-

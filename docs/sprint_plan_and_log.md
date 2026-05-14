@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 16:12:14 +07:00  
+Last updated: 2026-05-14 16:24:57 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -23,7 +23,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | Closed |
 | 14 | Publication pipeline hardening | `publication.py` split + statistics validation | Closed |
 | 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Closed |
-| 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Planned |
+| 16 | Web production hardening | Stable web UX, resilience, and diagnostics | In progress |
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Planned |
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Planned |
 
@@ -56,7 +56,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 13 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
 | 14 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
 | 15 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
-| 16 | Planned | n/a | n/a |
+| 16 | In progress | n/a | active branch `codex/sprint16-web-production-hardening` |
 | 17 | Planned | n/a | n/a |
 | 18 | Planned | n/a | n/a |
 
@@ -218,7 +218,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 | Task | Description | Status |
 |---|---|---|
-| 16.1 | Add resilient job supervision and timeout/error surfacing in UI | Planned |
+| 16.1 | Add resilient job supervision and timeout/error surfacing in UI | Done |
 | 16.2 | Add server-side request validation and safer defaults | Planned |
 | 16.3 | Add diagnostics endpoints/log bundle export for failed runs | Planned |
 | 16.4 | Add web-level regression tests for key user flows | Planned |
@@ -293,3 +293,9 @@ Closed in `main` via PR #18 (merge commit `145a999`).
 ## Sprint 15 Closure
 
 Closed in `main` via PR #18 (merge commit `145a999`).
+
+## Active Sprint Slice Log (Sprint 16)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-14 16:24:57 | 16.1 Resilient job supervision + timeout/error surfacing in UI | OK (`JobManager` watchdog + timeout status/details + UI status details line + timeout form control) | targeted + full pytest pass | current slice commit |

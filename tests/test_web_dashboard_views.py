@@ -34,6 +34,7 @@ def test_build_dashboard_html_with_empty_jobs_renders_defaults() -> None:
     assert tr("en", "no_runs_started") in html
     assert 'id="run-form"' in html
     assert 'name="config" value="config.yaml"' in html
+    assert 'name="job_timeout_seconds" value="3600"' in html
     assert f'data-default-batch-scenario-count="{len(DEFAULT_BATCH_SCENARIOS)}"' in html
     assert "href=\"/files?lang=en&amp;path=outputs\"" in html
 

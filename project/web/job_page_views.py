@@ -52,6 +52,7 @@ def build_job_page_html(job: _JobLike, lang: str) -> str:
   <p>{escape(tr(lang, "started"))}: <code id="job-started">{escape(fmt_dt(job.started_at))}</code></p>
   <p>{escape(tr(lang, "finished"))}: <code id="job-finished">{escape(fmt_dt(job.finished_at))}</code></p>
   <p>{escape(tr(lang, "return_code"))}: <code id="job-rc">{escape(str(job.return_code))}</code></p>
+  <p>{escape(tr(lang, "status_details"))}: <code id="job-details">-</code></p>
   <p>{escape(tr(lang, "command"))}:</p>
   <pre id="job-command">{escape(job.command_text())}</pre>
   {stop_button}
@@ -545,6 +546,7 @@ function updateJobView(data) {{
   document.getElementById("job-started").textContent = data.started_at;
   document.getElementById("job-finished").textContent = data.finished_at;
   document.getElementById("job-rc").textContent = String(data.return_code);
+  document.getElementById("job-details").textContent = String(data.status_details || "-");
   document.getElementById("job-command").textContent = data.command;
 
   const logEl = document.getElementById("job-log");

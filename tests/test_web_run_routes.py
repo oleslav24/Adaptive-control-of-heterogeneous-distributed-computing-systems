@@ -10,6 +10,7 @@ from project.web.run_routes import build_start_run_response, build_stop_run_resp
 class _FakeJob:
     id: str
     status: str = "running"
+    status_details: str = ""
     stop_result: bool = True
     logs: list[str] = field(default_factory=list)
 
@@ -25,11 +26,19 @@ class _FakeJobManager:
         self._jobs: dict[str, _FakeJob] = {}
         self.last_create_command: list[str] | None = None
         self.last_create_cwd: Path | None = None
+        self.last_timeout_seconds: int | None = None
         self._next_id = 1
 
-    def create(self, *, command: list[str], cwd: Path) -> _FakeJob:
+    def create(
+        self,
+        *,
+        command: list[str],
+        cwd: Path,
+        timeout_seconds: int | None = None,
+    ) -> _FakeJob:
         self.last_create_command = list(command)
         self.last_create_cwd = cwd
+        self.last_timeout_seconds = timeout_seconds
         job = _FakeJob(id=f"job-{self._next_id}")
         self._jobs[job.id] = job
         self._next_id += 1
@@ -67,6 +76,43 @@ def test_build_start_run_response_creates_job_and_redirects() -> None:
     assert "min-load" in manager.last_create_command
 
 
+def test_build_start_run_response_parses_timeout_seconds() -> None:
+    """Start route should forward timeout hint from form to job manager."""
+    manager = _FakeJobManager()
+    form = {
+        "lang": ["en"],
+        "mode": ["single"],
+        "job_timeout_seconds": ["25"],
+    }
+    workspace_root = Path(".").resolve()
+    response = build_start_run_response(
+        form,
+        manager,
+        workspace_root=workspace_root,
+        default_config="config.yaml",
+    )
+    assert response.status.value == 303
+    assert manager.last_timeout_seconds == 25
+
+
+def test_build_start_run_response_ignores_invalid_timeout() -> None:
+    """Invalid timeout input should fallback to manager default semantics."""
+    manager = _FakeJobManager()
+    form = {
+        "lang": ["en"],
+        "mode": ["single"],
+        "job_timeout_seconds": ["oops"],
+    }
+    response = build_start_run_response(
+        form,
+        manager,
+        workspace_root=Path(".").resolve(),
+        default_config="config.yaml",
+    )
+    assert response.status.value == 303
+    assert manager.last_timeout_seconds is None
+
+
 def test_build_stop_run_response_returns_not_found_for_unknown_job() -> None:
     """Stop route should return text not-found when job is missing."""
     manager = _FakeJobManager()
@@ -83,4 +129,5 @@ def test_build_stop_run_response_updates_state_and_redirects() -> None:
     assert response.status.value == 303
     assert response.headers["Location"] == f"/job?lang=en&id={job.id}"
     assert job.status == "stopped"
+    assert job.status_details == "stop-requested"
     assert job.logs[-1] == "[web-ui] stop requested."

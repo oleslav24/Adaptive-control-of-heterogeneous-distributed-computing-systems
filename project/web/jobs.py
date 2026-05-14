@@ -7,11 +7,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 import shlex
 import subprocess
+from threading import Event
 from threading import Lock, Thread
+import time
 from uuid import uuid4
 
 
 MAX_LOG_LINES = 4000
+DEFAULT_JOB_TIMEOUT_SECONDS = 3600
+MIN_JOB_TIMEOUT_SECONDS = 10
+MAX_JOB_TIMEOUT_SECONDS = 86400
+JOB_POLL_INTERVAL_SECONDS = 0.2
+JOB_TERMINATE_GRACE_SECONDS = 3.0
 
 
 @dataclass(slots=True)
@@ -21,10 +28,14 @@ class RunJob:
     id: str
     command: list[str]
     cwd: Path
-    status: str = "queued"  # queued | running | success | failed | stopped
+    status: str = "queued"  # queued | running | success | failed | stopped | timeout
     started_at: datetime | None = None
     finished_at: datetime | None = None
     return_code: int | None = None
+    timeout_seconds: int | None = DEFAULT_JOB_TIMEOUT_SECONDS
+    timed_out: bool = False
+    stop_requested: bool = False
+    status_details: str = ""
     log_lines: list[str] = field(default_factory=list)
     process: subprocess.Popen[str] | None = field(default=None, repr=False)
     _lock: Lock = field(default_factory=Lock, repr=False)
@@ -44,6 +55,7 @@ class RunJob:
     def stop(self) -> bool:
         """Request process termination if still running."""
         with self._lock:
+            self.stop_requested = True
             process = self.process
         if process is None or process.poll() is not None:
             return False
@@ -58,12 +70,19 @@ class JobManager:
         self._jobs: dict[str, RunJob] = {}
         self._lock = Lock()
 
-    def create(self, command: list[str], cwd: Path) -> RunJob:
+    def create(
+        self,
+        command: list[str],
+        cwd: Path,
+        *,
+        timeout_seconds: int | None = None,
+    ) -> RunJob:
         """Create and launch background job for command."""
         job = RunJob(
             id=uuid4().hex[:10],
             command=list(command),
             cwd=cwd,
+            timeout_seconds=self._normalize_timeout_seconds(timeout_seconds),
         )
         with self._lock:
             self._jobs[job.id] = job
@@ -89,8 +108,11 @@ class JobManager:
     def _run_job(self, job: RunJob) -> None:
         """Worker routine that executes command and captures logs."""
         job.status = "running"
+        job.status_details = ""
         job.started_at = datetime.now(timezone.utc)
         process: subprocess.Popen[str] | None = None
+        stream_done = Event()
+        output_thread: Thread | None = None
         try:
             process = subprocess.Popen(
                 job.command,
@@ -104,24 +126,106 @@ class JobManager:
             )
             with job._lock:
                 job.process = process
-            if process.stdout is not None:
-                for line in process.stdout:
-                    job.append_log(line)
+            output_thread = Thread(
+                target=self._capture_stdout,
+                args=(job, process, stream_done),
+                daemon=True,
+            )
+            output_thread.start()
+            self._supervise_process(job, process)
             code = process.wait()
             job.return_code = code
-            if code == 0:
+            if job.status == "timeout":
+                pass
+            elif job.stop_requested:
+                job.status = "stopped"
+                if not job.status_details:
+                    job.status_details = "stop-requested"
+            elif code == 0:
                 job.status = "success"
+                if not job.status_details:
+                    job.status_details = "completed"
             else:
-                # Distinguish regular failures from manual stop if possible.
-                if job.status != "stopped":
-                    job.status = "failed"
+                job.status = "failed"
+                if not job.status_details:
+                    job.status_details = f"exit-code:{code}"
         except Exception as exc:  # noqa: BLE001
             job.append_log(f"[web-ui] runner error: {exc!r}")
             job.return_code = -1
-            if job.status != "stopped":
+            if job.status not in {"stopped", "timeout"}:
                 job.status = "failed"
+            if not job.status_details:
+                job.status_details = f"runner-error:{type(exc).__name__}"
         finally:
+            if output_thread is not None:
+                stream_done.set()
+                output_thread.join(timeout=1.0)
             with job._lock:
                 job.process = None
             job.finished_at = datetime.now(timezone.utc)
+
+    def _supervise_process(self, job: RunJob, process: subprocess.Popen[str]) -> None:
+        """Poll running process and enforce timeout/stop semantics."""
+        started = job.started_at or datetime.now(timezone.utc)
+        while process.poll() is None:
+            if job.stop_requested:
+                self._terminate_with_grace(process)
+                break
+            timeout_seconds = job.timeout_seconds
+            if timeout_seconds is not None and timeout_seconds > 0:
+                elapsed = (datetime.now(timezone.utc) - started).total_seconds()
+                if elapsed >= timeout_seconds:
+                    job.timed_out = True
+                    job.status = "timeout"
+                    job.status_details = f"timeout>{int(timeout_seconds)}s"
+                    job.append_log(
+                        f"[web-ui] timeout reached ({int(timeout_seconds)}s), terminating process."
+                    )
+                    self._terminate_with_grace(process)
+                    break
+            time.sleep(JOB_POLL_INTERVAL_SECONDS)
+
+    def _capture_stdout(
+        self,
+        job: RunJob,
+        process: subprocess.Popen[str],
+        done_event: Event,
+    ) -> None:
+        """Consume process stdout line-by-line to prevent PIPE blocking."""
+        stream = process.stdout
+        if stream is None:
+            return
+        while not done_event.is_set():
+            line = stream.readline()
+            if not line:
+                if process.poll() is not None:
+                    break
+                time.sleep(0.05)
+                continue
+            job.append_log(line)
+
+    def _terminate_with_grace(self, process: subprocess.Popen[str]) -> None:
+        """Attempt graceful terminate, then force kill on timeout."""
+        if process.poll() is not None:
+            return
+        process.terminate()
+        deadline = time.monotonic() + JOB_TERMINATE_GRACE_SECONDS
+        while process.poll() is None and time.monotonic() < deadline:
+            time.sleep(0.05)
+        if process.poll() is None:
+            process.kill()
+
+    def _normalize_timeout_seconds(self, raw_value: int | None) -> int:
+        """Normalize optional timeout input to safe bounded value."""
+        if raw_value is None:
+            return DEFAULT_JOB_TIMEOUT_SECONDS
+        try:
+            parsed = int(raw_value)
+        except (TypeError, ValueError):
+            return DEFAULT_JOB_TIMEOUT_SECONDS
+        if parsed < MIN_JOB_TIMEOUT_SECONDS:
+            return MIN_JOB_TIMEOUT_SECONDS
+        if parsed > MAX_JOB_TIMEOUT_SECONDS:
+            return MAX_JOB_TIMEOUT_SECONDS
+        return parsed
 

@@ -14,6 +14,9 @@ class _FakeJob:
     started_at: datetime | None = datetime(2026, 5, 8, 8, 0, tzinfo=timezone.utc)
     finished_at: datetime | None = None
     return_code: int | None = None
+    timeout_seconds: int | None = 3600
+    timed_out: bool = False
+    status_details: str = ""
     log_lines: list[str] = field(default_factory=list)
     _lock: Lock = field(default_factory=Lock)
     command: list[str] = field(default_factory=lambda: ["python", "-m", "project.experiments.run"])
@@ -50,13 +53,14 @@ def test_job_payload_localizes_runs_and_status(monkeypatch) -> None:
             "t=1 queue=2 completed=1 latency=0.9 throughput=1.0 avg_load=0.3",
         ]
     )
-    result = payloads.job_payload(job, "ru")
+    result = payloads.job_payload(job, "en")
     runs = result["metrics"]["runs"]
     assert isinstance(runs, list)
-    assert runs[0]["scenario_label"] == "Статический"
-    assert runs[0]["algorithm_label"] == "Минимальная нагрузка"
-    assert "в очереди" in result["status_badge_html"]
-    assert result["insights"] == ["lang=ru", "status=queued", "max=6"]
+    assert runs[0]["scenario_label"] == "Static"
+    assert runs[0]["algorithm_label"] == "Min-load"
+    assert "queued" in result["status_badge_html"]
+    assert result["insights"] == ["lang=en", "status=queued", "max=6"]
+    assert result["status_details"] == "-"
 
 
 def test_job_payload_uses_last_run_for_researcher_analysis(monkeypatch) -> None:

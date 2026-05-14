@@ -160,6 +160,11 @@ def build_dashboard_html(
         <input type="number" name="repro_runs" value="3" min="2" />
       </div>
 
+      <div class="form-field" data-field="job_timeout_seconds">
+        <label>{escape(tr(lang, "job_timeout_seconds"))}</label>
+        <input type="number" name="job_timeout_seconds" value="3600" min="10" max="86400" />
+      </div>
+
       <div class="form-field" data-field="study_seeds">
         <label>{escape(tr(lang, "study_seeds"))}</label>
         <input type="text" name="study_seeds" value="42-71" />
@@ -217,6 +222,7 @@ def build_dashboard_html(
         "mode",
         "config_path",
         "llm_provider",
+        "job_timeout_seconds",
         "output_dir_override",
         "log_level"
       ]);
@@ -232,7 +238,8 @@ def build_dashboard_html(
       const trackedFields = [
         "mode", "config_path", "algorithm", "scenario", "llm_provider",
         "compare_algorithms", "batch_scenarios", "batch_algorithms",
-        "batch_runs", "repro_runs", "study_seeds", "output_dir_override", "log_level"
+        "batch_runs", "repro_runs", "job_timeout_seconds", "study_seeds",
+        "output_dir_override", "log_level"
       ];
 
       const alwaysChecks = new Set(["disable_intelligence", "disable_llm", "no_plots", "no_csv"]);

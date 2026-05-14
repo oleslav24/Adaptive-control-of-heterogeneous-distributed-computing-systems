@@ -38,8 +38,14 @@ class _FakeJobManager:
     def get(self, job_id: str) -> _FakeJob | None:
         return self._jobs.get(job_id)
 
-    def create(self, *, command: list[str], cwd: Path) -> _FakeJob:
-        _ = (command, cwd)
+    def create(
+        self,
+        *,
+        command: list[str],
+        cwd: Path,
+        timeout_seconds: int | None = None,
+    ) -> _FakeJob:
+        _ = (command, cwd, timeout_seconds)
         job = _FakeJob(id="job-2")
         self._jobs[job.id] = job
         return job
