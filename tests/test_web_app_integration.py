@@ -248,3 +248,71 @@ def test_web_http_stop_route_stops_running_job(monkeypatch) -> None:
             assert "[web-ui] stop requested." in payload["log_text"]
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
+
+
+def test_web_http_run_route_rejects_invalid_request() -> None:
+    """`/run` should return HTTP 400 for invalid server-side validated payload."""
+    workspace = _workspace_dir("__test_web_app_integration_invalid_run")
+    try:
+        manager = JobManager()
+        with _running_server(manager, workspace_root=workspace) as (host, port):
+            status, _headers, body = _request(
+                host,
+                port,
+                "POST",
+                "/run",
+                form={"lang": "en", "mode": "single", "config": "missing.yaml"},
+            )
+            assert status == 400
+            assert b"Invalid request:" in body
+            assert manager.list_jobs() == []
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)
+
+
+def test_web_http_failed_job_exposes_diagnostics_and_bundle(monkeypatch) -> None:
+    """Failed job should expose diagnostics JSON and downloadable zip bundle."""
+
+    def _failing_command_builder(_form, *, default_config: str) -> list[str]:
+        _ = default_config
+        inline = (
+            "print('Simulation initialized: scenario=static algorithm=min-load', flush=True);"
+            "print('fatal error', flush=True);"
+            "raise SystemExit(4)"
+        )
+        return [sys.executable, "-c", inline]
+
+    monkeypatch.setattr(run_routes, "build_run_command", _failing_command_builder)
+    workspace = _workspace_dir("__test_web_app_integration_diagnostics")
+    try:
+        (workspace / "config.yaml").write_text("name: web-test\n", encoding="utf-8")
+        manager = JobManager()
+        with _running_server(manager, workspace_root=workspace) as (host, port):
+            status, headers, _body = _request(
+                host,
+                port,
+                "POST",
+                "/run",
+                form={"lang": "en", "mode": "single", "config": "config.yaml"},
+            )
+            assert status == 303
+            job_id = _extract_job_id(headers["Location"])
+
+            assert _wait_until(
+                lambda: (manager.get(job_id) is not None and manager.get(job_id).status in {"failed", "timeout"}),
+                timeout_seconds=5,
+            )
+
+            status, _headers, body = _request(host, port, "GET", f"/job-diagnostics?id={job_id}&lang=en")
+            assert status == 200
+            payload = json.loads(body.decode("utf-8"))
+            assert payload["id"] == job_id
+            assert payload["can_export_bundle"] is True
+            assert payload["status"] in {"failed", "timeout"}
+
+            status, headers, body = _request(host, port, "GET", f"/job-bundle?id={job_id}&lang=en")
+            assert status == 200
+            assert headers.get("Content-Disposition", "").endswith(".zip")
+            assert body[:2] == b"PK"
+    finally:
+        shutil.rmtree(workspace, ignore_errors=True)
