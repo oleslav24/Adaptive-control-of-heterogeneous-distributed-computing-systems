@@ -12,6 +12,7 @@ ModeHandler = Callable[[ExperimentConfig, Namespace, list[str]], None]
 
 MODE_FINISH_MESSAGES: dict[str, str] = {
     "publication-study": "Publication study finished",
+    "replay-manifest": "Replay verification finished",
     "ab-llm": "A/B LLM run finished",
     "ab-intelligence": "A/B intelligence run finished",
     "compare": "Comparison run finished",
@@ -25,6 +26,8 @@ def resolve_mode(args: Namespace) -> str:
     """Resolve selected run mode from parsed CLI arguments."""
     if args.publication_study:
         return "publication-study"
+    if args.replay_manifest:
+        return "replay-manifest"
     if args.ab_llm:
         return "ab-llm"
     if args.ab_intelligence:
@@ -51,4 +54,3 @@ def dispatch_mode(
     if handler is None:
         raise ValueError(f"Unsupported mode: {mode}")
     handler(config, args, cli_args)
-

@@ -19,6 +19,7 @@ def _minimal_args(**overrides: object) -> Namespace:
         "compare": False,
         "batch": False,
         "repro_check": False,
+        "replay_manifest": None,
     }
     defaults.update(overrides)
     return Namespace(**defaults)
@@ -27,6 +28,10 @@ def _minimal_args(**overrides: object) -> Namespace:
 def test_resolve_mode_uses_expected_priority_order() -> None:
     """Mode resolution should follow explicit priority from most specific to fallback."""
     assert resolve_mode(_minimal_args(publication_study=True, batch=True)) == "publication-study"
+    assert (
+        resolve_mode(_minimal_args(replay_manifest="outputs/demo/run_manifest.json", compare=True))
+        == "replay-manifest"
+    )
     assert resolve_mode(_minimal_args(ab_llm=True, compare=True)) == "ab-llm"
     assert resolve_mode(_minimal_args(ab_intelligence=True, compare=True)) == "ab-intelligence"
     assert resolve_mode(_minimal_args(compare=True, batch=True)) == "compare"
@@ -65,4 +70,3 @@ def test_dispatch_mode_raises_on_unknown_mode() -> None:
             args=_minimal_args(),
             cli_args=[],
         )
-
