@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 11:06:00 +07:00  
+Last updated: 2026-05-14 11:18:42 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -257,5 +257,4 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
-| pending | 13.1 Extract CLI parser/schema from `run.py` | pending | pending | pending |
-
+| 2026-05-14 11:18:42 | 13.1 Extract CLI parser/schema from `run.py` | OK (parser extracted to dedicated module) | targeted + full pytest pass | current slice commit |
