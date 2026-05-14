@@ -57,9 +57,10 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-13 18:46:44 | Extract dashboard and job page routes | OK (route-level split) | full pytest pass | `04ff82f` |
 | 2026-05-13 18:52:54 | Add dispatch table and simplify handler | OK (controller thinning) | full pytest pass | `b1bc6ab` |
 | 2026-05-13 18:59:15 | Extract top-level request orchestration | OK (controller thinning) | full pytest pass | `d6cd62c` |
-| 2026-05-13 19:10:03 | Add explicit sprint plan/log governance file | OK (process compliance) | docs only | pending |
-| 2026-05-14 09:57:53 | Add end-to-end web integration tests (critical routes + job lifecycle) | OK (DoD closure coverage) | targeted + full pytest pass | pending |
+| 2026-05-13 19:10:03 | Add explicit sprint plan/log governance file | OK (process compliance) | docs only | `920472f` |
+| 2026-05-14 09:57:53 | Add end-to-end web integration tests (critical routes + job lifecycle) | OK (DoD closure coverage) | targeted + full pytest pass | `b186445` |
 
 ## Remaining Work To Close Sprint 12
 
-1. Final sprint closure update in this file with close timestamp and PR link after merge.
+1. Create/refresh PR for `codex/sprint12-job-page-slice` -> `main` and merge.
+2. Final sprint closure update in this file with close timestamp and PR link.
