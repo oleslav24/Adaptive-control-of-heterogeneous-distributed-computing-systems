@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 16:00:45 +07:00  
+Last updated: 2026-05-14 16:12:14 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -20,9 +20,9 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 10 | Stabilization baseline | Smoke regression + manifest validation | Closed |
 | 11 | Quality gates | Expanded tests + static checks + mutation baseline | Closed |
 | 12 | Web modular refactor | Web app decomposition into tested modules | Closed |
-| 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | In progress (slices complete, pending merge) |
-| 14 | Publication pipeline hardening | `publication.py` split + statistics validation | In progress (slices complete, pending merge) |
-| 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | In progress (slices complete, pending merge) |
+| 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | Closed |
+| 14 | Publication pipeline hardening | `publication.py` split + statistics validation | Closed |
+| 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Closed |
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Planned |
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Planned |
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Planned |
@@ -53,9 +53,9 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 10 | Closed | 2026-05-06 18:30:02 +07:00 | commit `2426af1`, merged via PR #3 |
 | 11 | Closed | 2026-05-06 19:38:10 +07:00 | commit `5a09403` |
 | 12 | Closed | 2026-05-14 10:14:40 +07:00 | merged to `main` via PRs #10-#15, tip merge commit `c892939` |
-| 13 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` |
-| 14 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` (until Sprint 13 merge) |
-| 15 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` (slices 15.1-15.4 complete) |
+| 13 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
+| 14 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
+| 15 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
 | 16 | Planned | n/a | n/a |
 | 17 | Planned | n/a | n/a |
 | 18 | Planned | n/a | n/a |
@@ -263,11 +263,9 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-14 11:33:12 | 13.4 Split batch/repro/AB/publication mode handlers | OK (`mode_advanced` extracted and wired into dispatcher) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 11:35:10 | 13.5 Add integration tests per mode + update docs | OK (handler wiring tests added for all run modes) | targeted + full pytest pass | current slice commit |
 
-## Remaining Work To Close Sprint 13
+## Sprint 13 Closure
 
-1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
-2. Merge PR to `main`.
-3. Update `Sprint Closure Register` row for Sprint 13 with close timestamp and merge evidence.
+Closed in `main` via PR #18 (merge commit `145a999`).
 
 ## Active Sprint Slice Log (Sprint 14)
 
@@ -279,11 +277,9 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-14 12:23:22 | 14.4 Add deterministic publication scenario fixtures | OK (`publication_scenarios` extracted + deterministic task/scenario fixture tests) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 12:25:06 | 14.5 Add publication artifact regression tests | OK (CSV/JSON/report artifact persistence checks added) | targeted + full pytest pass | current slice commit |
 
-## Remaining Work To Close Sprint 14
+## Sprint 14 Closure
 
-1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
-2. Merge PR to `main`.
-3. Update `Sprint Closure Register` row for Sprint 14 with close timestamp and merge evidence.
+Closed in `main` via PR #18 (merge commit `145a999`).
 
 ## Active Sprint Slice Log (Sprint 15)
 
@@ -294,8 +290,6 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-14 15:48:12 | 15.3 Add artifact integrity checks (hashes for manifests/results) | OK (`artifact_integrity` module + SHA-256 reports integrated into single/batch/publication/repro/replay paths) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 16:00:45 | 15.4 Document reproducibility SOP end-to-end | OK (`docs/reproducibility.md` rewritten as Sprint 15 SOP with replay/integrity workflow) | docs + full pytest pass | current slice commit |
 
-## Remaining Work To Close Sprint 15
+## Sprint 15 Closure
 
-1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
-2. Merge PR to `main`.
-3. Update `Sprint Closure Register` row for Sprint 15 with close timestamp and merge evidence.
+Closed in `main` via PR #18 (merge commit `145a999`).
