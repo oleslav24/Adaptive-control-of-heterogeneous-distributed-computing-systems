@@ -10,6 +10,7 @@ from project.web.commands import build_run_command
 from project.web.i18n import tr
 from project.web.route_responses import RouteResponse, redirect_response, text_response
 from project.web.routing import first, lang_from_form, with_lang
+from project.web.validation import validate_start_run_form
 
 
 class _RunnableJobManager(Protocol):
@@ -35,6 +36,16 @@ def build_start_run_response(
 ) -> RouteResponse:
     """Create redirect response for `/run` action."""
     lang = lang_from_form(form)
+    errors = validate_start_run_form(
+        form,
+        workspace_root=workspace_root,
+        default_config=default_config,
+    )
+    if errors:
+        return text_response(
+            HTTPStatus.BAD_REQUEST,
+            f"{tr(lang, 'invalid_request')}: {errors[0]}",
+        )
     command = build_run_command(form, default_config=default_config)
     timeout_seconds = _parse_timeout_seconds(first(form, "job_timeout_seconds", ""))
     job = job_manager.create(

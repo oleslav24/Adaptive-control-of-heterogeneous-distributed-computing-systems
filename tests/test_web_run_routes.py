@@ -54,7 +54,7 @@ def test_build_start_run_response_creates_job_and_redirects() -> None:
     form = {
         "lang": ["ru"],
         "mode": ["single"],
-        "config": ["custom.yaml"],
+        "config": ["config.yaml"],
         "algorithm": ["min-load"],
         "scenario": ["static"],
     }
@@ -71,7 +71,7 @@ def test_build_start_run_response_creates_job_and_redirects() -> None:
     assert manager.last_create_cwd == workspace_root
     assert manager.last_create_command is not None
     assert "--config" in manager.last_create_command
-    assert "custom.yaml" in manager.last_create_command
+    assert "config.yaml" in manager.last_create_command
     assert "--algorithm" in manager.last_create_command
     assert "min-load" in manager.last_create_command
 
@@ -96,7 +96,7 @@ def test_build_start_run_response_parses_timeout_seconds() -> None:
 
 
 def test_build_start_run_response_ignores_invalid_timeout() -> None:
-    """Invalid timeout input should fallback to manager default semantics."""
+    """Invalid timeout input should be rejected at server-side validation."""
     manager = _FakeJobManager()
     form = {
         "lang": ["en"],
@@ -109,8 +109,20 @@ def test_build_start_run_response_ignores_invalid_timeout() -> None:
         workspace_root=Path(".").resolve(),
         default_config="config.yaml",
     )
-    assert response.status.value == 303
+    assert response.status.value == 400
     assert manager.last_timeout_seconds is None
+
+
+def test_build_start_run_response_rejects_invalid_mode() -> None:
+    """Unsupported mode value should return HTTP 400."""
+    manager = _FakeJobManager()
+    response = build_start_run_response(
+        {"lang": ["en"], "mode": ["oops"], "config": ["config.yaml"]},
+        manager,
+        workspace_root=Path(".").resolve(),
+        default_config="config.yaml",
+    )
+    assert response.status.value == 400
 
 
 def test_build_stop_run_response_returns_not_found_for_unknown_job() -> None:

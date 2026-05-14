@@ -153,6 +153,7 @@ def test_web_http_run_route_produces_job_and_metrics_payload(monkeypatch) -> Non
     monkeypatch.setattr(run_routes, "build_run_command", _fake_command_builder)
     workspace = _workspace_dir("__test_web_app_integration_run")
     try:
+        (workspace / "config.yaml").write_text("name: web-test\n", encoding="utf-8")
         manager = JobManager()
 
         with _running_server(manager, workspace_root=workspace) as (host, port):
@@ -205,6 +206,7 @@ def test_web_http_stop_route_stops_running_job(monkeypatch) -> None:
     monkeypatch.setattr(run_routes, "build_run_command", _fake_command_builder)
     workspace = _workspace_dir("__test_web_app_integration_stop")
     try:
+        (workspace / "config.yaml").write_text("name: web-test\n", encoding="utf-8")
         manager = JobManager()
 
         with _running_server(manager, workspace_root=workspace) as (host, port):

@@ -164,6 +164,7 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "path_not_exist": "Path does not exist.",
         "file_not_found": "File not found.",
         "job_not_found": "Job not found.",
+        "invalid_request": "Invalid request",
         "not_found": "Not found.",
         "no_inline_preview": "No inline preview for this file type. Use download.",
     },
