@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 11:35:10 +07:00  
+Last updated: 2026-05-14 12:15:09 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -21,7 +21,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 11 | Quality gates | Expanded tests + static checks + mutation baseline | Closed |
 | 12 | Web modular refactor | Web app decomposition into tested modules | Closed |
 | 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | In progress (slices complete, pending merge) |
-| 14 | Publication pipeline hardening | `publication.py` split + statistics validation | Planned |
+| 14 | Publication pipeline hardening | `publication.py` split + statistics validation | In progress |
 | 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Planned |
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Planned |
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Planned |
@@ -54,7 +54,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 11 | Closed | 2026-05-06 19:38:10 +07:00 | commit `5a09403` |
 | 12 | Closed | 2026-05-14 10:14:40 +07:00 | merged to `main` via PRs #10-#15, tip merge commit `c892939` |
 | 13 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` |
-| 14 | Planned | n/a | n/a |
+| 14 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` (until Sprint 13 merge) |
 | 15 | Planned | n/a | n/a |
 | 16 | Planned | n/a | n/a |
 | 17 | Planned | n/a | n/a |
@@ -199,7 +199,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 | Task | Description | Status |
 |---|---|---|
-| 14.1 | Decompose `project/experiments/publication.py` into cohesive modules | Planned |
+| 14.1 | Decompose `project/experiments/publication.py` into cohesive modules | In progress (slice 1 done) |
 | 14.2 | Add strict validation for statistical outputs (mean/std/CI) | Planned |
 | 14.3 | Add hypothesis result contract checks (H1-H5) | Planned |
 | 14.4 | Add deterministic fixtures for publication scenarios | Planned |
@@ -268,3 +268,9 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
 2. Merge PR to `main`.
 3. Update `Sprint Closure Register` row for Sprint 13 with close timestamp and merge evidence.
+
+## Active Sprint Slice Log (Sprint 14)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-14 12:15:09 | 14.1 Extract method catalog and study spec builder from `publication.py` | OK (`publication_catalog` introduced, `publication.py` decoupled from catalog/spec construction) | targeted + full pytest pass | current slice commit |
