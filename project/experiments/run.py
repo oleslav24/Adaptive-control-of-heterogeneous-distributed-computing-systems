@@ -21,6 +21,12 @@ from project.core.config import ExperimentConfig, load_config
 from project.core.models import SystemState
 from project.experiments.cli import parse_args
 from project.experiments.controller import Experiment
+from project.experiments.dispatch import (
+    MODE_FINISH_MESSAGES,
+    ModeHandler,
+    dispatch_mode,
+    resolve_mode,
+)
 from project.experiments.manifest import build_run_manifest, write_manifest
 from project.experiments.publication import StudyResult, run_publication_pipeline
 from project.experiments.runner import BatchRunResult, BatchRunSpec, ExperimentRunner
@@ -44,52 +50,80 @@ def main() -> None:
     config = _apply_runtime_overrides(load_config(args.config), args)
     log_path = _configure_logging(config)
     LOGGER.info("Run started: experiment=%s", config.name)
+    mode = resolve_mode(args)
+    dispatch_mode(
+        mode=mode,
+        handlers=_build_mode_handlers(),
+        config=config,
+        args=args,
+        cli_args=cli_args,
+    )
+    LOGGER.info("%s. Log: %s", MODE_FINISH_MESSAGES[mode], log_path)
 
-    if args.publication_study:
-        seeds = _parse_study_seeds(args.study_seeds)
-        result = run_publication_pipeline(
-            config,
-            seeds=seeds,
-            quick=bool(args.study_quick),
-            save_plots=not bool(args.no_plots),
-            cli_args=cli_args,
-        )
-        _print_publication_result(config.name, seeds, result)
-        LOGGER.info("Publication study finished. Log: %s", log_path)
-        return
 
-    if args.ab_llm:
-        _run_llm_ab(config, cli_args)
-        LOGGER.info("A/B LLM run finished. Log: %s", log_path)
-        return
+def _build_mode_handlers() -> dict[str, ModeHandler]:
+    """Create mode-to-handler dispatch table."""
+    return {
+        "publication-study": _handle_publication_mode,
+        "ab-llm": _handle_ab_llm_mode,
+        "ab-intelligence": _handle_ab_intelligence_mode,
+        "compare": _handle_compare_mode,
+        "batch": _handle_batch_mode,
+        "repro-check": _handle_repro_check_mode,
+        "single": _handle_single_mode,
+    }
 
-    if args.ab_intelligence:
-        _run_intelligence_ab(config, cli_args)
-        LOGGER.info("A/B intelligence run finished. Log: %s", log_path)
-        return
 
-    if args.compare:
-        algorithms = _parse_compare_algorithms(args.compare_algorithms)
-        if not algorithms:
-            algorithms = config.optimization.compare_algorithms
-        _run_comparison(config, algorithms, cli_args)
-        LOGGER.info("Comparison run finished. Log: %s", log_path)
-        return
+def _handle_publication_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute publication-study mode."""
+    seeds = _parse_study_seeds(args.study_seeds)
+    result = run_publication_pipeline(
+        config,
+        seeds=seeds,
+        quick=bool(args.study_quick),
+        save_plots=not bool(args.no_plots),
+        cli_args=cli_args,
+    )
+    _print_publication_result(config.name, seeds, result)
 
-    if args.batch:
-        _run_batch(config, args, cli_args)
-        LOGGER.info("Batch run finished. Log: %s", log_path)
-        return
 
-    if args.repro_check:
-        _run_repro_check(config, max(2, int(args.repro_runs)), cli_args)
-        LOGGER.info("Reproducibility check finished. Log: %s", log_path)
-        return
+def _handle_ab_llm_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:
+    """Execute A/B LLM mode."""
+    _run_llm_ab(config, cli_args)
 
+
+def _handle_ab_intelligence_mode(
+    config: ExperimentConfig,
+    _args: Namespace,
+    cli_args: list[str],
+) -> None:
+    """Execute A/B intelligence mode."""
+    _run_intelligence_ab(config, cli_args)
+
+
+def _handle_compare_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute algorithm comparison mode."""
+    algorithms = _parse_compare_algorithms(args.compare_algorithms)
+    if not algorithms:
+        algorithms = config.optimization.compare_algorithms
+    _run_comparison(config, algorithms, cli_args)
+
+
+def _handle_batch_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute batch matrix mode."""
+    _run_batch(config, args, cli_args)
+
+
+def _handle_repro_check_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute reproducibility check mode."""
+    _run_repro_check(config, max(2, int(args.repro_runs)), cli_args)
+
+
+def _handle_single_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:
+    """Execute single run mode."""
     final_state = Experiment(config=config).run()
     artifacts = _persist_run_artifacts(config, final_state, mode="single", cli_args=cli_args)
     _print_single_result(config.name, final_state, artifacts)
-    LOGGER.info("Single run finished. Log: %s", log_path)
 
 
 def _run_comparison(config: ExperimentConfig, algorithms: list[str], cli_args: list[str]) -> None:

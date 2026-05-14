@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 11:18:42 +07:00  
+Last updated: 2026-05-14 11:24:36 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -189,8 +189,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 | Task | Description | Status |
 |---|---|---|
-| 13.1 | Extract CLI parser/schema from `project/experiments/run.py` | Planned |
-| 13.2 | Extract run mode dispatch table and handlers | Planned |
+| 13.1 | Extract CLI parser/schema from `project/experiments/run.py` | Done |
+| 13.2 | Extract run mode dispatch table and handlers | Done |
 | 13.3 | Split single/compare execution paths into dedicated modules | Planned |
 | 13.4 | Split batch/repro/AB/publication mode handlers | Planned |
 | 13.5 | Add integration tests per mode + update docs | Planned |
@@ -258,3 +258,4 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-14 11:18:42 | 13.1 Extract CLI parser/schema from `run.py` | OK (parser extracted to dedicated module) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 11:24:36 | 13.2 Extract run mode dispatch table and handlers | OK (main dispatch chain replaced by mode table) | targeted + full pytest pass | current slice commit |
