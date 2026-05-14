@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 09:57:53 +07:00  
+Last updated: 2026-05-14 10:14:40 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -46,7 +46,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 9 | Historical (not backfilled) | n/a | n/a |
 | 10 | Closed | 2026-05-06 18:30:02 +07:00 | commit `2426af1`, merged via PR #3 |
 | 11 | Closed | 2026-05-06 19:38:10 +07:00 | commit `5a09403` |
-| 12 | In progress | n/a | active branch `codex/sprint12-job-page-slice` |
+| 12 | Closed | 2026-05-14 10:14:40 +07:00 | merged to `main` via PRs #10-#15, tip merge commit `c892939` |
 
 ## Active Sprint Slice Log (Sprint 12)
 
@@ -62,5 +62,4 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Remaining Work To Close Sprint 12
 
-1. Create/refresh PR for `codex/sprint12-job-page-slice` -> `main` and merge.
-2. Final sprint closure update in this file with close timestamp and PR link.
+1. Completed.
