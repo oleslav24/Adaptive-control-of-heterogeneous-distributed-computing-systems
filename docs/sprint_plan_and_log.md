@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 12:15:09 +07:00  
+Last updated: 2026-05-14 12:17:50 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -200,7 +200,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | Task | Description | Status |
 |---|---|---|
 | 14.1 | Decompose `project/experiments/publication.py` into cohesive modules | In progress (slice 1 done) |
-| 14.2 | Add strict validation for statistical outputs (mean/std/CI) | Planned |
+| 14.2 | Add strict validation for statistical outputs (mean/std/CI) | Done |
 | 14.3 | Add hypothesis result contract checks (H1-H5) | Planned |
 | 14.4 | Add deterministic fixtures for publication scenarios | Planned |
 | 14.5 | Add regression tests for publication artifacts | Planned |
@@ -274,3 +274,4 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-14 12:15:09 | 14.1 Extract method catalog and study spec builder from `publication.py` | OK (`publication_catalog` introduced, `publication.py` decoupled from catalog/spec construction) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 12:17:50 | 14.2 Add strict validation for summary statistics | OK (`publication_validation` added and enforced in pipeline) | targeted + full pytest pass | current slice commit |

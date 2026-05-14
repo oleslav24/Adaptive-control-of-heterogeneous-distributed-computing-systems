@@ -32,6 +32,7 @@ from project.experiments.publication_catalog import (
     get_method_variant,
     method_to_row,
 )
+from project.experiments.publication_validation import validate_summary_statistics
 from project.simulation import init_system
 
 
@@ -101,6 +102,10 @@ def run_publication_pipeline(
 
     raw_runs = pd.DataFrame(rows)
     summary = _summarize_runs(raw_runs)
+    validation = validate_summary_statistics(summary)
+    if not validation.ok:
+        message = "; ".join(validation.errors[:8])
+        raise ValueError(f"Publication summary validation failed: {message}")
     hypothesis_df = _evaluate_hypotheses(raw_runs)
 
     output_paths = _persist_publication_outputs(
@@ -112,6 +117,16 @@ def run_publication_pipeline(
         unsupported_df=unsupported_df,
         save_plots=save_plots,
     )
+    validation_path = output_dir / "summary_validation.json"
+    _write_json(
+        validation_path,
+        {
+            "ok": validation.ok,
+            "row_count": validation.row_count,
+            "errors": validation.errors,
+        },
+    )
+    output_paths["summary_validation_json"] = str(validation_path)
 
     manifest_path = output_dir / "publication_manifest.json"
     manifest = build_run_manifest(
