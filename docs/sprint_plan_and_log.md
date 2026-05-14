@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 11:33:12 +07:00  
+Last updated: 2026-05-14 11:35:10 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -20,7 +20,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 10 | Stabilization baseline | Smoke regression + manifest validation | Closed |
 | 11 | Quality gates | Expanded tests + static checks + mutation baseline | Closed |
 | 12 | Web modular refactor | Web app decomposition into tested modules | Closed |
-| 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | Planned (next) |
+| 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | In progress (slices complete, pending merge) |
 | 14 | Publication pipeline hardening | `publication.py` split + statistics validation | Planned |
 | 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Planned |
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Planned |
@@ -53,7 +53,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 10 | Closed | 2026-05-06 18:30:02 +07:00 | commit `2426af1`, merged via PR #3 |
 | 11 | Closed | 2026-05-06 19:38:10 +07:00 | commit `5a09403` |
 | 12 | Closed | 2026-05-14 10:14:40 +07:00 | merged to `main` via PRs #10-#15, tip merge commit `c892939` |
-| 13 | Planned | n/a | n/a |
+| 13 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` |
 | 14 | Planned | n/a | n/a |
 | 15 | Planned | n/a | n/a |
 | 16 | Planned | n/a | n/a |
@@ -193,7 +193,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 13.2 | Extract run mode dispatch table and handlers | Done |
 | 13.3 | Split single/compare execution paths into dedicated modules | Done |
 | 13.4 | Split batch/repro/AB/publication mode handlers | Done |
-| 13.5 | Add integration tests per mode + update docs | Planned |
+| 13.5 | Add integration tests per mode + update docs | Done |
 
 ### Sprint 14 - Publication pipeline hardening
 
@@ -261,3 +261,10 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-14 11:24:36 | 13.2 Extract run mode dispatch table and handlers | OK (main dispatch chain replaced by mode table) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 11:29:15 | 13.3 Split single/compare execution paths into dedicated modules | OK (`mode_single_compare` + shared `common` helpers extracted) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 11:33:12 | 13.4 Split batch/repro/AB/publication mode handlers | OK (`mode_advanced` extracted and wired into dispatcher) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 11:35:10 | 13.5 Add integration tests per mode + update docs | OK (handler wiring tests added for all run modes) | targeted + full pytest pass | current slice commit |
+
+## Remaining Work To Close Sprint 13
+
+1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
+2. Merge PR to `main`.
+3. Update `Sprint Closure Register` row for Sprint 13 with close timestamp and merge evidence.
