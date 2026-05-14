@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-13 19:10:03 +07:00  
+Last updated: 2026-05-14 09:57:53 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -58,8 +58,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-13 18:52:54 | Add dispatch table and simplify handler | OK (controller thinning) | full pytest pass | `b1bc6ab` |
 | 2026-05-13 18:59:15 | Extract top-level request orchestration | OK (controller thinning) | full pytest pass | `d6cd62c` |
 | 2026-05-13 19:10:03 | Add explicit sprint plan/log governance file | OK (process compliance) | docs only | pending |
+| 2026-05-14 09:57:53 | Add end-to-end web integration tests (critical routes + job lifecycle) | OK (DoD closure coverage) | targeted + full pytest pass | pending |
 
 ## Remaining Work To Close Sprint 12
 
-1. Add end-to-end web flow integration tests for critical routes and job lifecycle.
-2. Final sprint closure update in this file with close timestamp and PR link.
+1. Final sprint closure update in this file with close timestamp and PR link after merge.
