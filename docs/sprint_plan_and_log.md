@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 15:48:12 +07:00  
+Last updated: 2026-05-14 16:00:45 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -212,7 +212,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 15.1 | Strengthen run/batch/publication manifest schema and versioning | Done |
 | 15.2 | Add deterministic replay command and verification report | Done |
 | 15.3 | Add artifact integrity checks (hashes for manifests/results) | Done |
-| 15.4 | Document reproducibility SOP end-to-end | Planned |
+| 15.4 | Document reproducibility SOP end-to-end | Done |
 
 ### Sprint 16 - Web production hardening
 
@@ -292,3 +292,10 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-14 12:27:09 | 15.1 Strengthen manifest schema and versioning | OK (`manifest_schema` + `manifest_schema_version` contract enforced and tested) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 15:18:06 | 15.2 Add deterministic replay command and verification report | OK (`--replay-manifest` mode added with validated replay + JSON verification report artifacts) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 15:48:12 | 15.3 Add artifact integrity checks (hashes for manifests/results) | OK (`artifact_integrity` module + SHA-256 reports integrated into single/batch/publication/repro/replay paths) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 16:00:45 | 15.4 Document reproducibility SOP end-to-end | OK (`docs/reproducibility.md` rewritten as Sprint 15 SOP with replay/integrity workflow) | docs + full pytest pass | current slice commit |
+
+## Remaining Work To Close Sprint 15
+
+1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
+2. Merge PR to `main`.
+3. Update `Sprint Closure Register` row for Sprint 15 with close timestamp and merge evidence.

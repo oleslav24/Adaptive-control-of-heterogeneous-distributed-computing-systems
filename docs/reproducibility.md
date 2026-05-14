@@ -1,16 +1,23 @@
-# Reproducibility Guide (Sprint 9)
+# Reproducibility SOP (Sprint 15)
 
-## Goal
+## Purpose
 
-Provide a stable, publication-grade process to reproduce simulation results, export tables, and regenerate figures.
+This SOP defines an end-to-end reproducibility contract for the testbed:
 
-## Environment
+- deterministic reruns for the same config and seed;
+- manifest-based replay from saved run metadata;
+- artifact integrity verification by SHA-256 checksums;
+- publication-ready export flow.
 
-1. Create and activate virtual environment.
+## 1. Environment Lock
+
+1. Create and activate a virtual environment.
 2. Install dependencies from `requirements.txt`.
-3. Use a fixed configuration file (`config.yaml`) with a fixed `simulation.seed`.
+3. Use a fixed config file (`config.yaml`) with fixed `simulation.seed`.
+4. Prefer deterministic provider settings for LLM experiments:
+   - `llm.provider: mock`, or run with `--disable-llm`.
 
-## Core Commands
+## 2. Run Modes
 
 Single run:
 
@@ -18,10 +25,22 @@ Single run:
 python -m project.experiments.run --config config.yaml
 ```
 
-Batch experiments:
+Strict batch comparison:
 
 ```bash
 python -m project.experiments.run --config config.yaml --batch --batch-runs 5
+```
+
+Reproducibility check (repeat identical run N times):
+
+```bash
+python -m project.experiments.run --config config.yaml --repro-check --repro-runs 30
+```
+
+Manifest replay (rebuild run from saved manifest snapshot):
+
+```bash
+python -m project.experiments.run --replay-manifest outputs/<exp>/<scenario>/<algorithm>/run_manifest.json --replay-runs 10
 ```
 
 Publication pipeline:
@@ -30,55 +49,82 @@ Publication pipeline:
 python -m project.experiments.run --config config.yaml --publication-study
 ```
 
-Reproducibility check:
-
-```bash
-python -m project.experiments.run --config config.yaml --repro-check --repro-runs 3
-```
-
-Sprint 10 smoke baseline (single/compare/batch/publication quick):
+Smoke baseline:
 
 ```bash
 python -m project.experiments.smoke --config config.yaml
 ```
 
-Update golden baseline snapshot:
+Update smoke golden snapshot (only on intentional baseline refresh):
 
 ```bash
 python -m project.experiments.smoke --config config.yaml --update-golden
 ```
 
-## Reproducibility Signals
+## 3. Required Artifacts
 
-Each run exports:
+Single/compare/AB/repro/replay flows export:
 
-- `run_manifest.json` with:
-  - `git_commit`
-  - `git_dirty`
-  - dependency versions
-  - CLI arguments
-  - full config snapshot
-- deterministic `seed` in config (`simulation.seed`)
-- consistent CSV/JSON outputs for metrics
-- fingerprint comparison against `docs/baselines/smoke_baseline.json` via smoke runner
+- run/repro/replay manifests (`*_manifest.json`);
+- metric outputs (`*.csv`, `*.json`);
+- `artifact_integrity.json` (or mode-specific integrity file);
+- replay verification report for replay mode:
+  - `replay_verification_report.json`.
 
-Batch mode additionally exports:
+Batch flow additionally exports:
 
-- `batch_manifest.json`
-- `batch_runs.csv` / `batch_summary.csv` / `batch_ranking.csv` / `batch_winners.csv`
-- publication plots in `png`, `pdf`, and `svg`
+- `batch_manifest.json`;
+- `batch_runs.csv`, `batch_summary.csv`, `batch_ranking.csv`, `batch_winners.csv`;
+- `artifact_integrity.json` in batch output directory.
 
-## Publication Figures
+Publication flow additionally exports:
 
-Publication profile is controlled by `observability`:
+- `publication_manifest.json`;
+- summary/hypothesis validation JSON;
+- report markdown;
+- publication plots and tabular outputs;
+- `artifact_integrity.json`.
 
-- `plot_profile: publication`
-- `plot_dpi: 300`
-- `plot_formats: [png, pdf, svg]`
+## 4. Integrity Verification
 
-This yields raster and vector outputs suitable for monographs and paper submissions.
+Run checksum verification against produced integrity report:
 
-## Notes
+```bash
+python -m project.experiments.verify_integrity --integrity-file outputs/<...>/artifact_integrity.json
+```
 
-- For strict algorithm comparison, use `--batch` without `--batch-keep-adaptive`; this disables adaptive intelligence and LLM during batch ranking.
-- If external LLM API is enabled, deterministic reproducibility may degrade; use `--disable-llm` or provider `mock` for stable reruns.
+Expected behavior:
+
+- exit code `0`: all files exist and match recorded `sha256`/size;
+- exit code `2`: at least one artifact mismatch or missing file.
+
+## 5. Replay Verification Procedure
+
+1. Produce source run and keep its `run_manifest.json`.
+2. Execute `--replay-manifest` with required repeat count.
+3. Inspect:
+   - `replay_runs.csv`;
+   - `replay_verification_report.json`;
+   - `replay_artifact_integrity.json`.
+4. Verify replay integrity report using `verify_integrity` command.
+5. Treat reproducibility as confirmed only when:
+   - `reproducible: true` in replay report;
+   - integrity check passes.
+
+## 6. Publication-Grade Checklist
+
+Before exporting results for paper/monograph:
+
+1. Re-run smoke baseline and confirm no fingerprint drift.
+2. Run `--repro-check` with statistically meaningful repeats (recommended `>=30`).
+3. Run replay from saved manifests for key experiments (E1-E5).
+4. Verify artifact integrity reports for:
+   - single key runs;
+   - batch outputs;
+   - publication outputs.
+5. Archive manifests, integrity reports, and generated tables/plots together.
+
+## 7. Notes
+
+- For strict algorithm-only comparison, use `--batch` without `--batch-keep-adaptive`.
+- `git_dirty: true` in manifests indicates local uncommitted state; avoid using such runs for final publication tables.
