@@ -165,6 +165,8 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "file_not_found": "File not found.",
         "job_not_found": "Job not found.",
         "invalid_request": "Invalid request",
+        "diagnostics_bundle": "Diagnostics bundle",
+        "diagnostics_bundle_unavailable": "Diagnostics bundle is available only for failed, timeout, or stopped jobs.",
         "not_found": "Not found.",
         "no_inline_preview": "No inline preview for this file type. Use download.",
     },

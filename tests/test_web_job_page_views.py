@@ -30,6 +30,7 @@ def test_build_job_page_html_includes_stop_for_running_job() -> None:
     assert "chart-latency" in html
     assert "chart-queue-completed" in html
     assert 'id="job-details"' in html
+    assert 'id="job-diagnostics-links"' in html
 
 
 def test_build_job_page_html_hides_stop_for_non_running_job() -> None:

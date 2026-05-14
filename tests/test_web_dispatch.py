@@ -8,6 +8,8 @@ def test_resolve_get_action_for_known_routes() -> None:
     assert resolve_get_action("/") == "dashboard"
     assert resolve_get_action("/job") == "job"
     assert resolve_get_action("/job-data") == "job_data"
+    assert resolve_get_action("/job-diagnostics") == "job_diagnostics"
+    assert resolve_get_action("/job-bundle") == "job_bundle"
     assert resolve_get_action("/files") == "files"
     assert resolve_get_action("/download") == "download"
     assert resolve_get_action("/health") == "health"

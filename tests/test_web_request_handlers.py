@@ -1,9 +1,10 @@
 """Unit tests for high-level web request orchestration helpers."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+from threading import Lock
 from urllib.parse import urlparse
 
 from project.web.request_handlers import build_get_response, build_post_response
@@ -16,6 +17,11 @@ class _FakeJob:
     started_at: datetime | None = datetime(2026, 5, 13, 12, 0, tzinfo=timezone.utc)
     finished_at: datetime | None = None
     return_code: int | None = None
+    timeout_seconds: int | None = 3600
+    timed_out: bool = False
+    status_details: str = ""
+    log_lines: list[str] = field(default_factory=list)
+    _lock: Lock = field(default_factory=Lock)
     command: tuple[str, ...] = ("python", "-m", "project.experiments.run")
 
     def command_text(self) -> str:
@@ -26,6 +32,7 @@ class _FakeJob:
 
     def append_log(self, _line: str) -> None:
         return
+
 
 
 class _FakeJobManager:
@@ -93,6 +100,22 @@ def test_build_get_response_job_data_uses_payload_builder() -> None:
     assert response.status.value == 200
     payload = json.loads(response.body.decode("utf-8"))
     assert payload == {"id": "job-1", "lang": "en"}
+
+
+def test_build_get_response_job_diagnostics_route() -> None:
+    """Job-diagnostics route should return diagnostics JSON payload."""
+    manager = _FakeJobManager()
+    response = build_get_response(
+        urlparse("/job-diagnostics?id=job-1&lang=en"),
+        manager,
+        workspace_root=Path(".").resolve(),
+        default_config="config.yaml",
+        payload_builder=lambda _job, _lang: {},
+    )
+    assert response.status.value == 200
+    payload = json.loads(response.body.decode("utf-8"))
+    assert payload["id"] == "job-1"
+    assert "status" in payload
 
 
 def test_build_post_response_run_route_redirects_to_new_job() -> None:

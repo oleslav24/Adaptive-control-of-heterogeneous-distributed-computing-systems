@@ -55,6 +55,7 @@ def build_job_page_html(job: _JobLike, lang: str) -> str:
   <p>{escape(tr(lang, "status_details"))}: <code id="job-details">-</code></p>
   <p>{escape(tr(lang, "command"))}:</p>
   <pre id="job-command">{escape(job.command_text())}</pre>
+  <p id="job-diagnostics-links"></p>
   {stop_button}
 </div>
 <div class="chart-grid">
@@ -103,6 +104,8 @@ const i18n = {{
   throughput: {json.dumps(tr(lang, "throughput"))},
   avgLoad: {json.dumps(tr(lang, "average_load"))},
   queueCompleted: {json.dumps(tr(lang, "queue_completed"))}
+  ,
+  diagnosticsBundle: {json.dumps(tr(lang, "diagnostics_bundle"))}
 }};
 
 const runPalette = [
@@ -548,6 +551,16 @@ function updateJobView(data) {{
   document.getElementById("job-rc").textContent = String(data.return_code);
   document.getElementById("job-details").textContent = String(data.status_details || "-");
   document.getElementById("job-command").textContent = data.command;
+  const diagEl = document.getElementById("job-diagnostics-links");
+  if (diagEl) {{
+    const status = String(data.status || "");
+    if (status === "failed" || status === "timeout" || status === "stopped") {{
+      const href = `/job-bundle?id=${{encodeURIComponent(jobId)}}&lang=${{encodeURIComponent(lang)}}`;
+      diagEl.innerHTML = `<a href="${{href}}">${{i18n.diagnosticsBundle}}</a>`;
+    }} else {{
+      diagEl.textContent = "";
+    }}
+  }}
 
   const logEl = document.getElementById("job-log");
   const wasNearBottom = (logEl.scrollTop + logEl.clientHeight) >= (logEl.scrollHeight - 24);

@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 16:29:14 +07:00  
+Last updated: 2026-05-14 16:33:48 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -220,7 +220,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 |---|---|---|
 | 16.1 | Add resilient job supervision and timeout/error surfacing in UI | Done |
 | 16.2 | Add server-side request validation and safer defaults | Done |
-| 16.3 | Add diagnostics endpoints/log bundle export for failed runs | Planned |
+| 16.3 | Add diagnostics endpoints/log bundle export for failed runs | Done |
 | 16.4 | Add web-level regression tests for key user flows | Planned |
 
 ### Sprint 17 - Scalability and performance
@@ -300,3 +300,4 @@ Closed in `main` via PR #18 (merge commit `145a999`).
 |---|---|---|---|---|
 | 2026-05-14 16:24:57 | 16.1 Resilient job supervision + timeout/error surfacing in UI | OK (`JobManager` watchdog + timeout status/details + UI status details line + timeout form control) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 16:29:14 | 16.2 Server-side request validation and safer defaults | OK (strict `/run` validation for mode/config/timeout/seeds + bounded defaults with HTTP 400 feedback) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 16:33:48 | 16.3 Diagnostics endpoints and failed-run log bundle export | OK (`/job-diagnostics` JSON + `/job-bundle` zip export for failed/timeout/stopped jobs + UI link) | targeted + full pytest pass | current slice commit |
