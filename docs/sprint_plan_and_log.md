@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 11:29:15 +07:00  
+Last updated: 2026-05-14 11:33:12 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -192,7 +192,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 13.1 | Extract CLI parser/schema from `project/experiments/run.py` | Done |
 | 13.2 | Extract run mode dispatch table and handlers | Done |
 | 13.3 | Split single/compare execution paths into dedicated modules | Done |
-| 13.4 | Split batch/repro/AB/publication mode handlers | Planned |
+| 13.4 | Split batch/repro/AB/publication mode handlers | Done |
 | 13.5 | Add integration tests per mode + update docs | Planned |
 
 ### Sprint 14 - Publication pipeline hardening
@@ -260,3 +260,4 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 2026-05-14 11:18:42 | 13.1 Extract CLI parser/schema from `run.py` | OK (parser extracted to dedicated module) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 11:24:36 | 13.2 Extract run mode dispatch table and handlers | OK (main dispatch chain replaced by mode table) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 11:29:15 | 13.3 Split single/compare execution paths into dedicated modules | OK (`mode_single_compare` + shared `common` helpers extracted) | targeted + full pytest pass | current slice commit |
+| 2026-05-14 11:33:12 | 13.4 Split batch/repro/AB/publication mode handlers | OK (`mode_advanced` extracted and wired into dispatcher) | targeted + full pytest pass | current slice commit |

@@ -20,19 +20,23 @@ from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig, load_config
 from project.core.models import SystemState
 from project.experiments.cli import parse_args
-from project.experiments.common import persist_run_artifacts, slug, with_algorithm
-from project.experiments.controller import Experiment
+from project.experiments.common import slug, with_algorithm
 from project.experiments.dispatch import (
     MODE_FINISH_MESSAGES,
     ModeHandler,
     dispatch_mode,
     resolve_mode,
 )
-from project.experiments.manifest import build_run_manifest, write_manifest
+from project.experiments.mode_advanced import (
+    run_batch_mode,
+    run_intelligence_ab_mode,
+    run_llm_ab_mode,
+    run_publication_mode,
+    run_repro_check_mode,
+)
 from project.experiments.mode_single_compare import run_comparison_mode, run_single_mode
-from project.experiments.publication import StudyResult, run_publication_pipeline
-from project.experiments.runner import BatchRunResult, BatchRunSpec, ExperimentRunner
-from project.metrics import summarize_state
+from project.experiments.publication import StudyResult
+from project.experiments.runner import BatchRunResult, BatchRunSpec
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,7 +83,7 @@ def _build_mode_handlers() -> dict[str, ModeHandler]:
 def _handle_publication_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
     """Execute publication-study mode."""
     seeds = _parse_study_seeds(args.study_seeds)
-    result = run_publication_pipeline(
+    result = run_publication_mode(
         config,
         seeds=seeds,
         quick=bool(args.study_quick),
@@ -91,7 +95,7 @@ def _handle_publication_mode(config: ExperimentConfig, args: Namespace, cli_args
 
 def _handle_ab_llm_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:
     """Execute A/B LLM mode."""
-    _run_llm_ab(config, cli_args)
+    run_llm_ab_mode(config, cli_args)
 
 
 def _handle_ab_intelligence_mode(
@@ -100,7 +104,7 @@ def _handle_ab_intelligence_mode(
     cli_args: list[str],
 ) -> None:
     """Execute A/B intelligence mode."""
-    _run_intelligence_ab(config, cli_args)
+    run_intelligence_ab_mode(config, cli_args)
 
 
 def _handle_compare_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
@@ -113,169 +117,6 @@ def _handle_compare_mode(config: ExperimentConfig, args: Namespace, cli_args: li
 
 def _handle_batch_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
     """Execute batch matrix mode."""
-    _run_batch(config, args, cli_args)
-
-
-def _handle_repro_check_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
-    """Execute reproducibility check mode."""
-    _run_repro_check(config, max(2, int(args.repro_runs)), cli_args)
-
-
-def _handle_single_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:
-    """Execute single run mode."""
-    final_state, artifacts = run_single_mode(config, cli_args)
-    _print_single_result(config.name, final_state, artifacts)
-
-
-def _run_intelligence_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
-    """Run A/B experiment with intelligence layer disabled vs enabled."""
-    baseline_config = replace(
-        config,
-        intelligence=replace(config.intelligence, enabled=False, adaptive_algorithm=False),
-    )
-    smart_config = replace(
-        config,
-        intelligence=replace(config.intelligence, enabled=True),
-    )
-    baseline_state = Experiment(config=baseline_config).run()
-    smart_state = Experiment(config=smart_config).run()
-    persist_run_artifacts(
-        baseline_config,
-        baseline_state,
-        mode="ab-intelligence",
-        cli_args=cli_args,
-        extra={"mode": "baseline"},
-    )
-    persist_run_artifacts(
-        smart_config,
-        smart_state,
-        mode="ab-intelligence",
-        cli_args=cli_args,
-        extra={"mode": "intelligent"},
-    )
-
-    print(f"Experiment '{config.name}' intelligence A/B")
-    print("mode | algorithm | completed | pending | latency | throughput | avg_load")
-    print("-" * 86)
-    print(
-        f"baseline | {baseline_state.selected_algorithm} | {baseline_state.completed_tasks} | "
-        f"{baseline_state.pending_tasks} | {baseline_state.avg_latency:.3f} | "
-        f"{baseline_state.throughput:.3f} | {baseline_state.avg_load:.3f}"
-    )
-    print(
-        f"intelligent | {smart_state.selected_algorithm} | {smart_state.completed_tasks} | "
-        f"{smart_state.pending_tasks} | {smart_state.avg_latency:.3f} | "
-        f"{smart_state.throughput:.3f} | {smart_state.avg_load:.3f}"
-    )
-
-    improvement_latency = baseline_state.avg_latency - smart_state.avg_latency
-    improvement_throughput = smart_state.throughput - baseline_state.throughput
-    print(
-        f"Delta: latency={improvement_latency:+.3f}, throughput={improvement_throughput:+.3f}"
-    )
-
-    rows = [
-        {"mode": "baseline", **summarize_state(baseline_state)},
-        {"mode": "intelligent", **summarize_state(smart_state)},
-    ]
-    ab_df = pd.DataFrame(rows)
-    ab_dir = Path(config.observability.output_dir) / config.name / slug(config.scenario)
-    ab_dir.mkdir(parents=True, exist_ok=True)
-    ab_csv = ab_dir / "intelligence_ab.csv"
-    ab_df.to_csv(ab_csv, index=False)
-    print(f"A/B CSV: {ab_csv}")
-
-    manifest_path = ab_dir / "intelligence_ab_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=config,
-            mode="ab-intelligence",
-            cli_args=cli_args,
-            extra={"rows": ab_df.to_dict(orient="records"), "ab_csv": str(ab_csv)},
-        ),
-    )
-    print(f"A/B manifest: {manifest_path}")
-
-
-def _run_llm_ab(config: ExperimentConfig, cli_args: list[str]) -> None:
-    """Run A/B experiment with and without LLM agent influence."""
-    baseline_config = replace(
-        config,
-        intelligence=replace(config.intelligence, adaptive_algorithm=False),
-        llm=replace(config.llm, enabled=False),
-    )
-    llm_config = replace(
-        config,
-        llm=replace(config.llm, enabled=True),
-    )
-    baseline_state = Experiment(config=baseline_config).run()
-    llm_state = Experiment(config=llm_config).run()
-    persist_run_artifacts(
-        baseline_config,
-        baseline_state,
-        mode="ab-llm",
-        cli_args=cli_args,
-        extra={"mode": "baseline"},
-    )
-    persist_run_artifacts(
-        llm_config,
-        llm_state,
-        mode="ab-llm",
-        cli_args=cli_args,
-        extra={"mode": "llm"},
-    )
-
-    print(f"Experiment '{config.name}' LLM A/B")
-    print(
-        "mode | algorithm | llm_source | completed | pending | latency | throughput | avg_load"
-    )
-    print("-" * 102)
-    print(
-        f"baseline | {baseline_state.selected_algorithm} | {baseline_state.llm_source} | "
-        f"{baseline_state.completed_tasks} | {baseline_state.pending_tasks} | "
-        f"{baseline_state.avg_latency:.3f} | {baseline_state.throughput:.3f} | "
-        f"{baseline_state.avg_load:.3f}"
-    )
-    print(
-        f"llm | {llm_state.selected_algorithm} | {llm_state.llm_source} | "
-        f"{llm_state.completed_tasks} | {llm_state.pending_tasks} | "
-        f"{llm_state.avg_latency:.3f} | {llm_state.throughput:.3f} | "
-        f"{llm_state.avg_load:.3f}"
-    )
-
-    improvement_latency = baseline_state.avg_latency - llm_state.avg_latency
-    improvement_throughput = llm_state.throughput - baseline_state.throughput
-    print(
-        f"Delta: latency={improvement_latency:+.3f}, throughput={improvement_throughput:+.3f}"
-    )
-
-    rows = [
-        {"mode": "baseline", **summarize_state(baseline_state)},
-        {"mode": "llm", **summarize_state(llm_state)},
-    ]
-    ab_df = pd.DataFrame(rows)
-    ab_dir = Path(config.observability.output_dir) / config.name / slug(config.scenario)
-    ab_dir.mkdir(parents=True, exist_ok=True)
-    ab_csv = ab_dir / "llm_ab.csv"
-    ab_df.to_csv(ab_csv, index=False)
-    print(f"LLM A/B CSV: {ab_csv}")
-
-    manifest_path = ab_dir / "llm_ab_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=config,
-            mode="ab-llm",
-            cli_args=cli_args,
-            extra={"rows": ab_df.to_dict(orient="records"), "ab_csv": str(ab_csv)},
-        ),
-    )
-    print(f"LLM A/B manifest: {manifest_path}")
-
-
-def _run_batch(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
-    """Run scenario/algorithm matrix and print aggregated winners."""
     scenarios = _parse_batch_scenarios(args.batch_scenarios)
     algorithms = _parse_compare_algorithms(args.batch_algorithms)
     if not algorithms:
@@ -288,96 +129,19 @@ def _run_batch(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -
         persist_individual_runs=bool(args.batch_save_runs),
         strict_algorithm_comparison=not bool(args.batch_keep_adaptive),
     )
-    result = ExperimentRunner(config=config).run_batch(spec, cli_args=cli_args)
+    result = run_batch_mode(config, spec=spec, cli_args=cli_args)
     _print_batch_result(config.name, spec, result)
 
 
-def _run_repro_check(config: ExperimentConfig, runs: int, cli_args: list[str]) -> None:
-    """Repeat identical run several times and verify deterministic outputs."""
-    rows: list[dict[str, object]] = []
-    for idx in range(runs):
-        state = Experiment(config=config).run()
-        rows.append({"run": idx + 1, **summarize_state(state)})
-
-    repro_df = pd.DataFrame(rows)
-    out_dir = (
-        Path(config.observability.output_dir)
-        / config.name
-        / slug(config.scenario)
-        / config.optimization.algorithm
-    )
-    out_dir.mkdir(parents=True, exist_ok=True)
-    repro_csv = out_dir / "repro_check.csv"
-    repro_df.to_csv(repro_csv, index=False)
-
-    reproducible, details = _evaluate_reproducibility(repro_df)
-    print(f"Experiment '{config.name}' reproducibility check")
-    print(f"Scenario: {config.scenario}")
-    print(f"Algorithm: {config.optimization.algorithm}")
-    print(f"Runs: {runs}")
-    print(f"Reproducible: {reproducible}")
-    print("Runs table:")
-    print(repro_df.to_string(index=False, float_format=lambda value: f"{value:.3f}"))
-    print("Details:")
-    for line in details:
-        print(f"- {line}")
-    print(f"Repro CSV: {repro_csv}")
-
-    manifest_path = out_dir / "repro_check_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=config,
-            mode="repro-check",
-            cli_args=cli_args,
-            extra={
-                "runs": runs,
-                "reproducible": reproducible,
-                "details": details,
-                "repro_csv": str(repro_csv),
-            },
-        ),
-    )
-    print(f"Repro manifest: {manifest_path}")
+def _handle_repro_check_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute reproducibility check mode."""
+    run_repro_check_mode(config, max(2, int(args.repro_runs)), cli_args)
 
 
-def _evaluate_reproducibility(repro_df: pd.DataFrame) -> tuple[bool, list[str]]:
-    """Evaluate equality of key metrics across repeated runs."""
-    if repro_df.empty:
-        return False, ["No runs were executed."]
-
-    strict_columns = [
-        "completed_tasks",
-        "pending_tasks",
-        "deadline_violations",
-        "generated_tasks",
-        "scenario",
-        "algorithm",
-    ]
-    float_columns = ["avg_latency", "throughput", "avg_load"]
-    baseline = repro_df.iloc[0]
-
-    details: list[str] = []
-    reproducible = True
-    for column in strict_columns:
-        if column not in repro_df.columns:
-            continue
-        if not (repro_df[column] == baseline[column]).all():
-            reproducible = False
-            details.append(f"Mismatch in '{column}'.")
-
-    tolerance = 1e-9
-    for column in float_columns:
-        if column not in repro_df.columns:
-            continue
-        max_diff = float((repro_df[column] - float(baseline[column])).abs().max())
-        if max_diff > tolerance:
-            reproducible = False
-            details.append(f"Mismatch in '{column}' (max diff {max_diff:.12f}).")
-
-    if reproducible:
-        details.append("All tracked metrics are identical across repeated runs.")
-    return reproducible, details
+def _handle_single_mode(config: ExperimentConfig, _args: Namespace, cli_args: list[str]) -> None:
+    """Execute single run mode."""
+    final_state, artifacts = run_single_mode(config, cli_args)
+    _print_single_result(config.name, final_state, artifacts)
 
 
 def _apply_runtime_overrides(config: ExperimentConfig, args: Namespace) -> ExperimentConfig:
