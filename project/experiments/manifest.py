@@ -13,6 +13,9 @@ from typing import Any, Mapping
 
 from project.core.config import ExperimentConfig
 
+MANIFEST_SCHEMA = "adaptive-testbed.run-manifest"
+MANIFEST_SCHEMA_VERSION = "2"
+
 
 def build_run_manifest(
     config: ExperimentConfig,
@@ -22,6 +25,8 @@ def build_run_manifest(
 ) -> dict[str, Any]:
     """Build reproducibility manifest for a run/batch/publication execution."""
     return {
+        "manifest_schema": MANIFEST_SCHEMA,
+        "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": str(mode),
         "cli_args": list(cli_args),
@@ -48,6 +53,8 @@ def validate_run_manifest(manifest: Mapping[str, Any]) -> list[str]:
     """Validate required run-manifest schema and return list of errors."""
     errors: list[str] = []
     required_root_keys = [
+        "manifest_schema",
+        "manifest_schema_version",
         "created_at_utc",
         "mode",
         "cli_args",
@@ -62,6 +69,28 @@ def validate_run_manifest(manifest: Mapping[str, Any]) -> list[str]:
     for key in required_root_keys:
         if key not in manifest:
             errors.append(f"Missing required key: '{key}'.")
+
+    schema = manifest.get("manifest_schema")
+    if schema != MANIFEST_SCHEMA:
+        errors.append(
+            f"Field 'manifest_schema' must be '{MANIFEST_SCHEMA}', got '{schema}'."
+        )
+
+    schema_version = manifest.get("manifest_schema_version")
+    if schema_version != MANIFEST_SCHEMA_VERSION:
+        errors.append(
+            "Field 'manifest_schema_version' must match supported "
+            f"version '{MANIFEST_SCHEMA_VERSION}'."
+        )
+
+    created_at = manifest.get("created_at_utc")
+    if not isinstance(created_at, str):
+        errors.append("Field 'created_at_utc' must be an ISO-8601 string.")
+    else:
+        try:
+            datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        except ValueError:
+            errors.append("Field 'created_at_utc' must be a valid ISO-8601 datetime.")
 
     mode = manifest.get("mode")
     if not isinstance(mode, str) or not mode.strip():
@@ -80,6 +109,23 @@ def validate_run_manifest(manifest: Mapping[str, Any]) -> list[str]:
     config = manifest.get("config")
     if not isinstance(config, dict):
         errors.append("Field 'config' must be an object.")
+    else:
+        required_config_keys = [
+            "name",
+            "scenario",
+            "simulation",
+            "optimization",
+            "intelligence",
+            "llm",
+            "observability",
+            "nodes",
+            "network_edges",
+            "initial_tasks",
+            "scenarios",
+        ]
+        for key in required_config_keys:
+            if key not in config:
+                errors.append(f"Config snapshot missing required key: '{key}'.")
 
     dependencies = manifest.get("dependencies")
     if not isinstance(dependencies, dict):

@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 12:25:06 +07:00  
+Last updated: 2026-05-14 12:27:09 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -22,7 +22,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 12 | Web modular refactor | Web app decomposition into tested modules | Closed |
 | 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | In progress (slices complete, pending merge) |
 | 14 | Publication pipeline hardening | `publication.py` split + statistics validation | In progress (slices complete, pending merge) |
-| 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Planned |
+| 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | In progress |
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Planned |
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Planned |
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Planned |
@@ -55,7 +55,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 12 | Closed | 2026-05-14 10:14:40 +07:00 | merged to `main` via PRs #10-#15, tip merge commit `c892939` |
 | 13 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` |
 | 14 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` (until Sprint 13 merge) |
-| 15 | Planned | n/a | n/a |
+| 15 | In progress | n/a | active branch `codex/sprint13-experiments-orchestration` |
 | 16 | Planned | n/a | n/a |
 | 17 | Planned | n/a | n/a |
 | 18 | Planned | n/a | n/a |
@@ -209,7 +209,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 | Task | Description | Status |
 |---|---|---|
-| 15.1 | Strengthen run/batch/publication manifest schema and versioning | Planned |
+| 15.1 | Strengthen run/batch/publication manifest schema and versioning | Done |
 | 15.2 | Add deterministic replay command and verification report | Planned |
 | 15.3 | Add artifact integrity checks (hashes for manifests/results) | Planned |
 | 15.4 | Document reproducibility SOP end-to-end | Planned |
@@ -284,3 +284,9 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 1. Create/refresh PR from `codex/sprint13-experiments-orchestration` to `main`.
 2. Merge PR to `main`.
 3. Update `Sprint Closure Register` row for Sprint 14 with close timestamp and merge evidence.
+
+## Active Sprint Slice Log (Sprint 15)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-14 12:27:09 | 15.1 Strengthen manifest schema and versioning | OK (`manifest_schema` + `manifest_schema_version` contract enforced and tested) | targeted + full pytest pass | current slice commit |
