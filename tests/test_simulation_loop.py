@@ -58,3 +58,45 @@ def test_simulation_loop_completes_task_and_updates_metrics() -> None:
     assert state.mas_messages >= 1
     assert len(state.completed_task_records) == state.completed_tasks
     assert len(state.history) == 4  # init snapshot + one snapshot per tick
+
+
+def test_simulation_loop_incremental_latency_and_deadline_metrics() -> None:
+    """Incremental counters should preserve latency/deadline aggregates and records."""
+    config = _minimal_config()
+    config = replace(
+        config,
+        simulation=SimulationConfig(time_horizon=4, seed=11, step_seconds=1.0),
+        nodes=[Node(id="node-a", cpu=2.0, memory=8.0, gpu=0.0)],
+        network_edges=[],
+        initial_tasks=[
+            Task(
+                id="task-fast",
+                cpu_required=2.0,
+                memory_required=1.0,
+                data_size=32.0,
+                deadline=2.0,
+                arrival_time=0,
+                duration=1,
+            ),
+            Task(
+                id="task-slow",
+                cpu_required=2.0,
+                memory_required=1.0,
+                data_size=32.0,
+                deadline=2.0,
+                arrival_time=0,
+                duration=2,
+            ),
+        ],
+    )
+
+    state = SimulationLoop(config=config).run()
+
+    assert state.completed_tasks == 2
+    assert state.deadline_violations == 1
+    assert state.avg_latency == 2.0
+    assert len(state.completed_task_records) == 2
+    assert sorted(item["task_id"] for item in state.completed_task_records) == [
+        "task-fast",
+        "task-slow",
+    ]

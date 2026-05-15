@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 
 from project.core.models import Node, Task
@@ -17,7 +18,7 @@ class SimulationContext:
     queue: TaskQueue
     running_tasks: dict[str, list[Task]]
     completed_tasks: list[Task]
-    future_tasks: list[Task]
+    future_tasks: deque[Task]
     network: NetworkModel
     current_time: int = 0
     active_algorithm: str = "min-load"
