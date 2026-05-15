@@ -1,0 +1,186 @@
+{
+  "created_at_utc": "2026-05-15T04:39:51.149863+00:00",
+  "notes": {
+    "latency_throughput_pending_deadline_deterministic_given_seed": true,
+    "runtime_seconds_mean_machine_dependent": true
+  },
+  "rows": [
+    {
+      "algorithm": "greedy",
+      "avg_latency_mean": 3.5185185185185186,
+      "avg_load_mean": 0.1772244392438176,
+      "deadline_violations_mean": 0.0,
+      "node_count": 10,
+      "pending_tasks_mean": 83.0,
+      "runtime_seconds_mean": 0.0077528999827336,
+      "task_count": 100,
+      "throughput_mean": 3.375
+    },
+    {
+      "algorithm": "min-load",
+      "avg_latency_mean": 3.7083333333333335,
+      "avg_load_mean": 0.2239569214223508,
+      "deadline_violations_mean": 0.0,
+      "node_count": 10,
+      "pending_tasks_mean": 86.0,
+      "runtime_seconds_mean": 0.0085768999997526,
+      "task_count": 100,
+      "throughput_mean": 3.0
+    },
+    {
+      "algorithm": "round-robin",
+      "avg_latency_mean": 3.140845070422535,
+      "avg_load_mean": 0.2274132082814255,
+      "deadline_violations_mean": 0.0,
+      "node_count": 10,
+      "pending_tasks_mean": 39.0,
+      "runtime_seconds_mean": 0.0058569000102579,
+      "task_count": 100,
+      "throughput_mean": 8.875
+    },
+    {
+      "algorithm": "greedy",
+      "avg_latency_mean": 4.047619047619048,
+      "avg_load_mean": 0.0836231940463907,
+      "deadline_violations_mean": 4.0,
+      "node_count": 10,
+      "pending_tasks_mean": 473.0,
+      "runtime_seconds_mean": 0.0297342999838292,
+      "task_count": 500,
+      "throughput_mean": 5.25
+    },
+    {
+      "algorithm": "min-load",
+      "avg_latency_mean": 4.190476190476191,
+      "avg_load_mean": 0.1069448335144371,
+      "deadline_violations_mean": 7.0,
+      "node_count": 10,
+      "pending_tasks_mean": 473.0,
+      "runtime_seconds_mean": 0.0338831999979447,
+      "task_count": 500,
+      "throughput_mean": 5.25
+    },
+    {
+      "algorithm": "round-robin",
+      "avg_latency_mean": 3.7222222222222223,
+      "avg_load_mean": 0.5179093004399153,
+      "deadline_violations_mean": 0.0,
+      "node_count": 10,
+      "pending_tasks_mean": 407.0,
+      "runtime_seconds_mean": 0.014953100006096,
+      "task_count": 500,
+      "throughput_mean": 13.5
+    },
+    {
+      "algorithm": "greedy",
+      "avg_latency_mean": 2.717391304347826,
+      "avg_load_mean": 0.0430135592676312,
+      "deadline_violations_mean": 0.0,
+      "node_count": 50,
+      "pending_tasks_mean": 72.0,
+      "runtime_seconds_mean": 0.0301327000197488,
+      "task_count": 100,
+      "throughput_mean": 5.75
+    },
+    {
+      "algorithm": "min-load",
+      "avg_latency_mean": 2.9047619047619047,
+      "avg_load_mean": 0.0290133990779719,
+      "deadline_violations_mean": 0.0,
+      "node_count": 50,
+      "pending_tasks_mean": 76.0,
+      "runtime_seconds_mean": 0.0303361999976914,
+      "task_count": 100,
+      "throughput_mean": 5.25
+    },
+    {
+      "algorithm": "round-robin",
+      "avg_latency_mean": 2.67032967032967,
+      "avg_load_mean": 0.1416176617514367,
+      "deadline_violations_mean": 0.0,
+      "node_count": 50,
+      "pending_tasks_mean": 27.0,
+      "runtime_seconds_mean": 0.0101494000118691,
+      "task_count": 100,
+      "throughput_mean": 11.375
+    },
+    {
+      "algorithm": "greedy",
+      "avg_latency_mean": 4.622222222222222,
+      "avg_load_mean": 0.0455466666666666,
+      "deadline_violations_mean": 2.0,
+      "node_count": 50,
+      "pending_tasks_mean": 467.0,
+      "runtime_seconds_mean": 0.1050575000117532,
+      "task_count": 500,
+      "throughput_mean": 5.625
+    },
+    {
+      "algorithm": "min-load",
+      "avg_latency_mean": 4.568181818181818,
+      "avg_load_mean": 0.0283458333333333,
+      "deadline_violations_mean": 2.0,
+      "node_count": 50,
+      "pending_tasks_mean": 468.0,
+      "runtime_seconds_mean": 0.1315333000093232,
+      "task_count": 500,
+      "throughput_mean": 5.5
+    },
+    {
+      "algorithm": "round-robin",
+      "avg_latency_mean": 3.2710280373831777,
+      "avg_load_mean": 0.5482102470136988,
+      "deadline_violations_mean": 0.0,
+      "node_count": 50,
+      "pending_tasks_mean": 191.0,
+      "runtime_seconds_mean": 0.0229735999892,
+      "task_count": 500,
+      "throughput_mean": 40.125
+    }
+  ],
+  "schema_version": "sprint17-scalability-baseline-v1",
+  "source_summary_csv": "outputs\\sprint9-publication-ready\\scalability-profile\\scalability_summary.csv",
+  "spec": {
+    "algorithms": [
+      "round-robin",
+      "min-load",
+      "greedy"
+    ],
+    "node_counts": [
+      10,
+      50
+    ],
+    "scenario": "static",
+    "task_counts": [
+      100,
+      500
+    ],
+    "topology": "ring"
+  },
+  "winners_by_point": [
+    {
+      "algorithm": "round-robin",
+      "node_count": 10,
+      "score": 2.643345070422535,
+      "task_count": 100
+    },
+    {
+      "algorithm": "round-robin",
+      "node_count": 10,
+      "score": 6.442222222222222,
+      "task_count": 500
+    },
+    {
+      "algorithm": "round-robin",
+      "node_count": 50,
+      "score": 1.8028296703296702,
+      "task_count": 100
+    },
+    {
+      "algorithm": "round-robin",
+      "node_count": 50,
+      "score": 1.1685280373831777,
+      "task_count": 500
+    }
+  ]
+}
