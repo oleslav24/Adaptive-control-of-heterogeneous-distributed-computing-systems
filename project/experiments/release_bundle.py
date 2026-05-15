@@ -17,6 +17,7 @@ DEFAULT_INCLUDES = [
     "docs/reproducibility.md",
     "docs/experimental_pipeline.md",
     "docs/codebase_modules.md",
+    "docs/publication_docs_package.md",
     "docs/baselines/release_profile_lock.json",
     "docs/baselines/smoke_baseline.json",
     "docs/baselines/scalability_baseline.json",

@@ -105,6 +105,7 @@ python -m project.experiments.scalability_report --summary-csv outputs/sprint9-p
 
 - `docs/baselines/scalability_baseline.json`
 - `docs/baselines/scalability_baseline_report.md`
+- `docs/publication_docs_package.md`
 
 ## 5. Release Sign-Off
 

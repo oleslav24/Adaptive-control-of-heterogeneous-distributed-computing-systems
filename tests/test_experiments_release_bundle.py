@@ -8,6 +8,7 @@ from uuid import uuid4
 import zipfile
 
 from project.experiments.release_bundle import (
+    DEFAULT_INCLUDES,
     build_bundle_manifest,
     collect_bundle_files,
     main,
@@ -72,6 +73,11 @@ def test_main_returns_error_for_missing_strict_include() -> None:
         ]
     )
     assert code == 2
+
+
+def test_default_bundle_includes_publication_docs_package() -> None:
+    """Default include set should ship final publication docs package."""
+    assert "docs/publication_docs_package.md" in DEFAULT_INCLUDES
 
 
 def _workspace_dir(suffix: str) -> Path:
