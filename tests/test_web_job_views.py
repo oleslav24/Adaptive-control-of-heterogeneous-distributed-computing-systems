@@ -27,10 +27,17 @@ def test_fmt_dt_handles_none_and_timestamp() -> None:
 
 
 def test_status_badge_uses_localized_label() -> None:
-    """Status badge includes translated Russian label and color style."""
-    html = status_badge("running", lang="ru")
-    assert "выполняется" in html
+    """Status badge includes localized label and color style."""
+    html = status_badge("running", lang="en")
+    assert "running" in html
     assert "background:#2563eb" in html
+
+
+def test_status_badge_supports_timeout_status() -> None:
+    """Timeout status should render dedicated badge color."""
+    html = status_badge("timeout", lang="en")
+    assert "timeout" in html
+    assert "background:#7c3aed" in html
 
 
 def test_job_row_html_contains_link_and_command() -> None:

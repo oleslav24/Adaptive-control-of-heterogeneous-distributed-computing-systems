@@ -1,0 +1,118 @@
+"""Diagnostics payload and bundle export helpers for web jobs."""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+import json
+from pathlib import Path
+from threading import Lock
+from typing import Protocol
+import zipfile
+
+
+_BUNDLE_ROOT = Path("outputs") / "_web_diagnostics"
+_MAX_DIAGNOSTIC_LOG_LINES = 500
+
+
+class _DiagnosticJobLike(Protocol):
+    """Minimal job protocol for diagnostics export."""
+
+    id: str
+    status: str
+    status_details: str
+    started_at: datetime | None
+    finished_at: datetime | None
+    return_code: int | None
+    timeout_seconds: int | None
+    timed_out: bool
+    log_lines: list[str]
+    _lock: Lock
+
+    def command_text(self) -> str: ...
+
+
+@dataclass(slots=True)
+class JobDiagnostics:
+    """Serializable diagnostics payload for one job."""
+
+    id: str
+    status: str
+    status_details: str
+    return_code: int | None
+    timeout_seconds: int | None
+    timed_out: bool
+    started_at_utc: str | None
+    finished_at_utc: str | None
+    duration_seconds: float | None
+    command: str
+    log_line_count: int
+    log_tail: list[str]
+    generated_at_utc: str
+
+    def to_payload(self) -> dict[str, object]:
+        """Convert diagnostics dataclass to JSON-ready payload."""
+        return asdict(self)
+
+
+def is_failure_like_status(status: str) -> bool:
+    """Return True when diagnostics bundle should be available."""
+    return str(status).strip().lower() in {"failed", "timeout", "stopped"}
+
+
+def build_job_diagnostics(job: _DiagnosticJobLike) -> JobDiagnostics:
+    """Build stable diagnostics payload from job state snapshot."""
+    with job._lock:
+        log_lines = list(job.log_lines)
+    started = job.started_at
+    finished = job.finished_at
+    duration: float | None = None
+    if started is not None and finished is not None:
+        duration = max(0.0, (finished - started).total_seconds())
+    return JobDiagnostics(
+        id=job.id,
+        status=job.status,
+        status_details=str(job.status_details or "").strip() or "-",
+        return_code=job.return_code,
+        timeout_seconds=job.timeout_seconds,
+        timed_out=bool(job.timed_out),
+        started_at_utc=_fmt_iso(started),
+        finished_at_utc=_fmt_iso(finished),
+        duration_seconds=duration,
+        command=job.command_text(),
+        log_line_count=len(log_lines),
+        log_tail=log_lines[-_MAX_DIAGNOSTIC_LOG_LINES:],
+        generated_at_utc=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+def export_job_diagnostics_bundle(
+    *,
+    job: _DiagnosticJobLike,
+    workspace_root: Path,
+) -> Path:
+    """Export diagnostics JSON + log into zip bundle and return path."""
+    diagnostics = build_job_diagnostics(job)
+    bundle_dir = workspace_root / _BUNDLE_ROOT / f"job-{job.id}"
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    diagnostics_json_path = bundle_dir / "diagnostics.json"
+    diagnostics_log_path = bundle_dir / "diagnostics.log"
+    zip_path = bundle_dir / f"job-{job.id}-diagnostics.zip"
+
+    with diagnostics_json_path.open("w", encoding="utf-8") as f:
+        json.dump(diagnostics.to_payload(), f, indent=2, sort_keys=True)
+    diagnostics_log_path.write_text("\n".join(diagnostics.log_tail), encoding="utf-8")
+
+    with zipfile.ZipFile(zip_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.write(diagnostics_json_path, arcname="diagnostics.json")
+        zf.write(diagnostics_log_path, arcname="diagnostics.log")
+
+    return zip_path
+
+
+def _fmt_iso(value: datetime | None) -> str | None:
+    """Format optional datetime for diagnostics payload."""
+    if value is None:
+        return None
+    return value.astimezone(timezone.utc).isoformat()

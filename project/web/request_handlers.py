@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Callable
 
 from project.web.dashboard_routes import build_dashboard_response
+from project.web.diagnostics_routes import (
+    build_job_bundle_response,
+    build_job_diagnostics_response,
+)
 from project.web.dispatch import resolve_get_action, resolve_post_action
 from project.web.file_routes import build_download_response, build_files_response
 from project.web.i18n import tr
@@ -41,6 +45,14 @@ def build_get_response(
             parsed,
             job_manager,
             payload_builder=payload_builder,
+        )
+    if action == "job_diagnostics":
+        return build_job_diagnostics_response(parsed, job_manager)
+    if action == "job_bundle":
+        return build_job_bundle_response(
+            parsed,
+            job_manager,
+            workspace_root=workspace_root,
         )
     if action == "files":
         return build_files_response(parsed, workspace_root=workspace_root)

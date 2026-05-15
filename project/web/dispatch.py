@@ -7,6 +7,8 @@ GET_ROUTE_ACTIONS: dict[str, str] = {
     "/": "dashboard",
     "/job": "job",
     "/job-data": "job_data",
+    "/job-diagnostics": "job_diagnostics",
+    "/job-bundle": "job_bundle",
     "/files": "files",
     "/download": "download",
     "/health": "health",

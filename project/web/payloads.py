@@ -29,6 +29,9 @@ class _JobPayloadLike(Protocol):
     started_at: datetime | None
     finished_at: datetime | None
     return_code: int | None
+    timeout_seconds: int | None
+    timed_out: bool
+    status_details: str
     log_lines: list[str]
     _lock: Lock
 
@@ -82,17 +85,40 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
         status=job.status,
         max_items=6,
     )
+    status_details = str(job.status_details or "").strip()
+    if not status_details:
+        status_details = _default_status_details(job)
     return {
         "id": job.id,
         "status": job.status,
         "status_badge_html": status_badge(job.status, lang),
+        "status_details": status_details,
         "started_at": fmt_dt(job.started_at),
         "finished_at": fmt_dt(job.finished_at),
         "return_code": job.return_code,
+        "timeout_seconds": job.timeout_seconds,
+        "timed_out": bool(job.timed_out),
         "command": job.command_text(),
         "log_text": "\n".join(lines),
         "metrics": metrics,
         "insights": insights,
         "lang": lang,
     }
+
+
+def _default_status_details(job: _JobPayloadLike) -> str:
+    """Build fallback status detail text when explicit detail is not set."""
+    if job.status == "timeout":
+        if job.timeout_seconds is None:
+            return "timeout"
+        return f"timeout>{int(job.timeout_seconds)}s"
+    if job.status == "stopped":
+        return "stop-requested"
+    if job.status == "success":
+        return "completed"
+    if job.status == "failed":
+        if job.return_code is None:
+            return "failed"
+        return f"exit-code:{job.return_code}"
+    return "-"
 

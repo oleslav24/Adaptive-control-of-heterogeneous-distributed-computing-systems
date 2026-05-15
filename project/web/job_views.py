@@ -37,6 +37,7 @@ def status_badge(status: str, lang: str = "en") -> str:
         "success": "#16a34a",
         "failed": "#dc2626",
         "stopped": "#b45309",
+        "timeout": "#7c3aed",
     }.get(status, "#6b7280")
     label = STATUS_LABELS.get(lang, STATUS_LABELS["en"]).get(status, status)
     return (

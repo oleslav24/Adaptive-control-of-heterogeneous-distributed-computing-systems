@@ -2,8 +2,14 @@
 
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 
-from project.web.jobs import JobManager, MAX_LOG_LINES, RunJob
+from project.web.jobs import (
+    DEFAULT_JOB_TIMEOUT_SECONDS,
+    JobManager,
+    MAX_LOG_LINES,
+    RunJob,
+)
 
 
 class _FakeProcess:
@@ -67,3 +73,43 @@ def test_job_manager_get_and_sorted_list() -> None:
     assert manager.get("older") is older
     ordered = manager.list_jobs()
     assert [item.id for item in ordered[:2]] == ["newer", "older"]
+
+
+def test_job_manager_timeout_normalization() -> None:
+    """Timeout normalization should keep safe defaults and clamp bounds."""
+    manager = JobManager()
+    assert manager._normalize_timeout_seconds(None) == DEFAULT_JOB_TIMEOUT_SECONDS  # noqa: SLF001
+    assert manager._normalize_timeout_seconds(-1) == 10  # noqa: SLF001
+    assert manager._normalize_timeout_seconds(1000000) == 86400  # noqa: SLF001
+    assert manager._normalize_timeout_seconds(120) == 120  # noqa: SLF001
+
+
+def test_run_job_timeout_marks_timeout_status() -> None:
+    """Supervisor should stop long-running process and set timeout status."""
+    manager = JobManager()
+    job = RunJob(
+        id="timeout-case",
+        command=[sys.executable, "-c", "import time; time.sleep(5)"],
+        cwd=Path(".").resolve(),
+        timeout_seconds=1,
+    )
+    manager._run_job(job)  # noqa: SLF001
+    assert job.status == "timeout"
+    assert job.timed_out is True
+    assert job.finished_at is not None
+    assert job.status_details.startswith("timeout>")
+
+
+def test_run_job_failed_exit_sets_status_details() -> None:
+    """Non-zero process exit should produce failed status details."""
+    manager = JobManager()
+    job = RunJob(
+        id="failed-case",
+        command=[sys.executable, "-c", "raise SystemExit(3)"],
+        cwd=Path(".").resolve(),
+        timeout_seconds=30,
+    )
+    manager._run_job(job)  # noqa: SLF001
+    assert job.status == "failed"
+    assert job.return_code == 3
+    assert job.status_details == "exit-code:3"
