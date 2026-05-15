@@ -1,0 +1,140 @@
+name: release-rc-publication
+scenario: peak-load
+
+simulation:
+  time_horizon: 8
+  seed: 42
+  step_seconds: 1.0
+
+optimization:
+  algorithm: min-load
+  compare_algorithms:
+    - round-robin
+    - min-load
+    - greedy
+
+intelligence:
+  enabled: true
+  prediction_window: 6
+  znn_gain: 0.40
+  high_queue_threshold: 1.5
+  high_load_threshold: 0.65
+  adaptive_algorithm: true
+  congestion_algorithm: round-robin
+  normal_algorithm: min-load
+
+llm:
+  enabled: true
+  provider: mock
+  model: gpt-5.4-mini
+  temperature: 0.2
+  max_tokens: 300
+  timeout_seconds: 12
+  api_base_url: https://api.openai.com
+  api_key_env: OPENAI_API_KEY
+  allow_algorithm_override: true
+  allow_node_bias_override: true
+  allowed_algorithms:
+    - round-robin
+    - min-load
+    - greedy
+
+observability:
+  output_dir: outputs/release_candidate
+  log_level: INFO
+  save_csv: true
+  save_json: true
+  save_plots: true
+  plot_profile: publication
+  plot_dpi: 300
+  plot_formats: [png, pdf, svg]
+
+scenarios:
+  dynamic_load:
+    enabled: true
+    base_rate: 1.4
+    amplitude: 0.40
+    period: 6
+    max_new_tasks: 6
+    cpu_range: [1.0, 6.0]
+    memory_range: [2.0, 14.0]
+    data_size_range: [64.0, 768.0]
+    duration_range: [1, 5]
+    deadline_slack_range: [2, 8]
+  peak_load:
+    enabled: false
+    start: 3
+    end: 5
+    multiplier: 3.0
+  node_failures:
+    enabled: false
+    events:
+      - node_id: node-b
+        time: 4
+        duration: 2
+  heterogeneous_tasks:
+    enabled: false
+    profiles:
+      - name: cpu-heavy
+        cpu_range: [5.0, 9.0]
+        memory_range: [2.0, 6.0]
+        data_size_range: [96.0, 320.0]
+        duration_range: [2, 5]
+        deadline_slack_range: [2, 5]
+      - name: memory-heavy
+        cpu_range: [1.0, 3.0]
+        memory_range: [10.0, 22.0]
+        data_size_range: [256.0, 768.0]
+        duration_range: [2, 5]
+        deadline_slack_range: [3, 7]
+      - name: balanced
+        cpu_range: [2.0, 5.0]
+        memory_range: [4.0, 12.0]
+        data_size_range: [128.0, 512.0]
+        duration_range: [1, 4]
+        deadline_slack_range: [2, 6]
+
+nodes:
+  - id: node-a
+    cpu: 16
+    memory: 64
+    gpu: 1
+    load: 0.10
+  - id: node-b
+    cpu: 12
+    memory: 32
+    gpu: 0
+    load: 0.15
+
+network_edges:
+  - source: node-a
+    target: node-b
+    bandwidth: 1000
+    latency: 4
+  - source: node-b
+    target: node-a
+    bandwidth: 1000
+    latency: 4
+
+initial_tasks:
+  - id: task-1
+    cpu_required: 2
+    memory_required: 4
+    data_size: 128
+    deadline: 6
+    arrival_time: 0
+    duration: 2
+  - id: task-2
+    cpu_required: 6
+    memory_required: 8
+    data_size: 256
+    deadline: 7
+    arrival_time: 1
+    duration: 3
+  - id: task-3
+    cpu_required: 4
+    memory_required: 6
+    data_size: 180
+    deadline: 5
+    arrival_time: 2
+    duration: 2

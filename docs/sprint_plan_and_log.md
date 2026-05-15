@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-15 11:40:33 +07:00  
+Last updated: 2026-05-15 11:51:37 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -24,8 +24,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 14 | Publication pipeline hardening | `publication.py` split + statistics validation | Closed |
 | 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Closed |
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Closed |
-| 17 | Scalability and performance | Profiling-backed optimization and load envelopes | In progress |
-| 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Planned |
+| 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Closed |
+| 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -57,8 +57,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 14 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
 | 15 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
 | 16 | Closed | 2026-05-15 10:39:06 +07:00 | merged via PR #19, merge commit `60b5101` |
-| 17 | In progress | n/a | active branch `codex/sprint17-profiling-harness` |
-| 18 | Planned | n/a | n/a |
+| 17 | Closed | 2026-05-15 11:45:09 +07:00 | merged via PR #20, merge commit `ee1b2e1` |
+| 18 | In progress | n/a | active branch `codex/sprint18-release-candidate` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -236,7 +236,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 | Task | Description | Status |
 |---|---|---|
-| 18.1 | Finalize release checklist and freeze config profiles | Planned |
+| 18.1 | Finalize release checklist and freeze config profiles | Done |
 | 18.2 | Produce reproducible experiment bundle for publication appendix | Planned |
 | 18.3 | Final QA pass across CLI/Web/repro/publication flows | Planned |
 | 18.4 | Prepare final docs package (architecture, methods, threats to validity) | Planned |
@@ -315,3 +315,13 @@ Closed in `main` via PR #19 (merge commit `60b5101`).
 | 2026-05-15 11:32:04 | 17.2 Optimize hot paths in simulation loop and metrics pipeline | OK (`future_tasks` switched to deque, completed-task/deadline/latency aggregation moved to incremental updates, history dataframe flattening vectorized) | targeted + full pytest pass (`146 passed`) | current slice commit |
 | 2026-05-15 11:36:28 | 17.3 Add performance budgets and threshold checks in CI | OK (`performance_budget` gate added and wired into GitHub Actions smoke workflow with runtime/throughput/pending thresholds) | targeted + full pytest pass (`149 passed`) | current slice commit |
 | 2026-05-15 11:40:33 | 17.4 Publish scalability report template and baseline numbers | OK (`scalability_report` generator + baseline JSON/markdown artifacts + docs template) | targeted + full pytest pass (`152 passed`) | current slice commit |
+
+## Sprint 17 Closure
+
+Closed in `main` via PR #20 (merge commit `ee1b2e1`).
+
+## Active Sprint Slice Log (Sprint 18)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-15 11:51:37 | 18.1 Finalize release checklist and freeze config profiles | OK (frozen release profiles added + deterministic `release_profile_lock.json` generator + release candidate checklist) | targeted + full pytest pass (`155 passed`) | current slice commit |
