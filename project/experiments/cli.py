@@ -138,6 +138,43 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run publication pipeline (E1-E5, H1-H5, stats, plots, report).",
     )
     parser.add_argument(
+        "--scalability-profile",
+        action="store_true",
+        help="Run scalability profiling sweep (nodes/tasks/algorithms).",
+    )
+    parser.add_argument(
+        "--scalability-nodes",
+        default="10,50,100,500",
+        help="Comma-separated node counts for scalability sweep.",
+    )
+    parser.add_argument(
+        "--scalability-tasks",
+        default="100,500,1000,5000",
+        help="Comma-separated task counts for scalability sweep.",
+    )
+    parser.add_argument(
+        "--scalability-runs",
+        type=int,
+        default=1,
+        help="Repeats per (nodes,tasks,algorithm) point in scalability sweep.",
+    )
+    parser.add_argument(
+        "--scalability-algorithms",
+        default=None,
+        help="Comma-separated algorithms for scalability sweep.",
+    )
+    parser.add_argument(
+        "--scalability-topology",
+        default="ring",
+        choices=["ring", "mesh", "star"],
+        help="Network topology for generated scalability experiments.",
+    )
+    parser.add_argument(
+        "--scalability-keep-adaptive",
+        action="store_true",
+        help="Keep intelligence/LLM enabled in scalability profile runs.",
+    )
+    parser.add_argument(
         "--study-seeds",
         default="42-71",
         help="Seeds for publication study: comma list (42,43,44) or range (42-71).",

@@ -253,15 +253,19 @@ def persist_batch_observability(
 
 def _build_history_dataframe(state: SystemState) -> pd.DataFrame:
     """Convert state.history entries into tabular DataFrame."""
-    rows: list[dict[str, Any]] = []
-    for entry in state.history:
-        row = {k: v for k, v in entry.items() if k != "node_loads"}
-        node_loads = entry.get("node_loads", {})
-        if isinstance(node_loads, dict):
-            for node_id, load in node_loads.items():
-                row[f"load_{node_id}"] = load
-        rows.append(row)
-    return pd.DataFrame(rows)
+    if not state.history:
+        return pd.DataFrame()
+    history_df = pd.DataFrame(state.history)
+    if "node_loads" not in history_df.columns:
+        return history_df
+
+    node_payload = [
+        value if isinstance(value, dict) else {} for value in history_df.pop("node_loads").tolist()
+    ]
+    loads_df = pd.DataFrame(node_payload).add_prefix("load_")
+    if loads_df.empty:
+        return history_df
+    return pd.concat([history_df, loads_df], axis=1)
 
 
 def _build_metrics_timeseries_figure(df: pd.DataFrame):

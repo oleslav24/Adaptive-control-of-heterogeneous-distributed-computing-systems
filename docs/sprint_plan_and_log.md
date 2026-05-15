@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-14 16:36:48 +07:00  
+Last updated: 2026-05-15 11:40:33 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -23,8 +23,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 13 | Experiments orchestration refactor | `project.experiments.run` decomposed into tested modules | Closed |
 | 14 | Publication pipeline hardening | `publication.py` split + statistics validation | Closed |
 | 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Closed |
-| 16 | Web production hardening | Stable web UX, resilience, and diagnostics | In progress |
-| 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Planned |
+| 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Closed |
+| 17 | Scalability and performance | Profiling-backed optimization and load envelopes | In progress |
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Planned |
 
 ## Execution Guardrails (mandatory each slice)
@@ -56,8 +56,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 13 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
 | 14 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
 | 15 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
-| 16 | In progress | n/a | active branch `codex/sprint16-web-production-hardening` |
-| 17 | Planned | n/a | n/a |
+| 16 | Closed | 2026-05-15 10:39:06 +07:00 | merged via PR #19, merge commit `60b5101` |
+| 17 | In progress | n/a | active branch `codex/sprint17-profiling-harness` |
 | 18 | Planned | n/a | n/a |
 
 ## Detailed Sprint Backlog And Status
@@ -227,10 +227,10 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 | Task | Description | Status |
 |---|---|---|
-| 17.1 | Add profiling harness for large-scale runs (nodes/tasks sweeps) | Planned |
-| 17.2 | Optimize hot paths in simulation loop and metrics pipeline | Planned |
-| 17.3 | Add performance budgets and threshold checks in CI | Planned |
-| 17.4 | Publish scalability report templates and baseline numbers | Planned |
+| 17.1 | Add profiling harness for large-scale runs (nodes/tasks sweeps) | Done |
+| 17.2 | Optimize hot paths in simulation loop and metrics pipeline | Done |
+| 17.3 | Add performance budgets and threshold checks in CI | Done |
+| 17.4 | Publish scalability report templates and baseline numbers | Done |
 
 ### Sprint 18 - Release candidate for paper/monograph
 
@@ -302,3 +302,16 @@ Closed in `main` via PR #18 (merge commit `145a999`).
 | 2026-05-14 16:29:14 | 16.2 Server-side request validation and safer defaults | OK (strict `/run` validation for mode/config/timeout/seeds + bounded defaults with HTTP 400 feedback) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 16:33:48 | 16.3 Diagnostics endpoints and failed-run log bundle export | OK (`/job-diagnostics` JSON + `/job-bundle` zip export for failed/timeout/stopped jobs + UI link) | targeted + full pytest pass | current slice commit |
 | 2026-05-14 16:36:48 | 16.4 Web-level regression tests for key user flows | OK (`/run` invalid request rejection + failed run diagnostics/bundle integration test) | targeted + full pytest pass (`142 passed`) | current slice commit |
+
+## Sprint 16 Closure
+
+Closed in `main` via PR #19 (merge commit `60b5101`).
+
+## Active Sprint Slice Log (Sprint 17)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-15 10:49:11 | 17.1 Profiling harness for large-scale runs (nodes/tasks sweeps) | OK (`scalability-profile` mode added with deterministic synthetic workload/topology generation, sweep aggregation, and artifact persistence) | targeted + full pytest pass (`145 passed`) | current slice commit |
+| 2026-05-15 11:32:04 | 17.2 Optimize hot paths in simulation loop and metrics pipeline | OK (`future_tasks` switched to deque, completed-task/deadline/latency aggregation moved to incremental updates, history dataframe flattening vectorized) | targeted + full pytest pass (`146 passed`) | current slice commit |
+| 2026-05-15 11:36:28 | 17.3 Add performance budgets and threshold checks in CI | OK (`performance_budget` gate added and wired into GitHub Actions smoke workflow with runtime/throughput/pending thresholds) | targeted + full pytest pass (`149 passed`) | current slice commit |
+| 2026-05-15 11:40:33 | 17.4 Publish scalability report template and baseline numbers | OK (`scalability_report` generator + baseline JSON/markdown artifacts + docs template) | targeted + full pytest pass (`152 passed`) | current slice commit |

@@ -14,6 +14,7 @@ def _minimal_args(**overrides: object) -> Namespace:
     """Create parsed-args like namespace for mode resolution tests."""
     defaults = {
         "publication_study": False,
+        "scalability_profile": False,
         "ab_llm": False,
         "ab_intelligence": False,
         "compare": False,
@@ -28,6 +29,7 @@ def _minimal_args(**overrides: object) -> Namespace:
 def test_resolve_mode_uses_expected_priority_order() -> None:
     """Mode resolution should follow explicit priority from most specific to fallback."""
     assert resolve_mode(_minimal_args(publication_study=True, batch=True)) == "publication-study"
+    assert resolve_mode(_minimal_args(scalability_profile=True, compare=True)) == "scalability-profile"
     assert (
         resolve_mode(_minimal_args(replay_manifest="outputs/demo/run_manifest.json", compare=True))
         == "replay-manifest"

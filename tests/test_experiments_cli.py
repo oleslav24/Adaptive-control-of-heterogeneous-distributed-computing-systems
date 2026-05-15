@@ -21,6 +21,13 @@ def test_parse_args_defaults() -> None:
     assert args.replay_manifest is None
     assert args.replay_runs == 3
     assert args.publication_study is False
+    assert args.scalability_profile is False
+    assert args.scalability_nodes == "10,50,100,500"
+    assert args.scalability_tasks == "100,500,1000,5000"
+    assert args.scalability_runs == 1
+    assert args.scalability_algorithms is None
+    assert args.scalability_topology == "ring"
+    assert args.scalability_keep_adaptive is False
     assert args.study_seeds == "42-71"
     assert args.study_quick is False
 
@@ -91,6 +98,18 @@ def test_parse_args_ab_publication_and_repro_flags() -> None:
             "--replay-runs",
             "5",
             "--publication-study",
+            "--scalability-profile",
+            "--scalability-nodes",
+            "12,24,48",
+            "--scalability-tasks",
+            "120,240",
+            "--scalability-runs",
+            "3",
+            "--scalability-algorithms",
+            "min-load,greedy",
+            "--scalability-topology",
+            "star",
+            "--scalability-keep-adaptive",
             "--study-seeds",
             "1,2,3",
             "--study-quick",
@@ -105,5 +124,12 @@ def test_parse_args_ab_publication_and_repro_flags() -> None:
     assert args.replay_manifest == "outputs/demo/run_manifest.json"
     assert args.replay_runs == 5
     assert args.publication_study is True
+    assert args.scalability_profile is True
+    assert args.scalability_nodes == "12,24,48"
+    assert args.scalability_tasks == "120,240"
+    assert args.scalability_runs == 3
+    assert args.scalability_algorithms == "min-load,greedy"
+    assert args.scalability_topology == "star"
+    assert args.scalability_keep_adaptive is True
     assert args.study_seeds == "1,2,3"
     assert args.study_quick is True

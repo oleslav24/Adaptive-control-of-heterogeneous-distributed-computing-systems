@@ -28,7 +28,7 @@ jobs:
       - name: Run static checks
         run: |
           python -m ruff check --no-cache project tests
-          python -m mypy --no-sqlite-cache --cache-dir .mypy_cache_ci --follow-imports=skip project/core/models.py project/algorithms/schedulers.py project/simulation/context.py project/simulation/mas.py project/simulation/loop.py project/experiments/manifest.py project/experiments/smoke.py
+          python -m mypy --no-sqlite-cache --cache-dir .mypy_cache_ci --follow-imports=skip project/core/models.py project/algorithms/schedulers.py project/simulation/context.py project/simulation/mas.py project/simulation/loop.py project/experiments/manifest.py project/experiments/smoke.py project/experiments/performance_budget.py
 
       - name: Run tests
         run: |
@@ -37,6 +37,10 @@ jobs:
       - name: Run smoke baseline against golden
         run: |
           python -B -m project.experiments.smoke --config config.yaml
+
+      - name: Run scalability performance budget gate
+        run: |
+          python -B -m project.experiments.performance_budget --config config.yaml --nodes 10 --tasks 100 --algorithms min-load,greedy --repeats 1 --topology ring --scenario static --max-runtime-seconds 1.0 --min-throughput 0.05 --max-pending-tasks 500
 
   mutation-baseline:
     runs-on: ubuntu-latest

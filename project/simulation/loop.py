@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 import logging
 
@@ -34,10 +35,15 @@ class SimulationLoop:
     config: ExperimentConfig
     agents: list[Agent] = field(default_factory=list)
     nodes: dict[str, Node] = field(default_factory=dict)
-    future_tasks: list[Task] = field(default_factory=list)
+    future_tasks: deque[Task] = field(default_factory=deque)
     queue: TaskQueue = field(default_factory=TaskQueue)
     running_tasks: dict[str, list[Task]] = field(default_factory=dict)
     completed_tasks: list[Task] = field(default_factory=list)
+    completed_task_records: list[dict[str, object]] = field(default_factory=list)
+    completed_latency_sum: float = 0.0
+    completed_latency_count: int = 0
+    deadline_violations_count: int = 0
+    scenario_events: list[dict[str, object]] = field(default_factory=list)
     network: NetworkModel = field(default_factory=NetworkModel)
     scenario_engine: ScenarioEngine | None = None
     context: SimulationContext | None = None
@@ -59,24 +65,31 @@ class SimulationLoop:
             for node in self.config.nodes
         }
         self.network = NetworkModel.from_edges(self.config.network_edges)
-        self.future_tasks = sorted(
-            [
-                Task(
-                    id=task.id,
-                    cpu_required=task.cpu_required,
-                    memory_required=task.memory_required,
-                    data_size=task.data_size,
-                    deadline=task.deadline,
-                    arrival_time=task.arrival_time,
-                    duration=task.duration,
-                )
-                for task in self.config.initial_tasks
-            ],
-            key=lambda task: task.arrival_time,
+        self.future_tasks = deque(
+            sorted(
+                [
+                    Task(
+                        id=task.id,
+                        cpu_required=task.cpu_required,
+                        memory_required=task.memory_required,
+                        data_size=task.data_size,
+                        deadline=task.deadline,
+                        arrival_time=task.arrival_time,
+                        duration=task.duration,
+                    )
+                    for task in self.config.initial_tasks
+                ],
+                key=lambda task: task.arrival_time,
+            )
         )
         self.queue = TaskQueue()
         self.running_tasks = {node_id: [] for node_id in self.nodes}
         self.completed_tasks = []
+        self.completed_task_records = []
+        self.completed_latency_sum = 0.0
+        self.completed_latency_count = 0
+        self.deadline_violations_count = 0
+        self.scenario_events = []
         self.scenario_engine = ScenarioEngine(config=self.config)
         self.context = SimulationContext(
             nodes=self.nodes,
@@ -147,7 +160,7 @@ class SimulationLoop:
         """Release preloaded tasks and generate scenario tasks for tick t."""
         released: list[Task] = []
         while self.future_tasks and self.future_tasks[0].arrival_time <= t:
-            task = self.future_tasks.pop(0)
+            task = self.future_tasks.popleft()
             task.status = "queued"
             released.append(task)
         generated: list[Task] = []
@@ -170,6 +183,7 @@ class SimulationLoop:
                 task.status = "completed"
                 task.finish_time = t + 1
                 self.completed_tasks.append(task)
+                self._register_completed_task(task)
                 node.release(task)
             self.running_tasks[node_id] = still_running
         self._sync_state(t + 1)
@@ -188,6 +202,13 @@ class SimulationLoop:
                         event.time,
                         event.kind,
                         event.details,
+                    )
+                    self.scenario_events.append(
+                        {
+                            "time": event.time,
+                            "kind": event.kind,
+                            **event.details,
+                        }
                     )
             self.generate_tasks(t)
             self.mas.step(self.state)
@@ -239,22 +260,17 @@ class SimulationLoop:
         self.state.inactive_nodes = sorted(
             [node_id for node_id, node in self.nodes.items() if not node.is_active]
         )
-        self.state.deadline_violations = sum(
-            1
-            for task in self.completed_tasks
-            if task.finish_time is not None and task.finish_time > task.deadline
-        )
+        self.state.deadline_violations = self.deadline_violations_count
         self.state.generated_tasks = (
             self.scenario_engine.generated_tasks_total
             if self.scenario_engine is not None
             else 0
         )
-        latencies = [
-            float(task.finish_time - task.arrival_time)
-            for task in self.completed_tasks
-            if task.finish_time is not None
-        ]
-        self.state.avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+        self.state.avg_latency = (
+            self.completed_latency_sum / float(self.completed_latency_count)
+            if self.completed_latency_count > 0
+            else 0.0
+        )
         self.state.throughput = (
             float(self.state.completed_tasks) / float(current_time)
             if current_time > 0
@@ -270,30 +286,8 @@ class SimulationLoop:
             self.state.mas_assignments = len(self.context.assignment_log)
         else:
             self.state.mas_assignments = 0
-        self.state.completed_task_records = [
-            {
-                "task_id": task.id,
-                "arrival_time": task.arrival_time,
-                "start_time": task.start_time,
-                "finish_time": task.finish_time,
-                "deadline": task.deadline,
-                "latency": (
-                    float(task.finish_time - task.arrival_time)
-                    if task.finish_time is not None
-                    else None
-                ),
-                "duration": task.duration,
-                "assigned_node": task.assigned_node,
-                "algorithm": self.state.selected_algorithm,
-                "scenario": self.state.scenario,
-            }
-            for task in self.completed_tasks
-        ]
-        self.state.scenario_events = (
-            self.scenario_engine.events_as_dicts()
-            if self.scenario_engine is not None
-            else []
-        )
+        self.state.completed_task_records = list(self.completed_task_records)
+        self.state.scenario_events = list(self.scenario_events)
         self.state.history.append(
             {
                 "time": self.state.current_time,
@@ -328,4 +322,29 @@ class SimulationLoop:
             self.state.avg_latency,
             self.state.throughput,
             self.state.avg_load,
+        )
+
+    def _register_completed_task(self, task: Task) -> None:
+        """Update incremental counters and completion record for finished task."""
+        if task.finish_time is not None:
+            latency = float(task.finish_time - task.arrival_time)
+            self.completed_latency_sum += latency
+            self.completed_latency_count += 1
+            if task.finish_time > task.deadline:
+                self.deadline_violations_count += 1
+        else:
+            latency = None
+        self.completed_task_records.append(
+            {
+                "task_id": task.id,
+                "arrival_time": task.arrival_time,
+                "start_time": task.start_time,
+                "finish_time": task.finish_time,
+                "deadline": task.deadline,
+                "latency": latency,
+                "duration": task.duration,
+                "assigned_node": task.assigned_node,
+                "algorithm": self.context.active_algorithm if self.context is not None else "",
+                "scenario": self.config.scenario,
+            }
         )

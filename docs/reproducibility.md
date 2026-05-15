@@ -55,6 +55,24 @@ Smoke baseline:
 python -m project.experiments.smoke --config config.yaml
 ```
 
+Scalability profiling sweep:
+
+```bash
+python -m project.experiments.run --config config.yaml --scalability-profile --scenario static --scalability-nodes 10,50 --scalability-tasks 100,500 --scalability-algorithms round-robin,min-load,greedy --scalability-runs 1 --scalability-topology ring --no-plots
+```
+
+Scalability performance budget gate:
+
+```bash
+python -m project.experiments.performance_budget --config config.yaml --nodes 10 --tasks 100 --algorithms min-load,greedy --repeats 1 --topology ring --scenario static --max-runtime-seconds 1.0 --min-throughput 0.05 --max-pending-tasks 500
+```
+
+Generate scalability baseline JSON + markdown report:
+
+```bash
+python -m project.experiments.scalability_report --summary-csv outputs/sprint9-publication-ready/scalability-profile/scalability_summary.csv --output-json docs/baselines/scalability_baseline.json --output-md docs/baselines/scalability_baseline_report.md --scenario static --topology ring --nodes 10,50 --tasks 100,500 --algorithms round-robin,min-load,greedy
+```
+
 Update smoke golden snapshot (only on intentional baseline refresh):
 
 ```bash

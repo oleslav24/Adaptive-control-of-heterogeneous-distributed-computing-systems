@@ -18,6 +18,12 @@ def _args(**overrides: object) -> Namespace:
         "batch_runs": 3,
         "batch_save_runs": False,
         "batch_keep_adaptive": False,
+        "scalability_nodes": "10,50,100,500",
+        "scalability_tasks": "100,500,1000,5000",
+        "scalability_runs": 1,
+        "scalability_algorithms": None,
+        "scalability_topology": "ring",
+        "scalability_keep_adaptive": False,
         "repro_runs": 3,
         "replay_manifest": None,
         "replay_runs": 3,
@@ -145,6 +151,51 @@ def test_handle_batch_mode_builds_spec_and_prints(monkeypatch) -> None:
     assert spec.algorithms == ["round-robin", "greedy"]
     assert spec.repeats == 5
     assert spec.persist_individual_runs is True
+    assert spec.strict_algorithm_comparison is False
+    assert getattr(calls["print_result"], "marker") == "ok"
+
+
+def test_handle_scalability_profile_mode_builds_spec_and_prints(monkeypatch) -> None:
+    """Scalability handler should normalize sweep parameters and print outputs."""
+    calls: dict[str, object] = {}
+
+    @dataclass
+    class _Result:
+        marker: str = "ok"
+
+    def _fake_run_scalability_sweep(*, config: ExperimentConfig, spec, cli_args: list[str]):
+        calls["config_name"] = config.name
+        calls["spec"] = spec
+        calls["cli_args"] = list(cli_args)
+        return _Result()
+
+    def _fake_print(name: str, spec, result) -> None:
+        calls["print_name"] = name
+        calls["print_spec"] = spec
+        calls["print_result"] = result
+
+    monkeypatch.setattr(run, "run_scalability_sweep", _fake_run_scalability_sweep)
+    monkeypatch.setattr(run, "_print_scalability_result", _fake_print)
+
+    run._handle_scalability_profile_mode(
+        _config(),
+        _args(
+            scalability_nodes="12,24,24",
+            scalability_tasks="120,240",
+            scalability_runs=3,
+            scalability_algorithms="round-robin,greedy",
+            scalability_topology="star",
+            scalability_keep_adaptive=True,
+        ),
+        ["--scalability-profile"],
+    )
+    spec = calls["spec"]
+    assert spec.node_counts == [12, 24]
+    assert spec.task_counts == [120, 240]
+    assert spec.algorithms == ["round-robin", "greedy"]
+    assert spec.repeats == 3
+    assert spec.topology == "star"
+    assert spec.scenario == "peak-load"
     assert spec.strict_algorithm_comparison is False
     assert getattr(calls["print_result"], "marker") == "ok"
 
