@@ -38,6 +38,11 @@ from project.experiments.mode_advanced import (
 from project.experiments.mode_single_compare import run_comparison_mode, run_single_mode
 from project.experiments.publication import StudyResult
 from project.experiments.runner import BatchRunResult, BatchRunSpec
+from project.experiments.scalability import (
+    ScalabilitySweepResult,
+    ScalabilitySweepSpec,
+    run_scalability_sweep,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +77,7 @@ def _build_mode_handlers() -> dict[str, ModeHandler]:
     """Create mode-to-handler dispatch table."""
     return {
         "publication-study": _handle_publication_mode,
+        "scalability-profile": _handle_scalability_profile_mode,
         "replay-manifest": _handle_replay_manifest_mode,
         "ab-llm": _handle_ab_llm_mode,
         "ab-intelligence": _handle_ab_intelligence_mode,
@@ -93,6 +99,34 @@ def _handle_publication_mode(config: ExperimentConfig, args: Namespace, cli_args
         cli_args=cli_args,
     )
     _print_publication_result(config.name, seeds, result)
+
+
+def _handle_scalability_profile_mode(
+    config: ExperimentConfig, args: Namespace, cli_args: list[str]
+) -> None:
+    """Execute scalability profiling sweep mode."""
+    node_counts = _parse_positive_int_csv(
+        raw=args.scalability_nodes,
+        fallback=[10, 50, 100, 500],
+    )
+    task_counts = _parse_positive_int_csv(
+        raw=args.scalability_tasks,
+        fallback=[100, 500, 1000, 5000],
+    )
+    algorithms = _parse_compare_algorithms(args.scalability_algorithms)
+    if not algorithms:
+        algorithms = list(config.optimization.compare_algorithms)
+    spec = ScalabilitySweepSpec(
+        node_counts=node_counts,
+        task_counts=task_counts,
+        algorithms=algorithms,
+        repeats=max(1, int(args.scalability_runs)),
+        topology=str(args.scalability_topology).strip().lower(),
+        scenario=slug(config.scenario),
+        strict_algorithm_comparison=not bool(args.scalability_keep_adaptive),
+    )
+    result = run_scalability_sweep(config=config, spec=spec, cli_args=cli_args)
+    _print_scalability_result(config.name, spec, result)
 
 
 def _handle_replay_manifest_mode(_config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
@@ -237,6 +271,26 @@ def _parse_study_seeds(raw: str | None) -> list[int]:
     return seeds or list(range(42, 72))
 
 
+def _parse_positive_int_csv(raw: str | None, fallback: list[int]) -> list[int]:
+    """Parse comma-separated positive integers preserving order/uniqueness."""
+    if not raw:
+        return list(fallback)
+    parsed: list[int] = []
+    for item in str(raw).split(","):
+        token = item.strip()
+        if not token:
+            continue
+        try:
+            value = int(token)
+        except ValueError:
+            continue
+        if value < 1:
+            continue
+        if value not in parsed:
+            parsed.append(value)
+    return parsed or list(fallback)
+
+
 def _print_single_result(name: str, final_state: SystemState, artifacts: dict[str, str]) -> None:
     """Print concise summary for one experiment run."""
     print(f"Experiment '{name}' completed.")
@@ -367,6 +421,54 @@ def _print_publication_result(name: str, seeds: list[int], result: StudyResult) 
             result.hypothesis_df.to_string(
                 index=False,
                 float_format=lambda value: f"{value:.3f}" if isinstance(value, float) else str(value),
+            )
+        )
+
+    for key, path in result.output_paths.items():
+        print(f"{key}: {path}")
+
+
+def _print_scalability_result(
+    name: str,
+    spec: ScalabilitySweepSpec,
+    result: ScalabilitySweepResult,
+) -> None:
+    """Print scalability sweep summary table and generated artifact paths."""
+    print(f"Experiment '{name}' scalability profile")
+    print(f"Scenario: {spec.scenario}")
+    print(f"Topology: {spec.topology}")
+    print(f"Nodes: {', '.join(str(value) for value in spec.node_counts)}")
+    print(f"Tasks: {', '.join(str(value) for value in spec.task_counts)}")
+    print(f"Algorithms: {', '.join(spec.algorithms)}")
+    print(f"Repeats per point: {spec.repeats}")
+    print(f"Strict algorithm comparison: {spec.strict_algorithm_comparison}")
+    expected_runs = (
+        len(spec.node_counts) * len(spec.task_counts) * len(spec.algorithms) * int(spec.repeats)
+    )
+    print(f"Total runs: {len(result.runs_df)} (expected {expected_runs})")
+
+    if result.summary_df.empty:
+        print("No scalability summary results were produced.")
+    else:
+        print("Scalability summary (mean/std):")
+        summary_columns = [
+            "node_count",
+            "task_count",
+            "algorithm",
+            "runs",
+            "runtime_seconds_mean",
+            "runtime_seconds_std",
+            "avg_latency_mean",
+            "throughput_mean",
+            "avg_load_mean",
+            "pending_tasks_mean",
+            "deadline_violations_mean",
+        ]
+        available_columns = [col for col in summary_columns if col in result.summary_df.columns]
+        print(
+            result.summary_df[available_columns].to_string(
+                index=False,
+                float_format=lambda value: f"{value:.3f}",
             )
         )
 
