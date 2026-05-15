@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-15 18:34:23 +07:00  
+Last updated: 2026-05-15 19:09:43 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -25,7 +25,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 15 | Reproducibility contract hardening | Strong manifests + deterministic replay checks | Closed |
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Closed |
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Closed |
-| 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Ready for PR |
+| 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Closed |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -58,7 +58,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 15 | Closed | 2026-05-14 16:12:14 +07:00 | merged via PR #18, merge commit `145a999` |
 | 16 | Closed | 2026-05-15 10:39:06 +07:00 | merged via PR #19, merge commit `60b5101` |
 | 17 | Closed | 2026-05-15 11:45:09 +07:00 | merged via PR #20, merge commit `ee1b2e1` |
-| 18 | In progress | n/a | all backlog items done on branch `codex/sprint18-release-candidate`, pending merge PR |
+| 18 | Closed | 2026-05-15 18:45:02 +07:00 | merged via PR #21, merge commit `4b7273d` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -328,3 +328,7 @@ Closed in `main` via PR #20 (merge commit `ee1b2e1`).
 | 2026-05-15 17:43:14 | 18.2 Produce reproducible experiment bundle for publication appendix | OK (`release_bundle` CLI + manifest/ZIP builder + strict include validation + RC bundle generation command documented) | targeted + full pytest pass (`158 passed`) | current slice commit |
 | 2026-05-15 18:31:48 | 18.3 Final QA pass across CLI/Web/repro/publication flows | OK (`release_qa` harness added, strict QA run persisted in `docs/baselines/release_qa_report.json`) | targeted + full pytest pass (`161 passed`) | current slice commit |
 | 2026-05-15 18:34:23 | 18.4 Prepare final docs package (architecture, methods, threats to validity) | OK (`publication_docs_package.md` added and included into default release bundle set) | targeted + full pytest pass (`162 passed`) | current slice commit |
+
+## Sprint 18 Closure
+
+Closed in `main` via PR #21 (merge commit `4b7273d`).
