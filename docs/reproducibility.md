@@ -73,6 +73,12 @@ Release appendix bundle:
 python -m project.experiments.release_bundle --strict --output-dir outputs/release_candidate/bundle --bundle-name publication_appendix_bundle_rc
 ```
 
+Final release QA bundle check:
+
+```bash
+python -m project.experiments.release_qa --strict --output docs/baselines/release_qa_report.json
+```
+
 Generate scalability baseline JSON + markdown report:
 
 ```bash

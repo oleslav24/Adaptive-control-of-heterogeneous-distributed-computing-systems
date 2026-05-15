@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-15 17:43:14 +07:00  
+Last updated: 2026-05-15 18:31:48 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -238,7 +238,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 |---|---|---|
 | 18.1 | Finalize release checklist and freeze config profiles | Done |
 | 18.2 | Produce reproducible experiment bundle for publication appendix | Done |
-| 18.3 | Final QA pass across CLI/Web/repro/publication flows | Planned |
+| 18.3 | Final QA pass across CLI/Web/repro/publication flows | Done |
 | 18.4 | Prepare final docs package (architecture, methods, threats to validity) | Planned |
 
 ## Active Sprint Slice Log (Sprint 12)
@@ -326,3 +326,4 @@ Closed in `main` via PR #20 (merge commit `ee1b2e1`).
 |---|---|---|---|---|
 | 2026-05-15 11:51:37 | 18.1 Finalize release checklist and freeze config profiles | OK (frozen release profiles added + deterministic `release_profile_lock.json` generator + release candidate checklist) | targeted + full pytest pass (`155 passed`) | current slice commit |
 | 2026-05-15 17:43:14 | 18.2 Produce reproducible experiment bundle for publication appendix | OK (`release_bundle` CLI + manifest/ZIP builder + strict include validation + RC bundle generation command documented) | targeted + full pytest pass (`158 passed`) | current slice commit |
+| 2026-05-15 18:31:48 | 18.3 Final QA pass across CLI/Web/repro/publication flows | OK (`release_qa` harness added, strict QA run persisted in `docs/baselines/release_qa_report.json`) | targeted + full pytest pass (`161 passed`) | current slice commit |

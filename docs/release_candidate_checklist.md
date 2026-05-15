@@ -55,6 +55,12 @@ python -m project.experiments.smoke --config config.yaml
 python -m project.experiments.performance_budget --config config.yaml --nodes 10 --tasks 100 --algorithms min-load,greedy --repeats 1 --topology ring --scenario static --max-runtime-seconds 1.0 --min-throughput 0.05 --max-pending-tasks 500
 ```
 
+5. Final release QA harness (CLI/Web/Repro/Publication):
+
+```bash
+python -m project.experiments.release_qa --strict --output docs/baselines/release_qa_report.json
+```
+
 ## 3. Reproducibility Artifacts
 
 1. Repro check (`>=30` for publication statistics):
