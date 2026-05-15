@@ -1,0 +1,73 @@
+{
+  "created_at_utc": "2026-05-15T04:50:28.524221+00:00",
+  "lock_schema": "adaptive-testbed.release-profile-lock",
+  "lock_schema_version": "1",
+  "profiles": [
+    {
+      "algorithm": "round-robin",
+      "compare_algorithms": [
+        "round-robin",
+        "min-load",
+        "greedy"
+      ],
+      "experiment_name": "release-rc-batch-strict",
+      "intelligence_enabled": false,
+      "llm_enabled": false,
+      "llm_provider": "mock",
+      "node_count": 2,
+      "output_dir": "outputs/release_candidate",
+      "profile": "rc_batch_strict.yaml",
+      "scenario": "dynamic-load",
+      "seed": 42,
+      "sha256": "51215cd89e75a6101d3e84b992fab60767ca7834485a95c2fac6076fbaaa1667",
+      "task_count": 3,
+      "time_horizon": 8
+    },
+    {
+      "algorithm": "min-load",
+      "compare_algorithms": [
+        "round-robin",
+        "min-load",
+        "greedy"
+      ],
+      "experiment_name": "release-rc-publication",
+      "intelligence_enabled": true,
+      "llm_enabled": true,
+      "llm_provider": "mock",
+      "node_count": 2,
+      "output_dir": "outputs/release_candidate",
+      "profile": "rc_publication.yaml",
+      "scenario": "peak-load",
+      "seed": 42,
+      "sha256": "50a5215d91d5ca59d8c2bd90d36c1fe6464c0882c15f55d82f3d3934d15c1b50",
+      "task_count": 3,
+      "time_horizon": 8
+    },
+    {
+      "algorithm": "min-load",
+      "compare_algorithms": [
+        "round-robin",
+        "min-load",
+        "greedy"
+      ],
+      "experiment_name": "release-rc-single",
+      "intelligence_enabled": false,
+      "llm_enabled": false,
+      "llm_provider": "mock",
+      "node_count": 2,
+      "output_dir": "outputs/release_candidate",
+      "profile": "rc_single.yaml",
+      "scenario": "static",
+      "seed": 42,
+      "sha256": "d050cd967ec828ba6a6b5deff737ad28eadf642d685c777ac727f33fb6ae700f",
+      "task_count": 3,
+      "time_horizon": 8
+    }
+  ],
+  "profiles_dir": "configs\\release_profiles",
+  "required_profiles": [
+    "rc_single.yaml",
+    "rc_batch_strict.yaml",
+    "rc_publication.yaml"
+  ]
+}
