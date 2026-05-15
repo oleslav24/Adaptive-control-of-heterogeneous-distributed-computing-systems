@@ -67,6 +67,12 @@ Scalability performance budget gate:
 python -m project.experiments.performance_budget --config config.yaml --nodes 10 --tasks 100 --algorithms min-load,greedy --repeats 1 --topology ring --scenario static --max-runtime-seconds 1.0 --min-throughput 0.05 --max-pending-tasks 500
 ```
 
+Release appendix bundle:
+
+```bash
+python -m project.experiments.release_bundle --strict --output-dir outputs/release_candidate/bundle --bundle-name publication_appendix_bundle_rc
+```
+
 Generate scalability baseline JSON + markdown report:
 
 ```bash

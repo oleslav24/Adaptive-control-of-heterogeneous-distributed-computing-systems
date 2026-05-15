@@ -75,6 +75,12 @@ python -m project.experiments.run --replay-manifest outputs/<exp>/<scenario>/<al
 python -m project.experiments.verify_integrity --integrity-file outputs/<...>/artifact_integrity.json
 ```
 
+4. Build appendix release bundle (manifest + zip):
+
+```bash
+python -m project.experiments.release_bundle --strict --output-dir outputs/release_candidate/bundle --bundle-name publication_appendix_bundle_rc
+```
+
 ## 4. Publication Outputs
 
 1. Publication study:
