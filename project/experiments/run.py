@@ -20,6 +20,7 @@ from project.algorithms import normalize_algorithm
 from project.core.config import ExperimentConfig, load_config
 from project.core.models import SystemState
 from project.experiments.cli import parse_args
+from project.experiments.chapter10 import Chapter10Result, run_chapter10_experiment
 from project.experiments.common import slug, with_algorithm
 from project.experiments.dispatch import (
     MODE_FINISH_MESSAGES,
@@ -76,6 +77,7 @@ def main() -> None:
 def _build_mode_handlers() -> dict[str, ModeHandler]:
     """Create mode-to-handler dispatch table."""
     return {
+        "chapter10-study": _handle_chapter10_mode,
         "publication-study": _handle_publication_mode,
         "scalability-profile": _handle_scalability_profile_mode,
         "replay-manifest": _handle_replay_manifest_mode,
@@ -86,6 +88,20 @@ def _build_mode_handlers() -> dict[str, ModeHandler]:
         "repro-check": _handle_repro_check_mode,
         "single": _handle_single_mode,
     }
+
+
+def _handle_chapter10_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute chapter10-study mode."""
+    chapter10_seeds = _parse_study_seeds(args.chapter10_seeds) if args.chapter10_seeds else None
+    chapter10_quick: bool | None = True if bool(args.chapter10_quick) else None
+    result = run_chapter10_experiment(
+        config,
+        seeds=chapter10_seeds,
+        quick=chapter10_quick,
+        save_plots=not bool(args.no_plots),
+        cli_args=cli_args,
+    )
+    _print_chapter10_result(config.name, result)
 
 
 def _handle_publication_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
@@ -472,6 +488,16 @@ def _print_scalability_result(
             )
         )
 
+    for key, path in result.output_paths.items():
+        print(f"{key}: {path}")
+
+
+def _print_chapter10_result(name: str, result: Chapter10Result) -> None:
+    """Print chapter10 artifact summary."""
+    print(f"Experiment '{name}' chapter10 package")
+    print(f"Output dir: {result.output_dir}")
+    print(f"Summary rows: {len(result.summary)}")
+    print(f"Hypotheses rows: {len(result.hypotheses)}")
     for key, path in result.output_paths.items():
         print(f"{key}: {path}")
 

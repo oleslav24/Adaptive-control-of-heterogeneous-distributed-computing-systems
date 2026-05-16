@@ -5,6 +5,7 @@ Sprint 9 publication-ready module for an adaptive control platform targeting het
 Detailed reproducibility protocol: `docs/reproducibility.md`.
 Publication pipeline protocol (E1-E5, H1-H5): `docs/experimental_pipeline.md`.
 Codebase module map: `docs/codebase_modules.md`.
+Chapter 10 package protocol: `docs/chapter10_experiment.md`.
 
 ## Quick start
 
@@ -31,6 +32,8 @@ python -m project.experiments.run --config config.yaml --batch --batch-scenarios
 python -m project.experiments.run --config config.yaml --repro-check --repro-runs 3
 python -m project.experiments.run --config config.yaml --publication-study
 python -m project.experiments.run --config config.yaml --publication-study --study-quick --study-seeds 42,43
+python -m project.experiments.run --config config.yaml --chapter10
+python -m project.experiments.run --config config.yaml --chapter10 --chapter10-quick --chapter10-seeds 42,43
 $env:PRE_COMMIT_HOME=".precommit_cache"  # PowerShell
 python -m pre_commit install
 python -m pre_commit install --hook-type pre-push
@@ -75,6 +78,9 @@ Artifacts are saved under `outputs/<experiment>/<scenario>/<algorithm>/`:
 - `batch/batch_metric_throughput.{png,pdf,svg}`
 - `batch/batch_metric_load.{png,pdf,svg}`
 - `outputs/<experiment>/run.log`
+- `chapter10/chapter10_report.md` (for `--chapter10`)
+- `chapter10/chapter10_manifest.json` (for `--chapter10`)
+- `chapter10/chapter10_artifact_integrity.json` (for `--chapter10`)
 
 Publication study artifacts (`--publication-study`) are saved under `outputs/<experiment>/publication/`:
 

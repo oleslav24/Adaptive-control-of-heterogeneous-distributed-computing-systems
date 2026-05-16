@@ -154,6 +154,16 @@ class ScenarioConfig:
 
 
 @dataclass(slots=True)
+class Chapter10Config:
+    """Chapter 10 experiment pipeline defaults and toggles."""
+
+    enabled: bool = False
+    seeds: list[int] = field(default_factory=lambda: list(range(42, 72)))
+    quick: bool = False
+    save_plots: bool = True
+
+
+@dataclass(slots=True)
 class ExperimentConfig:
     """Top-level experiment configuration object."""
 
@@ -165,6 +175,7 @@ class ExperimentConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
     observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
     scenarios: ScenarioConfig = field(default_factory=ScenarioConfig)
+    chapter10: Chapter10Config = field(default_factory=Chapter10Config)
     nodes: list[Node] = field(default_factory=list)
     network_edges: list[NetworkEdge] = field(default_factory=list)
     initial_tasks: list[Task] = field(default_factory=list)
@@ -208,6 +219,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
     )
 
     scenarios = _load_scenario_config(raw.get("scenarios", {}))
+    chapter10 = _load_chapter10_config(raw.get("chapter10", {}))
 
     nodes = [_build_node(item) for item in raw.get("nodes", [])]
     edges = [
@@ -241,6 +253,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
         llm=llm,
         observability=observability,
         scenarios=scenarios,
+        chapter10=chapter10,
         nodes=nodes,
         network_edges=edges,
         initial_tasks=tasks,
@@ -355,6 +368,20 @@ def _load_llm_config(raw: object) -> LLMConfig:
         allow_algorithm_override=_as_bool(data.get("allow_algorithm_override", True)),
         allow_node_bias_override=_as_bool(data.get("allow_node_bias_override", True)),
         allowed_algorithms=allowed,
+    )
+
+
+def _load_chapter10_config(raw: object) -> Chapter10Config:
+    """Parse Chapter 10 experiment defaults from config."""
+    data = raw if isinstance(raw, dict) else {}
+    seeds = _parse_int_list(data.get("seeds", list(range(42, 72))))
+    if not seeds:
+        seeds = list(range(42, 72))
+    return Chapter10Config(
+        enabled=_as_bool(data.get("enabled", False)),
+        seeds=seeds,
+        quick=_as_bool(data.get("quick", False)),
+        save_plots=_as_bool(data.get("save_plots", True)),
     )
 
 
@@ -505,6 +532,21 @@ def _as_float(value: object, default: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def _parse_int_list(value: object) -> list[int]:
+    """Parse list-like integer values into unique ordered list."""
+    if not isinstance(value, list):
+        return []
+    parsed: list[int] = []
+    for item in value:
+        try:
+            integer = int(item)
+        except (TypeError, ValueError):
+            continue
+        if integer not in parsed:
+            parsed.append(integer)
+    return parsed
 
 
 def _parse_plot_profile(value: object) -> str:
