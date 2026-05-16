@@ -138,6 +138,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run publication pipeline (E1-E5, H1-H5, stats, plots, report).",
     )
     parser.add_argument(
+        "--chapter10",
+        action="store_true",
+        help="Run Chapter 10 report package (tables, plots, report, manifest).",
+    )
+    parser.add_argument(
+        "--chapter10-seeds",
+        default=None,
+        help="Seeds for Chapter 10 run: comma list (42,43,44) or range (42-71).",
+    )
+    parser.add_argument(
+        "--chapter10-quick",
+        action="store_true",
+        help="Run reduced Chapter 10 package for quick verification.",
+    )
+    parser.add_argument(
         "--scalability-profile",
         action="store_true",
         help="Run scalability profiling sweep (nodes/tasks/algorithms).",

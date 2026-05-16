@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-15 19:09:43 +07:00  
+Last updated: 2026-05-16 15:45:15 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -26,6 +26,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 16 | Web production hardening | Stable web UX, resilience, and diagnostics | Closed |
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Closed |
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Closed |
+| 19 | Chapter 10 package pipeline | Chapter-ready tables/plots/report + CLI mode + tests | Ready for PR |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -59,6 +60,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 16 | Closed | 2026-05-15 10:39:06 +07:00 | merged via PR #19, merge commit `60b5101` |
 | 17 | Closed | 2026-05-15 11:45:09 +07:00 | merged via PR #20, merge commit `ee1b2e1` |
 | 18 | Closed | 2026-05-15 18:45:02 +07:00 | merged via PR #21, merge commit `4b7273d` |
+| 19 | In progress | n/a | active branch `codex/sprint19-chapter10-pipeline` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -241,6 +243,15 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 18.3 | Final QA pass across CLI/Web/repro/publication flows | Done |
 | 18.4 | Prepare final docs package (architecture, methods, threats to validity) | Done |
 
+### Sprint 19 - Chapter 10 package pipeline
+
+| Task | Description | Status |
+|---|---|---|
+| 19.1 | Restore `chapter10` experiment orchestrator module | Done |
+| 19.2 | Add chapter tables/plots generators and artifacts | Done |
+| 19.3 | Integrate `--chapter10` CLI mode and config section | Done |
+| 19.4 | Add tests and chapter10 documentation | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -332,3 +343,9 @@ Closed in `main` via PR #20 (merge commit `ee1b2e1`).
 ## Sprint 18 Closure
 
 Closed in `main` via PR #21 (merge commit `4b7273d`).
+
+## Active Sprint Slice Log (Sprint 19)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-16 15:45:15 | 19.1-19.4 Chapter 10 package pipeline (orchestrator + tables/plots + CLI + docs/tests) | OK (new chapter10 mode and artifacts implemented from clean `main`) | targeted + full pytest pass (`164 passed`) | current slice commit |

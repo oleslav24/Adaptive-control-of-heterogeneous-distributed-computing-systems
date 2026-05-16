@@ -49,6 +49,12 @@ observability:
   plot_dpi: 300
   plot_formats: [png, pdf, svg]
 
+chapter10:
+  enabled: false
+  seeds: [42, 43, 44, 45, 46]
+  quick: false
+  save_plots: true
+
 scenarios:
   dynamic_load:
     enabled: true
