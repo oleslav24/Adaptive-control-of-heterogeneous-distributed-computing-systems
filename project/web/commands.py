@@ -149,6 +149,25 @@ def build_run_command(
         if study_seeds:
             command.extend(["--study-seeds", study_seeds])
 
+    elif mode == "chapter10":
+        command.append("--chapter10")
+        if _is_checked(form, "study_quick"):
+            command.append("--chapter10-quick")
+        study_seeds = _first(form, "study_seeds", "42-71").strip()
+        if study_seeds:
+            command.extend(["--chapter10-seeds", study_seeds])
+
+    elif mode == "paper-bundle":
+        command.append("--paper-bundle")
+        if _is_checked(form, "study_quick"):
+            command.append("--chapter10-quick")
+        study_seeds = _first(form, "study_seeds", "42-71").strip()
+        if study_seeds:
+            command.extend(["--chapter10-seeds", study_seeds])
+        bundle_name = _first(form, "paper_bundle_name", "paper_bundle").strip()
+        if bundle_name:
+            command.extend(["--paper-bundle-name", bundle_name])
+
     elif mode == "ab-intelligence":
         command.append("--ab-intelligence")
 
@@ -161,4 +180,3 @@ def build_run_command(
         command.extend(["--repro-runs", str(repro_runs)])
 
     return command
-

@@ -1,4 +1,4 @@
-"""Localization catalogs and helpers for the web interface."""
+﻿"""Localization catalogs and helpers for the web interface."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ MODE_OPTIONS = (
     "compare",
     "batch",
     "publication",
+    "paper-bundle",
+    "chapter10",
     "ab-intelligence",
     "ab-llm",
     "repro-check",
@@ -39,18 +41,22 @@ MODE_LABELS: dict[str, dict[str, str]] = {
         "compare": "Compare",
         "batch": "Batch",
         "publication": "Publication",
+        "paper-bundle": "Paper Bundle",
+        "chapter10": "Chapter 10",
         "ab-intelligence": "A/B Intelligence",
         "ab-llm": "A/B LLM",
         "repro-check": "Repro Check",
     },
     "ru": {
-        "single": "Одиночный",
-        "compare": "Сравнение",
-        "batch": "Пакетный",
-        "publication": "Публикационный",
-        "ab-intelligence": "A/B Интеллект",
+        "single": "РћРґРёРЅРѕС‡РЅС‹Р№",
+        "compare": "РЎСЂР°РІРЅРµРЅРёРµ",
+        "batch": "РџР°РєРµС‚РЅС‹Р№",
+        "publication": "РџСѓР±Р»РёРєР°С†РёРѕРЅРЅС‹Р№",
+        "paper-bundle": "Пакет статьи",
+        "chapter10": "Р“Р»Р°РІР° 10",
+        "ab-intelligence": "A/B РРЅС‚РµР»Р»РµРєС‚",
         "ab-llm": "A/B LLM",
-        "repro-check": "Проверка воспроизводимости",
+        "repro-check": "РџСЂРѕРІРµСЂРєР° РІРѕСЃРїСЂРѕРёР·РІРѕРґРёРјРѕСЃС‚Рё",
     },
 }
 
@@ -61,9 +67,9 @@ ALGORITHM_LABELS: dict[str, dict[str, str]] = {
         "greedy": "Greedy",
     },
     "ru": {
-        "round-robin": "Круговой (Round-robin)",
-        "min-load": "Минимальная нагрузка",
-        "greedy": "Жадный",
+        "round-robin": "РљСЂСѓРіРѕРІРѕР№ (Round-robin)",
+        "min-load": "РњРёРЅРёРјР°Р»СЊРЅР°СЏ РЅР°РіСЂСѓР·РєР°",
+        "greedy": "Р–Р°РґРЅС‹Р№",
     },
 }
 
@@ -77,12 +83,12 @@ SCENARIO_LABELS: dict[str, dict[str, str]] = {
         "mixed": "Mixed",
     },
     "ru": {
-        "static": "Статический",
-        "dynamic-load": "Динамическая нагрузка",
-        "peak-load": "Пиковая нагрузка",
-        "node-failures": "Отказы узлов",
-        "heterogeneous-tasks": "Гетерогенные задачи",
-        "mixed": "Смешанный",
+        "static": "РЎС‚Р°С‚РёС‡РµСЃРєРёР№",
+        "dynamic-load": "Р”РёРЅР°РјРёС‡РµСЃРєР°СЏ РЅР°РіСЂСѓР·РєР°",
+        "peak-load": "РџРёРєРѕРІР°СЏ РЅР°РіСЂСѓР·РєР°",
+        "node-failures": "РћС‚РєР°Р·С‹ СѓР·Р»РѕРІ",
+        "heterogeneous-tasks": "Р“РµС‚РµСЂРѕРіРµРЅРЅС‹Рµ Р·Р°РґР°С‡Рё",
+        "mixed": "РЎРјРµС€Р°РЅРЅС‹Р№",
     },
 }
 
@@ -103,6 +109,7 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "repro_runs": "Repro runs",
         "job_timeout_seconds": "Job timeout (sec)",
         "study_seeds": "Study seeds",
+        "paper_bundle_name": "Paper bundle name",
         "output_dir_override": "Output dir override",
         "log_level": "Log level",
         "disable_intelligence": "disable intelligence",
@@ -171,82 +178,83 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "no_inline_preview": "No inline preview for this file type. Use download.",
     },
     "ru": {
-        "console_title": "Веб-консоль экспериментального стенда",
-        "workspace": "Рабочая директория",
-        "start_experiment": "Запуск эксперимента",
-        "mode": "Режим",
-        "config_path": "Путь к конфигу",
-        "algorithm": "Алгоритм",
-        "scenario": "Сценарий",
-        "llm_provider": "Провайдер LLM",
-        "compare_algorithms": "Алгоритмы сравнения",
-        "batch_scenarios": "Сценарии batch",
-        "batch_algorithms": "Алгоритмы batch",
-        "batch_runs": "Количество batch-прогонов",
-        "repro_runs": "Количество repro-прогонов",
-        "study_seeds": "Seeds исследования",
-        "output_dir_override": "Переопределить output dir",
-        "log_level": "Уровень логирования",
-        "disable_intelligence": "отключить интеллект",
-        "disable_llm": "отключить llm",
-        "no_plots": "без графиков",
-        "no_csv": "без csv",
-        "batch_save_runs": "сохранять batch-прогоны",
-        "batch_keep_adaptive": "оставить adaptive в batch",
-        "study_quick": "быстрый publication",
-        "run": "Запустить",
-        "expected_runs_title": "Ожидаемое число прогонов",
-        "expected_runs_formula": "Формула",
-        "expected_runs_fallback": "Для пустых выборов используются значения по умолчанию.",
-        "unknown": "неизвестно",
-        "mode_mapping": "Сопоставление режимов",
-        "quick_links": "Быстрые ссылки",
-        "browse_outputs": "Открыть outputs",
-        "browse_docs": "Открыть docs",
-        "open_config": "Открыть config.yaml",
-        "health_check": "Проверка health",
-        "running_jobs": "Активные задачи",
-        "recent_jobs": "Последние задачи",
-        "no_active_jobs": "Активных задач нет.",
-        "no_runs_started": "Запуски пока не выполнялись.",
+        "console_title": "Р’РµР±-РєРѕРЅСЃРѕР»СЊ СЌРєСЃРїРµСЂРёРјРµРЅС‚Р°Р»СЊРЅРѕРіРѕ СЃС‚РµРЅРґР°",
+        "workspace": "Р Р°Р±РѕС‡Р°СЏ РґРёСЂРµРєС‚РѕСЂРёСЏ",
+        "start_experiment": "Р—Р°РїСѓСЃРє СЌРєСЃРїРµСЂРёРјРµРЅС‚Р°",
+        "mode": "Р РµР¶РёРј",
+        "config_path": "РџСѓС‚СЊ Рє РєРѕРЅС„РёРіСѓ",
+        "algorithm": "РђР»РіРѕСЂРёС‚Рј",
+        "scenario": "РЎС†РµРЅР°СЂРёР№",
+        "llm_provider": "РџСЂРѕРІР°Р№РґРµСЂ LLM",
+        "compare_algorithms": "РђР»РіРѕСЂРёС‚РјС‹ СЃСЂР°РІРЅРµРЅРёСЏ",
+        "batch_scenarios": "РЎС†РµРЅР°СЂРёРё batch",
+        "batch_algorithms": "РђР»РіРѕСЂРёС‚РјС‹ batch",
+        "batch_runs": "РљРѕР»РёС‡РµСЃС‚РІРѕ batch-РїСЂРѕРіРѕРЅРѕРІ",
+        "repro_runs": "РљРѕР»РёС‡РµСЃС‚РІРѕ repro-РїСЂРѕРіРѕРЅРѕРІ",
+        "study_seeds": "Seeds РёСЃСЃР»РµРґРѕРІР°РЅРёСЏ",
+        "paper_bundle_name": "РРјСЏ paper bundle",
+        "output_dir_override": "РџРµСЂРµРѕРїСЂРµРґРµР»РёС‚СЊ output dir",
+        "log_level": "РЈСЂРѕРІРµРЅСЊ Р»РѕРіРёСЂРѕРІР°РЅРёСЏ",
+        "disable_intelligence": "РѕС‚РєР»СЋС‡РёС‚СЊ РёРЅС‚РµР»Р»РµРєС‚",
+        "disable_llm": "РѕС‚РєР»СЋС‡РёС‚СЊ llm",
+        "no_plots": "Р±РµР· РіСЂР°С„РёРєРѕРІ",
+        "no_csv": "Р±РµР· csv",
+        "batch_save_runs": "СЃРѕС…СЂР°РЅСЏС‚СЊ batch-РїСЂРѕРіРѕРЅС‹",
+        "batch_keep_adaptive": "РѕСЃС‚Р°РІРёС‚СЊ adaptive РІ batch",
+        "study_quick": "Р±С‹СЃС‚СЂС‹Р№ publication",
+        "run": "Р—Р°РїСѓСЃС‚РёС‚СЊ",
+        "expected_runs_title": "РћР¶РёРґР°РµРјРѕРµ С‡РёСЃР»Рѕ РїСЂРѕРіРѕРЅРѕРІ",
+        "expected_runs_formula": "Р¤РѕСЂРјСѓР»Р°",
+        "expected_runs_fallback": "Р”Р»СЏ РїСѓСЃС‚С‹С… РІС‹Р±РѕСЂРѕРІ РёСЃРїРѕР»СЊР·СѓСЋС‚СЃСЏ Р·РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ.",
+        "unknown": "РЅРµРёР·РІРµСЃС‚РЅРѕ",
+        "mode_mapping": "РЎРѕРїРѕСЃС‚Р°РІР»РµРЅРёРµ СЂРµР¶РёРјРѕРІ",
+        "quick_links": "Р‘С‹СЃС‚СЂС‹Рµ СЃСЃС‹Р»РєРё",
+        "browse_outputs": "РћС‚РєСЂС‹С‚СЊ outputs",
+        "browse_docs": "РћС‚РєСЂС‹С‚СЊ docs",
+        "open_config": "РћС‚РєСЂС‹С‚СЊ config.yaml",
+        "health_check": "РџСЂРѕРІРµСЂРєР° health",
+        "running_jobs": "РђРєС‚РёРІРЅС‹Рµ Р·Р°РґР°С‡Рё",
+        "recent_jobs": "РџРѕСЃР»РµРґРЅРёРµ Р·Р°РґР°С‡Рё",
+        "no_active_jobs": "РђРєС‚РёРІРЅС‹С… Р·Р°РґР°С‡ РЅРµС‚.",
+        "no_runs_started": "Р—Р°РїСѓСЃРєРё РїРѕРєР° РЅРµ РІС‹РїРѕР»РЅСЏР»РёСЃСЊ.",
         "id": "id",
-        "status": "статус",
-        "started": "старт",
-        "finished": "финиш",
-        "rc": "код",
-        "command": "команда",
-        "actions": "действия",
-        "open": "открыть",
-        "job": "Задача",
-        "back_dashboard": "Назад на дашборд",
-        "return_code": "Код возврата",
-        "stop_job": "Остановить задачу",
-        "latency_avg": "Latency (средняя)",
-        "throughput": "Пропускная способность",
-        "average_load": "Средняя загрузка",
-        "queue_completed": "Очередь / Выполнено",
-        "log": "Лог",
-        "no_data_yet": "Данных пока нет",
-        "queue": "Очередь",
-        "completed": "Выполнено",
-        "browse": "Просмотр",
-        "download_as_is": "Скачать как есть",
-        "parent": ".. родительская папка",
-        "type": "тип",
-        "name": "имя",
-        "size_bytes": "размер (байт)",
-        "empty": "(пусто)",
-        "dir": "папка",
-        "file": "файл",
-        "file_page": "Файл",
-        "back_folder": "Назад к папке",
-        "download": "Скачать",
-        "preview": "Предпросмотр",
-        "path_not_exist": "Путь не существует.",
-        "file_not_found": "Файл не найден.",
-        "job_not_found": "Задача не найдена.",
-        "not_found": "Не найдено.",
-        "no_inline_preview": "Для этого типа файла нет предпросмотра. Используйте скачивание.",
+        "status": "СЃС‚Р°С‚СѓСЃ",
+        "started": "СЃС‚Р°СЂС‚",
+        "finished": "С„РёРЅРёС€",
+        "rc": "РєРѕРґ",
+        "command": "РєРѕРјР°РЅРґР°",
+        "actions": "РґРµР№СЃС‚РІРёСЏ",
+        "open": "РѕС‚РєСЂС‹С‚СЊ",
+        "job": "Р—Р°РґР°С‡Р°",
+        "back_dashboard": "РќР°Р·Р°Рґ РЅР° РґР°С€Р±РѕСЂРґ",
+        "return_code": "РљРѕРґ РІРѕР·РІСЂР°С‚Р°",
+        "stop_job": "РћСЃС‚Р°РЅРѕРІРёС‚СЊ Р·Р°РґР°С‡Сѓ",
+        "latency_avg": "Latency (СЃСЂРµРґРЅСЏСЏ)",
+        "throughput": "РџСЂРѕРїСѓСЃРєРЅР°СЏ СЃРїРѕСЃРѕР±РЅРѕСЃС‚СЊ",
+        "average_load": "РЎСЂРµРґРЅСЏСЏ Р·Р°РіСЂСѓР·РєР°",
+        "queue_completed": "РћС‡РµСЂРµРґСЊ / Р’С‹РїРѕР»РЅРµРЅРѕ",
+        "log": "Р›РѕРі",
+        "no_data_yet": "Р”Р°РЅРЅС‹С… РїРѕРєР° РЅРµС‚",
+        "queue": "РћС‡РµСЂРµРґСЊ",
+        "completed": "Р’С‹РїРѕР»РЅРµРЅРѕ",
+        "browse": "РџСЂРѕСЃРјРѕС‚СЂ",
+        "download_as_is": "РЎРєР°С‡Р°С‚СЊ РєР°Рє РµСЃС‚СЊ",
+        "parent": ".. СЂРѕРґРёС‚РµР»СЊСЃРєР°СЏ РїР°РїРєР°",
+        "type": "С‚РёРї",
+        "name": "РёРјСЏ",
+        "size_bytes": "СЂР°Р·РјРµСЂ (Р±Р°Р№С‚)",
+        "empty": "(РїСѓСЃС‚Рѕ)",
+        "dir": "РїР°РїРєР°",
+        "file": "С„Р°Р№Р»",
+        "file_page": "Р¤Р°Р№Р»",
+        "back_folder": "РќР°Р·Р°Рґ Рє РїР°РїРєРµ",
+        "download": "РЎРєР°С‡Р°С‚СЊ",
+        "preview": "РџСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ",
+        "path_not_exist": "РџСѓС‚СЊ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.",
+        "file_not_found": "Р¤Р°Р№Р» РЅРµ РЅР°Р№РґРµРЅ.",
+        "job_not_found": "Р—Р°РґР°С‡Р° РЅРµ РЅР°Р№РґРµРЅР°.",
+        "not_found": "РќРµ РЅР°Р№РґРµРЅРѕ.",
+        "no_inline_preview": "Р”Р»СЏ СЌС‚РѕРіРѕ С‚РёРїР° С„Р°Р№Р»Р° РЅРµС‚ РїСЂРµРґРїСЂРѕСЃРјРѕС‚СЂР°. РСЃРїРѕР»СЊР·СѓР№С‚Рµ СЃРєР°С‡РёРІР°РЅРёРµ.",
     },
 }
 
@@ -260,11 +268,11 @@ STATUS_LABELS: dict[str, dict[str, str]] = {
         "timeout": "timeout",
     },
     "ru": {
-        "queued": "в очереди",
-        "running": "выполняется",
-        "success": "успешно",
-        "failed": "ошибка",
-        "stopped": "остановлено",
+        "queued": "РІ РѕС‡РµСЂРµРґРё",
+        "running": "РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ",
+        "success": "СѓСЃРїРµС€РЅРѕ",
+        "failed": "РѕС€РёР±РєР°",
+        "stopped": "РѕСЃС‚Р°РЅРѕРІР»РµРЅРѕ",
     },
 }
 
@@ -301,32 +309,32 @@ def catalog_label(
 def default_select_label(lang: str) -> str:
     """Localized label for empty select value."""
     if lang == "ru":
-        return "(по умолчанию)"
+        return "(РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ)"
     return "(default)"
 
 
 def insights_title(lang: str) -> str:
     """Localized title for researcher insights card."""
     if lang == "ru":
-        return "Выводы исследовательского агента"
+        return "Р’С‹РІРѕРґС‹ РёСЃСЃР»РµРґРѕРІР°С‚РµР»СЊСЃРєРѕРіРѕ Р°РіРµРЅС‚Р°"
     return "Researcher Insights"
 
 
 def insights_placeholder(lang: str) -> str:
     """Localized placeholder for insights list before enough data arrives."""
     if lang == "ru":
-        return "Недостаточно данных для выводов."
+        return "РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РґР°РЅРЅС‹С… РґР»СЏ РІС‹РІРѕРґРѕРІ."
     return "Not enough data for conclusions yet."
 
 
 def chart_line_note(lang: str, series: str) -> str:
     """Localized explanatory text for each chart line."""
     notes_ru = {
-        "latency": "Цвет линии = отдельный прогон (легенда: сценарий/алгоритм); метрика: средняя задержка задач (ниже лучше).",
-        "throughput": "Цвет линии = отдельный прогон (легенда: сценарий/алгоритм); метрика: пропускная способность (выше лучше).",
-        "avg_load": "Цвет линии = отдельный прогон (легенда: сценарий/алгоритм); метрика: средняя загрузка узлов.",
-        "queue": "Цвет линии = отдельный прогон (легенда: сценарий/алгоритм); сплошная линия = размер очереди.",
-        "completed": "Тот же цвет прогона: пунктирная линия = выполненные задачи (накопительно).",
+        "latency": "Р¦РІРµС‚ Р»РёРЅРёРё = РѕС‚РґРµР»СЊРЅС‹Р№ РїСЂРѕРіРѕРЅ (Р»РµРіРµРЅРґР°: СЃС†РµРЅР°СЂРёР№/Р°Р»РіРѕСЂРёС‚Рј); РјРµС‚СЂРёРєР°: СЃСЂРµРґРЅСЏСЏ Р·Р°РґРµСЂР¶РєР° Р·Р°РґР°С‡ (РЅРёР¶Рµ Р»СѓС‡С€Рµ).",
+        "throughput": "Р¦РІРµС‚ Р»РёРЅРёРё = РѕС‚РґРµР»СЊРЅС‹Р№ РїСЂРѕРіРѕРЅ (Р»РµРіРµРЅРґР°: СЃС†РµРЅР°СЂРёР№/Р°Р»РіРѕСЂРёС‚Рј); РјРµС‚СЂРёРєР°: РїСЂРѕРїСѓСЃРєРЅР°СЏ СЃРїРѕСЃРѕР±РЅРѕСЃС‚СЊ (РІС‹С€Рµ Р»СѓС‡С€Рµ).",
+        "avg_load": "Р¦РІРµС‚ Р»РёРЅРёРё = РѕС‚РґРµР»СЊРЅС‹Р№ РїСЂРѕРіРѕРЅ (Р»РµРіРµРЅРґР°: СЃС†РµРЅР°СЂРёР№/Р°Р»РіРѕСЂРёС‚Рј); РјРµС‚СЂРёРєР°: СЃСЂРµРґРЅСЏСЏ Р·Р°РіСЂСѓР·РєР° СѓР·Р»РѕРІ.",
+        "queue": "Р¦РІРµС‚ Р»РёРЅРёРё = РѕС‚РґРµР»СЊРЅС‹Р№ РїСЂРѕРіРѕРЅ (Р»РµРіРµРЅРґР°: СЃС†РµРЅР°СЂРёР№/Р°Р»РіРѕСЂРёС‚Рј); СЃРїР»РѕС€РЅР°СЏ Р»РёРЅРёСЏ = СЂР°Р·РјРµСЂ РѕС‡РµСЂРµРґРё.",
+        "completed": "РўРѕС‚ Р¶Рµ С†РІРµС‚ РїСЂРѕРіРѕРЅР°: РїСѓРЅРєС‚РёСЂРЅР°СЏ Р»РёРЅРёСЏ = РІС‹РїРѕР»РЅРµРЅРЅС‹Рµ Р·Р°РґР°С‡Рё (РЅР°РєРѕРїРёС‚РµР»СЊРЅРѕ).",
     }
     notes_en = {
         "latency": "Line color = sub-run (legend: scenario/algorithm); metric: average task latency (lower is better).",
@@ -337,3 +345,4 @@ def chart_line_note(lang: str, series: str) -> str:
     }
     table = notes_ru if lang == "ru" else notes_en
     return table.get(series, series)
+

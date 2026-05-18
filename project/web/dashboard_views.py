@@ -170,6 +170,11 @@ def build_dashboard_html(
         <input type="text" name="study_seeds" value="42-71" />
       </div>
 
+      <div class="form-field" data-field="paper_bundle_name">
+        <label>{escape(tr(lang, "paper_bundle_name"))}</label>
+        <input type="text" name="paper_bundle_name" value="paper_bundle" />
+      </div>
+
       <div class="form-field" data-field="output_dir_override">
         <label>{escape(tr(lang, "output_dir_override"))}</label>
         <input type="text" name="output_dir" value="" placeholder="outputs" />
@@ -197,7 +202,7 @@ def build_dashboard_html(
       <button type="submit">{escape(tr(lang, "run"))}</button>
     </form>
     <p class="hint">{escape(tr(lang, "mode_mapping"))}: <code>single</code>, <code>compare</code>, <code>batch</code>,
-    <code>publication</code>, <code>ab-intelligence</code>, <code>ab-llm</code>, <code>repro-check</code>.</p>
+    <code>publication</code>, <code>chapter10</code>, <code>paper-bundle</code>, <code>ab-intelligence</code>, <code>ab-llm</code>, <code>repro-check</code>.</p>
     <script>
     (() => {{
       const form = document.getElementById("run-form");
@@ -231,6 +236,8 @@ def build_dashboard_html(
         "compare": ["scenario", "compare_algorithms"],
         "batch": ["batch_scenarios", "batch_algorithms", "batch_runs"],
         "publication": ["study_seeds"],
+        "paper-bundle": ["study_seeds", "paper_bundle_name"],
+        "chapter10": ["study_seeds"],
         "ab-intelligence": ["algorithm", "scenario"],
         "ab-llm": ["algorithm", "scenario"],
         "repro-check": ["algorithm", "scenario", "repro_runs"]
@@ -239,7 +246,7 @@ def build_dashboard_html(
         "mode", "config_path", "algorithm", "scenario", "llm_provider",
         "compare_algorithms", "batch_scenarios", "batch_algorithms",
         "batch_runs", "repro_runs", "job_timeout_seconds", "study_seeds",
-        "output_dir_override", "log_level"
+        "paper_bundle_name", "output_dir_override", "log_level"
       ];
 
       const alwaysChecks = new Set(["disable_intelligence", "disable_llm", "no_plots", "no_csv"]);
@@ -248,6 +255,8 @@ def build_dashboard_html(
         "compare": [],
         "batch": ["batch_save_runs", "batch_keep_adaptive"],
         "publication": ["study_quick"],
+        "paper-bundle": ["study_quick"],
+        "chapter10": ["study_quick"],
         "ab-intelligence": [],
         "ab-llm": [],
         "repro-check": []
@@ -361,12 +370,12 @@ def build_dashboard_html(
           usedFallback = selectedScenarios === 0 || selectedAlgorithms === 0;
           total = repeats * scenarioCount * algorithmCount;
           formula = `batch = ${{repeats}} x ${{scenarioCount}} x ${{algorithmCount}} = ${{total}}`;
-        }} else if (mode === "publication") {{
+        }} else if (mode === "publication" || mode === "chapter10" || mode === "paper-bundle") {{
           const seeds = parseSeeds(form.querySelector('input[name="study_seeds"]')?.value || "");
           const quick = Boolean(form.querySelector('input[name="study_quick"]')?.checked);
           const runsPerSeed = quick ? 25 : 33;
           total = seeds.length * runsPerSeed;
-          formula = `publication = ${{seeds.length}} x ${{runsPerSeed}} = ${{total}}`;
+          formula = `${{mode}} = ${{seeds.length}} x ${{runsPerSeed}} = ${{total}}`;
         }} else if (mode === "ab-intelligence" || mode === "ab-llm") {{
           total = 2;
           formula = `${{mode}} = 2`;

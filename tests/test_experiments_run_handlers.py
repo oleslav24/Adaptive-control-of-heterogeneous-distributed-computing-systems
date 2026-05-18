@@ -29,6 +29,9 @@ def _args(**overrides: object) -> Namespace:
         "replay_runs": 3,
         "study_seeds": "42-71",
         "study_quick": False,
+        "chapter10_seeds": None,
+        "chapter10_quick": False,
+        "paper_bundle_name": "paper_bundle",
         "no_plots": False,
     }
     values.update(overrides)
@@ -255,3 +258,53 @@ def test_handle_single_mode_routes_result_to_printer(monkeypatch) -> None:
     run._handle_single_mode(_config(), _args(), ["--config", "config.yaml"])
     assert calls["print_state"] is fake_state
     assert calls["print_artifacts"] == fake_artifacts
+
+
+def test_handle_paper_bundle_mode_routes_result_to_printer(monkeypatch) -> None:
+    """Paper-bundle handler should delegate orchestration and print outputs."""
+    calls: dict[str, object] = {}
+    result_marker = object()
+
+    def _fake_run_paper_bundle(
+        config: ExperimentConfig,
+        *,
+        seeds: list[int] | None,
+        quick: bool | None,
+        save_plots: bool,
+        bundle_name: str,
+        strict: bool,
+        cli_args: list[str],
+    ):
+        calls["config_name"] = config.name
+        calls["seeds"] = seeds
+        calls["quick"] = quick
+        calls["save_plots"] = save_plots
+        calls["bundle_name"] = bundle_name
+        calls["strict"] = strict
+        calls["cli_args"] = list(cli_args)
+        return result_marker
+
+    def _fake_print(name: str, result: object) -> None:
+        calls["print_name"] = name
+        calls["print_result"] = result
+
+    monkeypatch.setattr(run, "run_paper_bundle", _fake_run_paper_bundle)
+    monkeypatch.setattr(run, "_print_paper_bundle_result", _fake_print)
+
+    run._handle_paper_bundle_mode(
+        _config(),
+        _args(
+            chapter10_seeds="42,43",
+            chapter10_quick=True,
+            no_plots=True,
+            paper_bundle_name="ase_bundle_v2",
+        ),
+        ["--paper-bundle"],
+    )
+
+    assert calls["seeds"] == [42, 43]
+    assert calls["quick"] is True
+    assert calls["save_plots"] is False
+    assert calls["bundle_name"] == "ase_bundle_v2"
+    assert calls["strict"] is True
+    assert calls["print_result"] is result_marker

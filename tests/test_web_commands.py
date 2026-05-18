@@ -115,3 +115,42 @@ def test_build_run_command_publication_and_repro_modes() -> None:
         python_executable="python",
     )
     assert repro[-3:] == ["--repro-check", "--repro-runs", "2"]
+
+
+def test_build_run_command_chapter10_mode() -> None:
+    """Chapter10 mode should map shared study fields to chapter10 CLI flags."""
+    chapter10 = build_run_command(
+        {
+            "mode": ["chapter10"],
+            "study_quick": ["on"],
+            "study_seeds": ["42,43"],
+        },
+        python_executable="python",
+    )
+    assert chapter10[-4:] == [
+        "--chapter10",
+        "--chapter10-quick",
+        "--chapter10-seeds",
+        "42,43",
+    ]
+
+
+def test_build_run_command_paper_bundle_mode() -> None:
+    """Paper-bundle mode should map study fields and bundle name switches."""
+    command = build_run_command(
+        {
+            "mode": ["paper-bundle"],
+            "study_quick": ["on"],
+            "study_seeds": ["50-52"],
+            "paper_bundle_name": ["ase_bundle_v1"],
+        },
+        python_executable="python",
+    )
+    assert command[-6:] == [
+        "--paper-bundle",
+        "--chapter10-quick",
+        "--chapter10-seeds",
+        "50-52",
+        "--paper-bundle-name",
+        "ase_bundle_v1",
+    ]
