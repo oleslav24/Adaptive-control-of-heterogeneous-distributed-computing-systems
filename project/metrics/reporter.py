@@ -46,6 +46,11 @@ def summarize_state(state: SystemState) -> dict[str, float | int | str]:
         "avg_latency": state.avg_latency,
         "throughput": state.throughput,
         "avg_load": state.avg_load,
+        "energy_consumed_mwh": state.energy_consumed_mwh,
+        "co2_total_lb": state.co2_total_lb,
+        "co2e_total_lb": state.co2e_total_lb,
+        "co2_per_completed_task_lb": state.co2_per_completed_task_lb,
+        "co2e_per_completed_task_lb": state.co2e_per_completed_task_lb,
         "mas_messages": state.mas_messages,
         "mas_assignments": state.mas_assignments,
     }
@@ -269,9 +274,9 @@ def _build_history_dataframe(state: SystemState) -> pd.DataFrame:
 
 
 def _build_metrics_timeseries_figure(df: pd.DataFrame):
-    """Create latency/throughput/load timeseries figure."""
+    """Create latency/throughput/load/carbon timeseries figure."""
     time = df["time"] if "time" in df else range(len(df))
-    fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+    fig, axes = plt.subplots(4, 1, figsize=(12, 12), sharex=True)
 
     axes[0].plot(time, _series_or_default(df, "avg_latency"), color="#1f77b4")
     axes[0].set_ylabel("Latency")
@@ -283,8 +288,12 @@ def _build_metrics_timeseries_figure(df: pd.DataFrame):
 
     axes[2].plot(time, _series_or_default(df, "avg_load"), color="#d62728")
     axes[2].set_ylabel("Load")
-    axes[2].set_xlabel("Time")
     axes[2].set_title("Average Node Load")
+
+    axes[3].plot(time, _series_or_default(df, "co2_total_lb"), color="#9467bd")
+    axes[3].set_ylabel("CO2 (lb)")
+    axes[3].set_title("Cumulative CO2 Emissions")
+    axes[3].set_xlabel("Time")
 
     for ax in axes:
         ax.grid(True, alpha=0.3)

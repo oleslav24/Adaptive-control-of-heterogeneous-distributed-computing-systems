@@ -164,6 +164,19 @@ class Chapter10Config:
 
 
 @dataclass(slots=True)
+class EnergyConfig:
+    """Energy/CO2 estimation settings including eGRID dataset mapping."""
+
+    enabled: bool = True
+    egrid_dataset_path: str = "data/DataSet/eGRID2021_data.xlsx"
+    egrid_level: str = "srl"  # srl | ba | us
+    default_co2_lb_per_mwh: float = 855.0
+    default_co2e_lb_per_mwh: float = 900.0
+    node_power_idle_kw: float = 0.12
+    node_power_max_kw: float = 0.35
+
+
+@dataclass(slots=True)
 class ExperimentConfig:
     """Top-level experiment configuration object."""
 
@@ -176,6 +189,7 @@ class ExperimentConfig:
     observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
     scenarios: ScenarioConfig = field(default_factory=ScenarioConfig)
     chapter10: Chapter10Config = field(default_factory=Chapter10Config)
+    energy: EnergyConfig = field(default_factory=EnergyConfig)
     nodes: list[Node] = field(default_factory=list)
     network_edges: list[NetworkEdge] = field(default_factory=list)
     initial_tasks: list[Task] = field(default_factory=list)
@@ -220,6 +234,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
 
     scenarios = _load_scenario_config(raw.get("scenarios", {}))
     chapter10 = _load_chapter10_config(raw.get("chapter10", {}))
+    energy = _load_energy_config(raw.get("energy", {}))
 
     nodes = [_build_node(item) for item in raw.get("nodes", [])]
     edges = [
@@ -254,6 +269,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
         observability=observability,
         scenarios=scenarios,
         chapter10=chapter10,
+        energy=energy,
         nodes=nodes,
         network_edges=edges,
         initial_tasks=tasks,
@@ -385,6 +401,29 @@ def _load_chapter10_config(raw: object) -> Chapter10Config:
     )
 
 
+def _load_energy_config(raw: object) -> EnergyConfig:
+    """Parse optional energy/eGRID settings from config."""
+    data = raw if isinstance(raw, dict) else {}
+    level = str(data.get("egrid_level", "srl")).strip().lower()
+    if level not in {"srl", "ba", "us"}:
+        level = "srl"
+    idle_kw = max(0.01, _as_float(data.get("node_power_idle_kw", 0.12), 0.12))
+    max_kw = max(idle_kw, _as_float(data.get("node_power_max_kw", 0.35), 0.35))
+    return EnergyConfig(
+        enabled=_as_bool(data.get("enabled", True)),
+        egrid_dataset_path=str(data.get("egrid_dataset_path", "data/DataSet/eGRID2021_data.xlsx")),
+        egrid_level=level,
+        default_co2_lb_per_mwh=max(
+            0.0, _as_float(data.get("default_co2_lb_per_mwh", 855.0), 855.0)
+        ),
+        default_co2e_lb_per_mwh=max(
+            0.0, _as_float(data.get("default_co2e_lb_per_mwh", 900.0), 900.0)
+        ),
+        node_power_idle_kw=idle_kw,
+        node_power_max_kw=max_kw,
+    )
+
+
 def _build_node(item: dict[str, object]) -> Node:
     """Build Node model from YAML item and optional initial load."""
     cpu = float(item["cpu"])
@@ -397,6 +436,8 @@ def _build_node(item: dict[str, object]) -> Node:
         gpu=float(item.get("gpu", 0.0)),
         used_cpu=used_cpu,
         used_memory=0.0,
+        egrid_subregion=str(item.get("egrid_subregion", item.get("subregion", ""))).strip(),
+        egrid_ba_code=str(item.get("egrid_ba_code", item.get("ba_code", ""))).strip(),
     )
 
 

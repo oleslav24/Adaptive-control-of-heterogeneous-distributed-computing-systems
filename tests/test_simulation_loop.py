@@ -56,7 +56,13 @@ def test_simulation_loop_completes_task_and_updates_metrics() -> None:
     assert state.selected_algorithm == "min-load"
     assert state.mas_assignments >= 1
     assert state.mas_messages >= 1
+    assert state.energy_consumed_mwh > 0.0
+    assert state.co2_total_lb > 0.0
+    assert state.co2e_total_lb >= state.co2_total_lb
+    assert state.co2_per_completed_task_lb > 0.0
     assert len(state.completed_task_records) == state.completed_tasks
+    assert state.completed_task_records[0]["energy_mwh"] > 0.0
+    assert "co2_total_lb" in state.history[-1]
     assert len(state.history) == 4  # init snapshot + one snapshot per tick
 
 
@@ -95,6 +101,8 @@ def test_simulation_loop_incremental_latency_and_deadline_metrics() -> None:
     assert state.completed_tasks == 2
     assert state.deadline_violations == 1
     assert state.avg_latency == 2.0
+    assert state.energy_consumed_mwh > 0.0
+    assert state.co2_total_lb > 0.0
     assert len(state.completed_task_records) == 2
     assert sorted(item["task_id"] for item in state.completed_task_records) == [
         "task-fast",

@@ -18,6 +18,8 @@ class Node:
     used_memory: float = 0.0
     is_active: bool = True
     failed_since: int | None = None
+    egrid_subregion: str = ""
+    egrid_ba_code: str = ""
 
     @property
     def load(self) -> float:
@@ -110,6 +112,11 @@ class SystemState:
     avg_latency: float = 0.0
     throughput: float = 0.0
     avg_load: float = 0.0
+    energy_consumed_mwh: float = 0.0
+    co2_total_lb: float = 0.0
+    co2e_total_lb: float = 0.0
+    co2_per_completed_task_lb: float = 0.0
+    co2e_per_completed_task_lb: float = 0.0
     mas_messages: int = 0
     mas_assignments: int = 0
     completed_task_records: list[dict[str, object]] = field(default_factory=list)
