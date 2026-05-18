@@ -18,6 +18,7 @@ from project.agents import (
 from project.core.agent import Agent
 from project.core.config import ExperimentConfig
 from project.core.models import Node, SystemState, Task
+from project.metrics.egrid_loader import EGridLookup, default_factors, load_lookup
 from project.simulation.context import SimulationContext
 from project.simulation.mas import MultiAgentSystem
 from project.simulation.network import NetworkModel
@@ -43,8 +44,12 @@ class SimulationLoop:
     completed_latency_sum: float = 0.0
     completed_latency_count: int = 0
     deadline_violations_count: int = 0
+    energy_consumed_mwh_total: float = 0.0
+    co2_total_lb_accum: float = 0.0
+    co2e_total_lb_accum: float = 0.0
     scenario_events: list[dict[str, object]] = field(default_factory=list)
     network: NetworkModel = field(default_factory=NetworkModel)
+    egrid_lookup: EGridLookup | None = None
     scenario_engine: ScenarioEngine | None = None
     context: SimulationContext | None = None
     mas: MultiAgentSystem | None = None
@@ -61,6 +66,8 @@ class SimulationLoop:
                 gpu=node.gpu,
                 used_cpu=node.used_cpu,
                 used_memory=node.used_memory,
+                egrid_subregion=node.egrid_subregion,
+                egrid_ba_code=node.egrid_ba_code,
             )
             for node in self.config.nodes
         }
@@ -89,7 +96,15 @@ class SimulationLoop:
         self.completed_latency_sum = 0.0
         self.completed_latency_count = 0
         self.deadline_violations_count = 0
+        self.energy_consumed_mwh_total = 0.0
+        self.co2_total_lb_accum = 0.0
+        self.co2e_total_lb_accum = 0.0
         self.scenario_events = []
+        self.egrid_lookup = (
+            load_lookup(self.config.energy.egrid_dataset_path)
+            if self.config.energy.enabled
+            else None
+        )
         self.scenario_engine = ScenarioEngine(config=self.config)
         self.context = SimulationContext(
             nodes=self.nodes,
@@ -214,12 +229,14 @@ class SimulationLoop:
             self.mas.step(self.state)
             self.update_state(t)
         LOGGER.info(
-            "Simulation finished: completed=%d pending=%d latency=%.3f throughput=%.3f avg_load=%.3f predicted_queue=%.3f predicted_load=%.3f llm_source=%s llm_hint=%s",
+            "Simulation finished: completed=%d pending=%d latency=%.3f throughput=%.3f avg_load=%.3f energy_mwh=%.6f co2_lb=%.3f predicted_queue=%.3f predicted_load=%.3f llm_source=%s llm_hint=%s",
             self.state.completed_tasks,
             self.state.pending_tasks,
             self.state.avg_latency,
             self.state.throughput,
             self.state.avg_load,
+            self.state.energy_consumed_mwh,
+            self.state.co2_total_lb,
             self.state.predicted_queue,
             self.state.predicted_avg_load,
             self.state.llm_source,
@@ -281,6 +298,19 @@ class SimulationLoop:
             if self.state.node_loads
             else 0.0
         )
+        self.state.energy_consumed_mwh = self.energy_consumed_mwh_total
+        self.state.co2_total_lb = self.co2_total_lb_accum
+        self.state.co2e_total_lb = self.co2e_total_lb_accum
+        if self.state.completed_tasks > 0:
+            self.state.co2_per_completed_task_lb = (
+                self.state.co2_total_lb / float(self.state.completed_tasks)
+            )
+            self.state.co2e_per_completed_task_lb = (
+                self.state.co2e_total_lb / float(self.state.completed_tasks)
+            )
+        else:
+            self.state.co2_per_completed_task_lb = 0.0
+            self.state.co2e_per_completed_task_lb = 0.0
         self.state.mas_messages = len(self.mas.message_log) if self.mas is not None else 0
         if self.context is not None:
             self.state.mas_assignments = len(self.context.assignment_log)
@@ -310,6 +340,10 @@ class SimulationLoop:
                 "avg_latency": self.state.avg_latency,
                 "throughput": self.state.throughput,
                 "avg_load": self.state.avg_load,
+                "energy_consumed_mwh": self.state.energy_consumed_mwh,
+                "co2_total_lb": self.state.co2_total_lb,
+                "co2e_total_lb": self.state.co2e_total_lb,
+                "co2_per_completed_task_lb": self.state.co2_per_completed_task_lb,
                 "mas_messages": self.state.mas_messages,
                 "mas_assignments": self.state.mas_assignments,
             }
@@ -334,6 +368,13 @@ class SimulationLoop:
                 self.deadline_violations_count += 1
         else:
             latency = None
+        energy_mwh = self._estimate_task_energy_mwh(task)
+        factors = self._resolve_node_factors(task.assigned_node)
+        co2_lb = energy_mwh * factors.co2_lb_per_mwh
+        co2e_lb = energy_mwh * factors.co2e_lb_per_mwh
+        self.energy_consumed_mwh_total += energy_mwh
+        self.co2_total_lb_accum += co2_lb
+        self.co2e_total_lb_accum += co2e_lb
         self.completed_task_records.append(
             {
                 "task_id": task.id,
@@ -344,7 +385,46 @@ class SimulationLoop:
                 "latency": latency,
                 "duration": task.duration,
                 "assigned_node": task.assigned_node,
+                "energy_mwh": energy_mwh,
+                "co2_lb": co2_lb,
+                "co2e_lb": co2e_lb,
+                "egrid_source": factors.source,
                 "algorithm": self.context.active_algorithm if self.context is not None else "",
                 "scenario": self.config.scenario,
             }
+        )
+
+    def _estimate_task_energy_mwh(self, task: Task) -> float:
+        """Estimate consumed electrical energy for one completed task."""
+        node = self.nodes.get(task.assigned_node or "")
+        if node is None:
+            return 0.0
+        step_seconds = float(self.config.simulation.step_seconds)
+        hours = max(0.0, float(task.duration) * step_seconds / 3600.0)
+        if hours <= 0.0:
+            return 0.0
+        cpu_ratio = (
+            max(0.0, min(1.0, float(task.cpu_required) / float(node.cpu)))
+            if node.cpu > 0.0
+            else 0.0
+        )
+        idle_kw = float(self.config.energy.node_power_idle_kw)
+        max_kw = max(idle_kw, float(self.config.energy.node_power_max_kw))
+        power_kw = idle_kw + (max_kw - idle_kw) * cpu_ratio
+        return (power_kw * hours) / 1000.0
+
+    def _resolve_node_factors(self, node_id: str | None):
+        """Resolve node factors from eGRID lookup with deterministic fallback."""
+        fallback = default_factors(self.config.energy)
+        if node_id is None:
+            return fallback
+        node = self.nodes.get(node_id)
+        if node is None:
+            return fallback
+        if self.egrid_lookup is None:
+            return fallback
+        return self.egrid_lookup.resolve(
+            node=node,
+            level=self.config.energy.egrid_level,
+            fallback=fallback,
         )

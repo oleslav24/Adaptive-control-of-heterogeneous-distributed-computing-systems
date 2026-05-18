@@ -349,6 +349,10 @@ def _print_single_result(name: str, final_state: SystemState, artifacts: dict[st
     print(f"Latency (avg): {final_state.avg_latency:.3f}")
     print(f"Throughput: {final_state.throughput:.3f}")
     print(f"Load (avg): {final_state.avg_load:.3f}")
+    print(f"Energy (MWh): {final_state.energy_consumed_mwh:.6f}")
+    print(f"CO2 total (lb): {final_state.co2_total_lb:.3f}")
+    print(f"CO2e total (lb): {final_state.co2e_total_lb:.3f}")
+    print(f"CO2 per completed task (lb): {final_state.co2_per_completed_task_lb:.6f}")
     print(f"MAS assignments: {final_state.mas_assignments}")
     print(f"MAS messages: {final_state.mas_messages}")
     print(f"State updates: {len(final_state.history)}")
@@ -383,6 +387,9 @@ def _print_batch_result(name: str, spec: BatchRunSpec, result: BatchRunResult) -
             "throughput_std",
             "avg_load_mean",
             "avg_load_std",
+            "co2_total_lb_mean",
+            "co2_total_lb_std",
+            "energy_consumed_mwh_mean",
             "deadline_violations_mean",
             "pending_tasks_mean",
         ]

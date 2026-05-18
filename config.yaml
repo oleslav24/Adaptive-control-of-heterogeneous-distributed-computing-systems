@@ -55,6 +55,15 @@ chapter10:
   quick: false
   save_plots: true
 
+energy:
+  enabled: true
+  egrid_dataset_path: data/DataSet/eGRID2021_data.xlsx
+  egrid_level: srl
+  default_co2_lb_per_mwh: 855.0
+  default_co2e_lb_per_mwh: 900.0
+  node_power_idle_kw: 0.12
+  node_power_max_kw: 0.35
+
 scenarios:
   dynamic_load:
     enabled: true
@@ -106,11 +115,13 @@ nodes:
     memory: 64
     gpu: 1
     load: 0.10
+    egrid_subregion: CAMX
   - id: node-b
     cpu: 12
     memory: 32
     gpu: 0
     load: 0.15
+    egrid_subregion: AZNM
 
 network_edges:
   - source: node-a

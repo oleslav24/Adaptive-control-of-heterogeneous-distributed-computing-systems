@@ -23,12 +23,16 @@ def test_resolve_mode_selects_chapter10() -> None:
 
 
 def test_load_config_parses_chapter10_section() -> None:
-    """Base config should expose parsed chapter10 settings."""
+    """Base config should expose parsed chapter10 and energy settings."""
     config = load_config("config.yaml")
     assert config.chapter10.enabled is False
     assert config.chapter10.quick is False
     assert config.chapter10.save_plots is True
     assert config.chapter10.seeds[:3] == [42, 43, 44]
+    assert config.energy.enabled is True
+    assert config.energy.egrid_level == "srl"
+    assert config.energy.egrid_dataset_path.endswith("eGRID2021_data.xlsx")
+    assert config.nodes[0].egrid_subregion == "CAMX"
 
 
 def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:

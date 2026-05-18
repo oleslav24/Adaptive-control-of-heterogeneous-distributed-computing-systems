@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-18 12:25:34 +07:00  
+Last updated: 2026-05-18 13:24:02 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -262,6 +262,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 20.2 | Integrate `--paper-bundle` mode into CLI dispatch/run handlers | Done |
 | 20.3 | Integrate chapter10/paper-bundle into Web mode builder + validation | Done |
 | 20.4 | Add mode-level tests (CLI/dispatch/handlers/paper_bundle/web) | Done |
+| 20.5 | Add eGRID-driven energy/CO2 accounting in simulation and observability | Done |
 
 ## Active Sprint Slice Log (Sprint 12)
 
@@ -370,3 +371,4 @@ Closed in `main` via PR #22 (merge commit `f4b1a5c`).
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-18 12:25:34 | 20.1-20.4 Orchestration + CLI/Web wiring + tests for `paper-bundle` and `chapter10` | OK (mapped to Sprint 20 backlog items 20.1-20.4) | targeted tests + full pytest pass (`173 passed`) | `c565d23` |
+| 2026-05-18 13:24:02 | 20.5 eGRID integration: node mapping + runtime energy/CO2 metrics + tests | OK (mapped to Sprint 20 backlog item 20.5) | targeted tests + full pytest pass (`175 passed`) | current slice commit |
