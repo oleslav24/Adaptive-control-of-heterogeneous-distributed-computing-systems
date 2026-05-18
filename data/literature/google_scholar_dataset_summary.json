@@ -67,15 +67,15 @@
     "missing clear distributed/edge/cloud computing context": 60
   },
   "pdf_candidate_urls": 128,
-  "raw_records": 601,
+  "raw_records": 602,
   "raw_url_types": {
     "arxiv_abs": 3,
     "arxiv_pdf": 41,
     "open_html": 48,
     "pdf": 78,
-    "publisher": 431
+    "publisher": 432
   },
   "relevant_articles": 364,
-  "unique_source_emails": 159,
+  "unique_source_emails": 160,
   "unique_urls": 494
 }
