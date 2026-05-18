@@ -37,6 +37,8 @@ def test_build_dashboard_html_with_empty_jobs_renders_defaults() -> None:
     assert 'name="job_timeout_seconds" value="3600"' in html
     assert f'data-default-batch-scenario-count="{len(DEFAULT_BATCH_SCENARIOS)}"' in html
     assert "href=\"/files?lang=en&amp;path=outputs\"" in html
+    assert "<code>chapter10</code>" in html
+    assert "<code>paper-bundle</code>" in html
 
 
 def test_build_dashboard_html_renders_running_and_recent_jobs() -> None:

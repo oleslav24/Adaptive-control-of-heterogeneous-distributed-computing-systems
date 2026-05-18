@@ -11,6 +11,7 @@ from project.core.config import ExperimentConfig
 ModeHandler = Callable[[ExperimentConfig, Namespace, list[str]], None]
 
 MODE_FINISH_MESSAGES: dict[str, str] = {
+    "paper-bundle": "Paper bundle generation finished",
     "chapter10-study": "Chapter 10 study finished",
     "publication-study": "Publication study finished",
     "scalability-profile": "Scalability profile finished",
@@ -26,6 +27,8 @@ MODE_FINISH_MESSAGES: dict[str, str] = {
 
 def resolve_mode(args: Namespace) -> str:
     """Resolve selected run mode from parsed CLI arguments."""
+    if bool(getattr(args, "paper_bundle", False)):
+        return "paper-bundle"
     if bool(getattr(args, "chapter10", False)):
         return "chapter10-study"
     if args.publication_study:

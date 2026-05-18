@@ -70,3 +70,32 @@ def test_validate_start_run_form_rejects_bad_seed_expression() -> None:
         default_config="config.yaml",
     )
     assert any("Study seeds" in item for item in errors)
+
+
+def test_validate_start_run_form_accepts_chapter10_seed_expression() -> None:
+    """Chapter10 mode should reuse publication seed-expression validation."""
+    errors = validate_start_run_form(
+        {
+            "mode": ["chapter10"],
+            "config": ["config.yaml"],
+            "study_seeds": ["42-44"],
+        },
+        workspace_root=Path(".").resolve(),
+        default_config="config.yaml",
+    )
+    assert errors == []
+
+
+def test_validate_start_run_form_rejects_bad_paper_bundle_name() -> None:
+    """Paper bundle name should reject path-like or unsafe values."""
+    errors = validate_start_run_form(
+        {
+            "mode": ["paper-bundle"],
+            "config": ["config.yaml"],
+            "study_seeds": ["42-44"],
+            "paper_bundle_name": ["bad/name"],
+        },
+        workspace_root=Path(".").resolve(),
+        default_config="config.yaml",
+    )
+    assert any("Paper bundle name" in item for item in errors)

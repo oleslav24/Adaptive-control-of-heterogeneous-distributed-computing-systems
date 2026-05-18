@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-18 12:11:47 +07:00  
+Last updated: 2026-05-18 12:25:34 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -27,6 +27,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Closed |
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Closed |
 | 19 | Chapter 10 package pipeline | Chapter-ready tables/plots/report + CLI mode + tests | Closed |
+| 20 | Paper bundle and chapter10 web orchestration | One-click paper bundle mode in CLI/Web with full tests | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -61,6 +62,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 17 | Closed | 2026-05-15 11:45:09 +07:00 | merged via PR #20, merge commit `ee1b2e1` |
 | 18 | Closed | 2026-05-15 18:45:02 +07:00 | merged via PR #21, merge commit `4b7273d` |
 | 19 | Closed | 2026-05-16 15:47:37 +07:00 | merged via PR #22, merge commit `f4b1a5c` |
+| 20 | In progress | n/a | current working branch/slice |
 
 ## Detailed Sprint Backlog And Status
 
@@ -252,6 +254,15 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 19.3 | Integrate `--chapter10` CLI mode and config section | Done |
 | 19.4 | Add tests and chapter10 documentation | Done |
 
+### Sprint 20 - Paper bundle and chapter10 web orchestration
+
+| Task | Description | Status |
+|---|---|---|
+| 20.1 | Add `paper_bundle` experiment orchestrator (chapter10 + release zip) | Done |
+| 20.2 | Integrate `--paper-bundle` mode into CLI dispatch/run handlers | Done |
+| 20.3 | Integrate chapter10/paper-bundle into Web mode builder + validation | Done |
+| 20.4 | Add mode-level tests (CLI/dispatch/handlers/paper_bundle/web) | In progress |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -353,3 +364,9 @@ Closed in `main` via PR #21 (merge commit `4b7273d`).
 ## Sprint 19 Closure
 
 Closed in `main` via PR #22 (merge commit `f4b1a5c`).
+
+## Active Sprint Slice Log (Sprint 20)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-18 12:25:34 | 20.1-20.3 Orchestration + CLI/Web wiring for `paper-bundle` and `chapter10` | OK (mapped to Sprint 20 backlog items 20.1-20.3) | targeted tests + full pytest pass (`173 passed`) | current slice commit |

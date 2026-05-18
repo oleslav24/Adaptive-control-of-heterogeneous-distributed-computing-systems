@@ -21,6 +21,11 @@ def test_parse_args_defaults() -> None:
     assert args.replay_manifest is None
     assert args.replay_runs == 3
     assert args.publication_study is False
+    assert args.chapter10 is False
+    assert args.chapter10_seeds is None
+    assert args.chapter10_quick is False
+    assert args.paper_bundle is False
+    assert args.paper_bundle_name == "paper_bundle"
     assert args.scalability_profile is False
     assert args.scalability_nodes == "10,50,100,500"
     assert args.scalability_tasks == "100,500,1000,5000"
@@ -98,6 +103,13 @@ def test_parse_args_ab_publication_and_repro_flags() -> None:
             "--replay-runs",
             "5",
             "--publication-study",
+            "--chapter10",
+            "--chapter10-seeds",
+            "10-12",
+            "--chapter10-quick",
+            "--paper-bundle",
+            "--paper-bundle-name",
+            "ase_bundle_v1",
             "--scalability-profile",
             "--scalability-nodes",
             "12,24,48",
@@ -124,6 +136,11 @@ def test_parse_args_ab_publication_and_repro_flags() -> None:
     assert args.replay_manifest == "outputs/demo/run_manifest.json"
     assert args.replay_runs == 5
     assert args.publication_study is True
+    assert args.chapter10 is True
+    assert args.chapter10_seeds == "10-12"
+    assert args.chapter10_quick is True
+    assert args.paper_bundle is True
+    assert args.paper_bundle_name == "ase_bundle_v1"
     assert args.scalability_profile is True
     assert args.scalability_nodes == "12,24,48"
     assert args.scalability_tasks == "120,240"

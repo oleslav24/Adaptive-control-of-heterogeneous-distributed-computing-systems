@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from typing import Mapping
 
 from project.web.i18n import ALGORITHM_OPTIONS, MODE_OPTIONS, SCENARIO_OPTIONS
@@ -12,6 +13,7 @@ _ALGORITHM_SET = {item for item in ALGORITHM_OPTIONS if item}
 _SCENARIO_SET = {item for item in SCENARIO_OPTIONS if item}
 _LOG_LEVEL_SET = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 _LLM_PROVIDER_SET = {"auto", "openai", "mock"}
+_BUNDLE_NAME_RE = re.compile(r"^[A-Za-z0-9._-]{1,80}$")
 
 
 def validate_start_run_form(
@@ -92,10 +94,16 @@ def validate_start_run_form(
         if repro_runs is None or repro_runs < 2 or repro_runs > 1000:
             errors.append("Repro runs must be between 2 and 1000.")
 
-    if mode == "publication":
+    if mode in {"publication", "chapter10", "paper-bundle"}:
         seeds = _first(form, "study_seeds", "42-71").strip()
         if seeds and not _is_valid_seed_expression(seeds):
             errors.append("Study seeds must be comma-list or numeric range.")
+    if mode == "paper-bundle":
+        bundle_name = _first(form, "paper_bundle_name", "paper_bundle").strip()
+        if bundle_name and _BUNDLE_NAME_RE.fullmatch(bundle_name) is None:
+            errors.append(
+                "Paper bundle name may contain only letters, digits, dot, underscore, dash."
+            )
 
     return errors
 

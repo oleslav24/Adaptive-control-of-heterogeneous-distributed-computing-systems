@@ -153,6 +153,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run reduced Chapter 10 package for quick verification.",
     )
     parser.add_argument(
+        "--paper-bundle",
+        action="store_true",
+        help="Run chapter10 pipeline and export one consolidated paper bundle ZIP.",
+    )
+    parser.add_argument(
+        "--paper-bundle-name",
+        default="paper_bundle",
+        help="Bundle base name for --paper-bundle outputs.",
+    )
+    parser.add_argument(
         "--scalability-profile",
         action="store_true",
         help="Run scalability profiling sweep (nodes/tasks/algorithms).",
