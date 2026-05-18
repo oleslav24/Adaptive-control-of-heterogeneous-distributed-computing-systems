@@ -261,7 +261,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 20.1 | Add `paper_bundle` experiment orchestrator (chapter10 + release zip) | Done |
 | 20.2 | Integrate `--paper-bundle` mode into CLI dispatch/run handlers | Done |
 | 20.3 | Integrate chapter10/paper-bundle into Web mode builder + validation | Done |
-| 20.4 | Add mode-level tests (CLI/dispatch/handlers/paper_bundle/web) | In progress |
+| 20.4 | Add mode-level tests (CLI/dispatch/handlers/paper_bundle/web) | Done |
 
 ## Active Sprint Slice Log (Sprint 12)
 
@@ -369,4 +369,4 @@ Closed in `main` via PR #22 (merge commit `f4b1a5c`).
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
-| 2026-05-18 12:25:34 | 20.1-20.3 Orchestration + CLI/Web wiring for `paper-bundle` and `chapter10` | OK (mapped to Sprint 20 backlog items 20.1-20.3) | targeted tests + full pytest pass (`173 passed`) | current slice commit |
+| 2026-05-18 12:25:34 | 20.1-20.4 Orchestration + CLI/Web wiring + tests for `paper-bundle` and `chapter10` | OK (mapped to Sprint 20 backlog items 20.1-20.4) | targeted tests + full pytest pass (`173 passed`) | `c565d23` |
