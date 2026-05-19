@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 
 from project.experiments.publication_validation import (
+    validate_carbon_summary_table,
     validate_hypotheses_table,
     validate_summary_statistics,
 )
@@ -139,3 +140,67 @@ def test_validate_hypotheses_table_reports_contract_errors() -> None:
     assert any("Unexpected hypothesis rows" in err for err in result.errors)
     assert any("missing metric column 'delta_latency_hybrid_vs_best_baseline'" in err for err in result.errors)
     assert any("'confirmed' must be boolean" in err for err in result.errors)
+
+
+def test_validate_carbon_summary_table_ok() -> None:
+    """Carbon summary validator should pass on valid rows."""
+    table = pd.DataFrame(
+        [
+            {
+                "rank_co2": 1,
+                "method": "carbon-aware",
+                "method_label": "Carbon-Aware",
+                "baseline_method": "min-load",
+                "co2_per_completed_task_lb_mean": 1.1,
+                "co2_total_lb_mean": 120.0,
+                "delta_latency_vs_min_load": 0.05,
+                "delta_throughput_vs_min_load": -0.03,
+                "delta_co2_total_vs_min_load_lb": -40.0,
+                "delta_co2_per_task_vs_min_load_lb": -0.5,
+                "co2_total_reduction_vs_min_load_pct": 25.0,
+                "co2_per_task_reduction_vs_min_load_pct": 31.25,
+            },
+            {
+                "rank_co2": 2,
+                "method": "min-load",
+                "method_label": "Min-Load",
+                "baseline_method": "min-load",
+                "co2_per_completed_task_lb_mean": 1.6,
+                "co2_total_lb_mean": 160.0,
+                "delta_latency_vs_min_load": 0.0,
+                "delta_throughput_vs_min_load": 0.0,
+                "delta_co2_total_vs_min_load_lb": 0.0,
+                "delta_co2_per_task_vs_min_load_lb": 0.0,
+                "co2_total_reduction_vs_min_load_pct": 0.0,
+                "co2_per_task_reduction_vs_min_load_pct": 0.0,
+            },
+        ]
+    )
+    result = validate_carbon_summary_table(table)
+    assert result.ok is True
+    assert result.errors == []
+    assert result.row_count == 2
+
+
+def test_validate_carbon_summary_table_reports_errors() -> None:
+    """Carbon summary validator should fail on missing columns and bad values."""
+    table = pd.DataFrame(
+        [
+            {
+                "rank_co2": 0,
+                "method": "",
+                "method_label": "Bad",
+                "baseline_method": "",
+                "co2_per_completed_task_lb_mean": -1.0,
+                "co2_total_lb_mean": -2.0,
+                "delta_latency_vs_min_load": float("nan"),
+                "delta_throughput_vs_min_load": 0.0,
+                "delta_co2_total_vs_min_load_lb": 0.0,
+                "delta_co2_per_task_vs_min_load_lb": 0.0,
+                "co2_total_reduction_vs_min_load_pct": -5.0,
+            }
+        ]
+    )
+    result = validate_carbon_summary_table(table)
+    assert result.ok is False
+    assert any("Missing required column 'co2_per_task_reduction_vs_min_load_pct'" in err for err in result.errors)

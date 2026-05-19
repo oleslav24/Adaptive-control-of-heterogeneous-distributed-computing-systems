@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-19 17:01:15 +07:00  
+Last updated: 2026-05-19 17:45:44 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -29,7 +29,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 19 | Chapter 10 package pipeline | Chapter-ready tables/plots/report + CLI mode + tests | Closed |
 | 20 | Paper bundle and chapter10 web orchestration | One-click paper bundle mode in CLI/Web with full tests | Closed |
 | 21 | Carbon-aware optimization | Carbon-aware scheduler integrated into MAS/CLI/Web with tests | Closed |
-| 22 | Carbon evidence pipeline | Publication/Chapter10 carbon trade-off evidence and reproducible study outputs | In progress |
+| 22 | Carbon evidence pipeline | Publication/Chapter10 carbon trade-off evidence and reproducible study outputs | Closed |
+| 23 | Carbon analytics and publication quality | Carbon-specific dashboards/summary contracts and interpretation layer for paper results | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -66,7 +67,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 19 | Closed | 2026-05-16 15:47:37 +07:00 | merged via PR #22, merge commit `f4b1a5c` |
 | 20 | Closed | 2026-05-19 11:32:40 +07:00 | merged to `main`, tip `54186b9` (PRs #24, #25) |
 | 21 | Closed | 2026-05-19 16:45:54 +07:00 | merged to `main`, merge commit `9f83c53` (PR #26) |
-| 22 | In progress | n/a | current working branch/slice |
+| 22 | Closed | 2026-05-19 17:24:58 +07:00 | merged to `main`, merge commit `83372a5` (PR #27) |
+| 23 | In progress | n/a | current working branch/slice |
 
 ## Detailed Sprint Backlog And Status
 
@@ -288,6 +290,16 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 22.4 | Add reproducible carbon-study presets (`>=30` seeds) and manifest contract | Done |
 | 22.5 | Add regression/integration tests for Sprint 22 artifacts and CLI/Web wiring | Done |
 
+### Sprint 23 - Carbon analytics and publication quality
+
+| Task | Description | Status |
+|---|---|---|
+| 23.1 | Add carbon-study aggregate summary artifact with deltas vs baseline (`min-load`) | Done |
+| 23.2 | Add publication/chapter report section with explicit carbon-performance interpretation text blocks | Done |
+| 23.3 | Add web job page block for carbon-study key outcomes (CO2/task, CO2 total, latency trade-off) | Done |
+| 23.4 | Add contract validation for carbon summary schema and numeric constraints | Done |
+| 23.5 | Add regression/integration tests for Sprint 23 artifacts and UI exposure | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -418,3 +430,17 @@ Closed in `main` via PR #26 (merge commit `9f83c53`).
 | 2026-05-19 16:50:23 | 22.1-22.2 Publication catalog + Chapter10 carbon tradeoff tables (`carbon-aware`, `E6_carbon_vs_performance`) | OK (mapped to Sprint 22 backlog items 22.1-22.2) | targeted + full pytest pass (`181 passed`) | current slice commit |
 | 2026-05-19 16:53:08 | 22.3 Carbon/performance frontier Chapter10 plot + plot regression tests + Matplotlib compatibility fix | OK (mapped to Sprint 22 backlog items 22.3, 22.5) | targeted + full pytest pass (`183 passed`) | current slice commit |
 | 2026-05-19 17:01:15 | 22.4-22.5 Reproducible `carbon-study` mode (CLI/config/manifest) + Web wiring + coverage | OK (mapped to Sprint 22 backlog items 22.4-22.5) | targeted + full pytest pass (`186 passed`) | current slice commit |
+
+## Sprint 22 Closure
+
+Closed in `main` via PR #27 (merge commit `83372a5`).
+
+## Active Sprint Slice Log (Sprint 23)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-19 17:24:58 | Sprint 22 closure recorded + Sprint 23 backlog opened | OK (process compliance and continuity) | docs only | current slice commit |
+| 2026-05-19 17:28:50 | 23.1 Carbon summary artifact (`carbon_summary.csv/json`) with baseline deltas + regression tests | OK (mapped to Sprint 23 backlog items 23.1 and 23.5) | targeted + full pytest pass (`189 passed`) | current slice commit |
+| 2026-05-19 17:32:14 | 23.2 Report interpretation sections for publication/chapter outputs + coverage updates | OK (mapped to Sprint 23 backlog items 23.2 and 23.5) | targeted + full pytest pass (`189 passed`) | current slice commit |
+| 2026-05-19 17:43:17 | 23.3 Web job page carbon outcomes block + payload parsing from `carbon_summary.csv` + UI tests | OK (mapped to Sprint 23 backlog items 23.3 and 23.5) | targeted + full pytest pass (`190 passed`) | current slice commit |
+| 2026-05-19 17:45:44 | 23.4 Carbon summary schema validation in publication pipeline + validation tests | OK (mapped to Sprint 23 backlog items 23.4 and 23.5) | targeted + full pytest pass (`192 passed`) | current slice commit |

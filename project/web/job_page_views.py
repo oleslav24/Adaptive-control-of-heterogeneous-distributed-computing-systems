@@ -86,6 +86,12 @@ def build_job_page_html(job: _JobLike, lang: str) -> str:
     <li>{escape(insights_placeholder(lang))}</li>
   </ul>
 </div>
+<div class="card" id="carbon-outcomes-card" style="display:none;">
+  <h2>{escape(tr(lang, "carbon_outcomes_title"))}</h2>
+  <ul id="job-carbon-outcomes" class="insights-list">
+    <li>{escape(tr(lang, "carbon_outcomes_pending"))}</li>
+  </ul>
+</div>
 <div class="card">
   <h2>{escape(tr(lang, "log"))}</h2>
   <pre class="log" id="job-log"></pre>
@@ -103,9 +109,16 @@ const i18n = {{
   latency: {json.dumps(tr(lang, "latency_avg"))},
   throughput: {json.dumps(tr(lang, "throughput"))},
   avgLoad: {json.dumps(tr(lang, "average_load"))},
-  queueCompleted: {json.dumps(tr(lang, "queue_completed"))}
-  ,
-  diagnosticsBundle: {json.dumps(tr(lang, "diagnostics_bundle"))}
+  queueCompleted: {json.dumps(tr(lang, "queue_completed"))},
+  diagnosticsBundle: {json.dumps(tr(lang, "diagnostics_bundle"))},
+  carbonOutcomesPending: {json.dumps(tr(lang, "carbon_outcomes_pending"))},
+  carbonBestMethod: {json.dumps(tr(lang, "carbon_best_method"))},
+  carbonBaselineMethod: {json.dumps(tr(lang, "carbon_baseline_method"))},
+  carbonCo2PerTask: {json.dumps(tr(lang, "carbon_co2_per_task"))},
+  carbonCo2Total: {json.dumps(tr(lang, "carbon_co2_total"))},
+  carbonLatencyDelta: {json.dumps(tr(lang, "carbon_latency_delta"))},
+  carbonThroughputDelta: {json.dumps(tr(lang, "carbon_throughput_delta"))},
+  carbonCo2ReductionPct: {json.dumps(tr(lang, "carbon_co2_reduction_pct"))}
 }};
 
 const runPalette = [
@@ -583,6 +596,7 @@ function updateJobView(data) {{
     "legend-queue-completed"
   );
   renderInsights(data.insights || []);
+  renderCarbonOutcomes(data.carbon_outcomes || null);
 }}
 
 function renderInsights(items) {{
@@ -602,6 +616,51 @@ function renderInsights(items) {{
     const li = document.createElement("li");
     li.textContent = String(item);
     container.appendChild(li);
+  }}
+}}
+
+function _fmtMetric(value, digits = 3, suffix = "") {{
+  const num = Number(value);
+  if (!Number.isFinite(num)) {{
+    return i18n.unknown;
+  }}
+  return `${{num.toFixed(digits)}}${{suffix}}`;
+}}
+
+function renderCarbonOutcomes(payload) {{
+  const card = document.getElementById("carbon-outcomes-card");
+  const list = document.getElementById("job-carbon-outcomes");
+  if (!card || !list) return;
+  while (list.firstChild) {{
+    list.removeChild(list.firstChild);
+  }}
+
+  const item = (payload && typeof payload === "object") ? payload : null;
+  if (!item) {{
+    card.style.display = "none";
+    return;
+  }}
+  card.style.display = "";
+  if (!item.available) {{
+    const li = document.createElement("li");
+    li.textContent = i18n.carbonOutcomesPending;
+    list.appendChild(li);
+    return;
+  }}
+
+  const lines = [
+    `${{i18n.carbonBestMethod}}: ${{String(item.best_method || i18n.unknown)}}`,
+    `${{i18n.carbonBaselineMethod}}: ${{String(item.baseline_method || i18n.unknown)}}`,
+    `${{i18n.carbonCo2PerTask}}: ${{_fmtMetric(item.co2_per_task_lb, 4, " lb")}}`,
+    `${{i18n.carbonCo2Total}}: ${{_fmtMetric(item.co2_total_lb, 2, " lb")}}`,
+    `${{i18n.carbonLatencyDelta}}: ${{_fmtMetric(item.latency_delta_vs_baseline, 3)}}`,
+    `${{i18n.carbonThroughputDelta}}: ${{_fmtMetric(item.throughput_delta_vs_baseline, 3)}}`,
+    `${{i18n.carbonCo2ReductionPct}}: ${{_fmtMetric(item.co2_reduction_vs_baseline_pct, 2, "%")}}`
+  ];
+  for (const text of lines) {{
+    const li = document.createElement("li");
+    li.textContent = text;
+    list.appendChild(li);
   }}
 }}
 

@@ -150,6 +150,84 @@ def validate_hypotheses_table(hypotheses: pd.DataFrame) -> SummaryValidationResu
     )
 
 
+def validate_carbon_summary_table(carbon_summary: pd.DataFrame) -> SummaryValidationResult:
+    """Validate carbon summary table schema and numeric sanity checks."""
+    errors: list[str] = []
+    if carbon_summary.empty:
+        return SummaryValidationResult(ok=True, errors=errors, row_count=0)
+
+    required_columns = {
+        "rank_co2",
+        "method",
+        "method_label",
+        "baseline_method",
+        "co2_per_completed_task_lb_mean",
+        "co2_total_lb_mean",
+        "delta_latency_vs_min_load",
+        "delta_throughput_vs_min_load",
+        "delta_co2_total_vs_min_load_lb",
+        "delta_co2_per_task_vs_min_load_lb",
+        "co2_total_reduction_vs_min_load_pct",
+        "co2_per_task_reduction_vs_min_load_pct",
+    }
+    missing = sorted(required_columns - set(carbon_summary.columns))
+    for column in missing:
+        errors.append(f"Missing required column '{column}'.")
+    if missing:
+        return SummaryValidationResult(ok=False, errors=errors, row_count=int(len(carbon_summary)))
+
+    seen_ranks: set[int] = set()
+    for idx, row in carbon_summary.iterrows():
+        rank = _as_float(row.get("rank_co2"))
+        if rank is None:
+            errors.append(f"Row {idx}: rank_co2 must be numeric.")
+        else:
+            rank_int = int(rank)
+            if rank_int < 1:
+                errors.append(f"Row {idx}: rank_co2 must be >= 1.")
+            if rank_int in seen_ranks:
+                errors.append(f"Row {idx}: duplicate rank_co2 value {rank_int}.")
+            seen_ranks.add(rank_int)
+
+        for metric in (
+            "co2_per_completed_task_lb_mean",
+            "co2_total_lb_mean",
+            "co2_total_reduction_vs_min_load_pct",
+            "co2_per_task_reduction_vs_min_load_pct",
+        ):
+            value = _as_float(row.get(metric))
+            if value is None:
+                errors.append(f"Row {idx}: metric '{metric}' must be finite numeric.")
+                continue
+            if metric.endswith("_pct"):
+                if value < -1e-9 or value > 1000.0:
+                    errors.append(f"Row {idx}: metric '{metric}' must be in [0, 1000].")
+            elif value < 0.0:
+                errors.append(f"Row {idx}: metric '{metric}' must be >= 0.")
+
+        for delta in (
+            "delta_latency_vs_min_load",
+            "delta_throughput_vs_min_load",
+            "delta_co2_total_vs_min_load_lb",
+            "delta_co2_per_task_vs_min_load_lb",
+        ):
+            if _as_float(row.get(delta)) is None:
+                errors.append(f"Row {idx}: metric '{delta}' must be finite numeric.")
+
+        method = str(row.get("method", "")).strip()
+        baseline = str(row.get("baseline_method", "")).strip()
+        if not method:
+            errors.append(f"Row {idx}: method must be non-empty.")
+        if not baseline:
+            errors.append(f"Row {idx}: baseline_method must be non-empty.")
+
+    return SummaryValidationResult(
+        ok=not errors,
+        errors=errors,
+        row_count=int(len(carbon_summary)),
+    )
+
+
 def _as_float(value: Any) -> float | None:
     """Convert value to finite float or return None."""
     try:
