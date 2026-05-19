@@ -17,7 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--algorithm",
         default=None,
-        help="Scheduling algorithm: round-robin, min-load, greedy.",
+        help="Scheduling algorithm: round-robin, min-load, greedy, carbon-aware.",
     )
     parser.add_argument(
         "--scenario",

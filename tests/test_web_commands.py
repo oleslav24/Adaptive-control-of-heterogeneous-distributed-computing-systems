@@ -68,6 +68,19 @@ def test_build_run_command_compare_filters_and_deduplicates_algorithms() -> None
     assert command[-3:] == ["--compare", "--compare-algorithms", "round-robin,min-load"]
 
 
+def test_build_run_command_accepts_carbon_aware_algorithm() -> None:
+    """Single mode should pass through carbon-aware algorithm value."""
+    command = build_run_command(
+        {
+            "mode": ["single"],
+            "algorithm": ["carbon-aware"],
+        },
+        python_executable="python",
+    )
+    assert "--algorithm" in command
+    assert command[command.index("--algorithm") + 1] == "carbon-aware"
+
+
 def test_build_run_command_batch_parses_lists_and_clamps_runs() -> None:
     """Batch mode parses comma-list fallbacks and clamps batch-runs to minimum."""
     form = {

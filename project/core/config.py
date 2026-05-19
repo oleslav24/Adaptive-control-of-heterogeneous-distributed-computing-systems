@@ -27,7 +27,7 @@ class OptimizationConfig:
 
     algorithm: str = "min-load"
     compare_algorithms: list[str] = field(
-        default_factory=lambda: ["round-robin", "min-load", "greedy"]
+        default_factory=lambda: ["round-robin", "min-load", "greedy", "carbon-aware"]
     )
 
 
@@ -74,7 +74,7 @@ class LLMConfig:
     allow_algorithm_override: bool = True
     allow_node_bias_override: bool = True
     allowed_algorithms: list[str] = field(
-        default_factory=lambda: ["round-robin", "min-load", "greedy"]
+        default_factory=lambda: ["round-robin", "min-load", "greedy", "carbon-aware"]
     )
 
 
@@ -174,6 +174,9 @@ class EnergyConfig:
     default_co2e_lb_per_mwh: float = 900.0
     node_power_idle_kw: float = 0.12
     node_power_max_kw: float = 0.35
+    carbon_weight: float = 0.65
+    load_weight: float = 0.25
+    bandwidth_weight: float = 0.10
 
 
 @dataclass(slots=True)
@@ -421,6 +424,9 @@ def _load_energy_config(raw: object) -> EnergyConfig:
         ),
         node_power_idle_kw=idle_kw,
         node_power_max_kw=max_kw,
+        carbon_weight=max(0.0, _as_float(data.get("carbon_weight", 0.65), 0.65)),
+        load_weight=max(0.0, _as_float(data.get("load_weight", 0.25), 0.25)),
+        bandwidth_weight=max(0.0, _as_float(data.get("bandwidth_weight", 0.10), 0.10)),
     )
 
 

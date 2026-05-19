@@ -10,7 +10,14 @@ from project.core.models import Node, Task
 class ComputeAgent(Agent):
     """Assign queued tasks to nodes using active scheduling policies."""
 
-    def __init__(self, name: str = "compute") -> None:
+    def __init__(
+        self,
+        *,
+        carbon_weight: float = 0.65,
+        load_weight: float = 0.25,
+        bandwidth_weight: float = 0.10,
+        name: str = "compute",
+    ) -> None:
         super().__init__(name=name)
         self._plan: list[tuple[Task, str]] = []
         self._node_bandwidth: dict[str, float] = {}
@@ -23,6 +30,10 @@ class ComputeAgent(Agent):
         self._node_bias: dict[str, float] = {}
         self._llm_bias: dict[str, float] = {}
         self._llm_confidence: float = 0.0
+        self._node_co2_lb_per_mwh: dict[str, float] = {}
+        self._carbon_weight = max(0.0, float(carbon_weight))
+        self._load_weight = max(0.0, float(load_weight))
+        self._bandwidth_weight = max(0.0, float(bandwidth_weight))
 
     def decide(self) -> None:
         """Build an assignment plan for tasks currently in the queue."""
@@ -106,6 +117,7 @@ class ComputeAgent(Agent):
         self._node_bias = {}
         self._llm_bias = {}
         self._llm_confidence = 0.0
+        self._node_co2_lb_per_mwh = dict(getattr(self.context, "node_co2_lb_per_mwh", {}))
         for message in self.read_messages():
             if message.topic == "optimization_policy":
                 algorithm = message.payload.get("algorithm", "min-load")
@@ -174,6 +186,8 @@ class ComputeAgent(Agent):
             return selected
         if self._algorithm == "greedy":
             return min(candidates, key=lambda node: self._greedy_score(task, node))
+        if self._algorithm == "carbon-aware":
+            return min(candidates, key=lambda node: self._carbon_aware_score(task, node))
         return min(candidates, key=self._min_load_score)
 
     def _min_load_score(self, node: Node) -> float:
@@ -211,3 +225,31 @@ class ComputeAgent(Agent):
             - 0.25 * bias
             + 0.06 * (self._predicted_queue / max(1.0, len(self._node_bandwidth)))
         )
+
+    def _carbon_aware_score(self, task: Task, node: Node) -> float:
+        """Score for carbon-aware placement with load/bandwidth balancing."""
+        candidates = [value for value in self._node_co2_lb_per_mwh.values() if value >= 0.0]
+        fallback = min(candidates) if candidates else 800.0
+        co2 = self._node_co2_lb_per_mwh.get(node.id, fallback)
+        max_co2 = max(candidates) if candidates else max(1.0, fallback)
+        min_co2 = min(candidates) if candidates else 0.0
+        span = max(1e-9, max_co2 - min_co2)
+        co2_norm = (co2 - min_co2) / span
+
+        projected_load = node.load
+        if node.cpu > 0.0:
+            projected_load = min(1.0, (node.used_cpu + task.cpu_required) / node.cpu)
+
+        bandwidth = max(0.0, self._node_bandwidth.get(node.id, 0.0))
+        bandwidth_penalty = 1.0 / (1.0 + bandwidth)
+        bias = self._node_bias.get(node.id, 0.0) + (
+            self._llm_bias.get(node.id, 0.0) * self._llm_confidence
+        )
+        pressure = self._predicted_queue / max(1.0, float(len(self._node_bandwidth)))
+
+        weighted = (
+            self._carbon_weight * co2_norm
+            + self._load_weight * projected_load
+            + self._bandwidth_weight * bandwidth_penalty
+        )
+        return weighted + 0.05 * pressure - 0.20 * bias

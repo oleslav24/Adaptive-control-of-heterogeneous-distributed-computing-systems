@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-18 13:24:02 +07:00  
+Last updated: 2026-05-19 11:32:40 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -27,7 +27,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 17 | Scalability and performance | Profiling-backed optimization and load envelopes | Closed |
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Closed |
 | 19 | Chapter 10 package pipeline | Chapter-ready tables/plots/report + CLI mode + tests | Closed |
-| 20 | Paper bundle and chapter10 web orchestration | One-click paper bundle mode in CLI/Web with full tests | In progress |
+| 20 | Paper bundle and chapter10 web orchestration | One-click paper bundle mode in CLI/Web with full tests | Closed |
+| 21 | Carbon-aware optimization | Carbon-aware scheduler integrated into MAS/CLI/Web with tests | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -62,7 +63,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 17 | Closed | 2026-05-15 11:45:09 +07:00 | merged via PR #20, merge commit `ee1b2e1` |
 | 18 | Closed | 2026-05-15 18:45:02 +07:00 | merged via PR #21, merge commit `4b7273d` |
 | 19 | Closed | 2026-05-16 15:47:37 +07:00 | merged via PR #22, merge commit `f4b1a5c` |
-| 20 | In progress | n/a | current working branch/slice |
+| 20 | Closed | 2026-05-19 11:32:40 +07:00 | merged to `main`, tip `54186b9` (PRs #24, #25) |
+| 21 | In progress | n/a | current working branch/slice |
 
 ## Detailed Sprint Backlog And Status
 
@@ -264,6 +266,16 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 20.4 | Add mode-level tests (CLI/dispatch/handlers/paper_bundle/web) | Done |
 | 20.5 | Add eGRID-driven energy/CO2 accounting in simulation and observability | Done |
 
+### Sprint 21 - Carbon-aware optimization
+
+| Task | Description | Status |
+|---|---|---|
+| 21.1 | Add `carbon-aware` algorithm to supported scheduler catalog and normalization | Done |
+| 21.2 | Integrate carbon-aware scoring in `ComputeAgent` using eGRID node factors | Done |
+| 21.3 | Pass per-node CO2 factors via simulation context and expose configurable carbon/load/bandwidth weights | Done |
+| 21.4 | Integrate new algorithm into config/CLI/Web catalogs | Done |
+| 21.5 | Add regression/unit tests and validate full suite | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -372,3 +384,13 @@ Closed in `main` via PR #22 (merge commit `f4b1a5c`).
 |---|---|---|---|---|
 | 2026-05-18 12:25:34 | 20.1-20.4 Orchestration + CLI/Web wiring + tests for `paper-bundle` and `chapter10` | OK (mapped to Sprint 20 backlog items 20.1-20.4) | targeted tests + full pytest pass (`173 passed`) | `c565d23` |
 | 2026-05-18 13:24:02 | 20.5 eGRID integration: node mapping + runtime energy/CO2 metrics + tests | OK (mapped to Sprint 20 backlog item 20.5) | targeted tests + full pytest pass (`175 passed`) | current slice commit |
+
+## Sprint 20 Closure
+
+Closed in `main` via PR #24 and PR #25 (tip merge commit `54186b9`).
+
+## Active Sprint Slice Log (Sprint 21)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-19 11:32:40 | 21.1-21.5 Carbon-aware scheduler end-to-end (MAS + context + config/CLI/Web + tests) | OK (mapped to Sprint 21 backlog items 21.1-21.5) | targeted tests + full pytest pass (`178 passed`) | current slice commit |
