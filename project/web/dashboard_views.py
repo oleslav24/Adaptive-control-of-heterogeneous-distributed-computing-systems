@@ -202,7 +202,7 @@ def build_dashboard_html(
       <button type="submit">{escape(tr(lang, "run"))}</button>
     </form>
     <p class="hint">{escape(tr(lang, "mode_mapping"))}: <code>single</code>, <code>compare</code>, <code>batch</code>,
-    <code>publication</code>, <code>chapter10</code>, <code>paper-bundle</code>, <code>ab-intelligence</code>, <code>ab-llm</code>, <code>repro-check</code>.</p>
+    <code>publication</code>, <code>carbon-study</code>, <code>chapter10</code>, <code>paper-bundle</code>, <code>ab-intelligence</code>, <code>ab-llm</code>, <code>repro-check</code>.</p>
     <script>
     (() => {{
       const form = document.getElementById("run-form");
@@ -236,6 +236,7 @@ def build_dashboard_html(
         "compare": ["scenario", "compare_algorithms"],
         "batch": ["batch_scenarios", "batch_algorithms", "batch_runs"],
         "publication": ["study_seeds"],
+        "carbon-study": ["study_seeds"],
         "paper-bundle": ["study_seeds", "paper_bundle_name"],
         "chapter10": ["study_seeds"],
         "ab-intelligence": ["algorithm", "scenario"],
@@ -255,6 +256,7 @@ def build_dashboard_html(
         "compare": [],
         "batch": ["batch_save_runs", "batch_keep_adaptive"],
         "publication": ["study_quick"],
+        "carbon-study": ["study_quick"],
         "paper-bundle": ["study_quick"],
         "chapter10": ["study_quick"],
         "ab-intelligence": [],
@@ -370,6 +372,11 @@ def build_dashboard_html(
           usedFallback = selectedScenarios === 0 || selectedAlgorithms === 0;
           total = repeats * scenarioCount * algorithmCount;
           formula = `batch = ${{repeats}} x ${{scenarioCount}} x ${{algorithmCount}} = ${{total}}`;
+        }} else if (mode === "carbon-study") {{
+          const seeds = parseSeeds(form.querySelector('input[name="study_seeds"]')?.value || "");
+          const runsPerSeed = 5;
+          total = seeds.length * runsPerSeed;
+          formula = `${{mode}} = ${{seeds.length}} x ${{runsPerSeed}} = ${{total}}`;
         }} else if (mode === "publication" || mode === "chapter10" || mode === "paper-bundle") {{
           const seeds = parseSeeds(form.querySelector('input[name="study_seeds"]')?.value || "");
           const quick = Boolean(form.querySelector('input[name="study_quick"]')?.checked);

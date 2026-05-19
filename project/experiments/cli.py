@@ -135,7 +135,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--publication-study",
         action="store_true",
-        help="Run publication pipeline (E1-E5, H1-H5, stats, plots, report).",
+        help="Run publication pipeline (E1-E6, H1-H5, stats, plots, report).",
+    )
+    parser.add_argument(
+        "--carbon-study",
+        action="store_true",
+        help="Run dedicated carbon/performance study slice (E6) with reproducible seeds.",
+    )
+    parser.add_argument(
+        "--carbon-seeds",
+        default=None,
+        help="Seeds for carbon study: comma list (42,43,44) or range (42-71).",
+    )
+    parser.add_argument(
+        "--carbon-quick",
+        action="store_true",
+        help="Run reduced carbon-study profile for quick verification.",
     )
     parser.add_argument(
         "--chapter10",

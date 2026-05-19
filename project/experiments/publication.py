@@ -57,6 +57,9 @@ def run_publication_pipeline(
     quick: bool = False,
     save_plots: bool = True,
     cli_args: list[str] | None = None,
+    mode: str = "publication-study",
+    output_dir_name: str = "publication",
+    include_study_ids: list[str] | None = None,
 ) -> StudyResult:
     """Run full publication pipeline and export tables, report, and plots."""
     cli_args = list(cli_args or [])
@@ -64,7 +67,7 @@ def run_publication_pipeline(
     if not seeds:
         raise ValueError("At least one seed is required for publication study.")
 
-    output_dir = Path(base_config.observability.output_dir) / base_config.name / "publication"
+    output_dir = Path(base_config.observability.output_dir) / base_config.name / output_dir_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
     methods_df = pd.DataFrame([method_to_row(m) for m in METHOD_CATALOG])
@@ -72,6 +75,16 @@ def run_publication_pipeline(
     unsupported_df = methods_df[methods_df["ready"] == False].copy()  # noqa: E712
 
     experiment_specs = build_study_specs(seeds=seeds, ready_methods=ready_methods, quick=quick)
+    normalized_study_ids: list[str] = []
+    if include_study_ids:
+        for item in include_study_ids:
+            value = str(item).strip()
+            if value and value not in normalized_study_ids:
+                normalized_study_ids.append(value)
+    if normalized_study_ids:
+        experiment_specs = [spec for spec in experiment_specs if spec.study_id in normalized_study_ids]
+    if not experiment_specs:
+        raise ValueError("No study specifications selected for publication pipeline run.")
 
     rows: list[dict[str, Any]] = []
     for spec in experiment_specs:
@@ -147,12 +160,13 @@ def run_publication_pipeline(
     manifest_path = output_dir / "publication_manifest.json"
     manifest = build_run_manifest(
         config=base_config,
-        mode="publication-study",
+        mode=mode,
         cli_args=cli_args,
         extra={
             "quick_mode": quick,
             "seed_count": len(seeds),
             "seeds": seeds,
+            "study_ids_filter": normalized_study_ids,
             "study_specs": [asdict(spec) for spec in experiment_specs],
             "ready_methods": ready_methods,
             "unsupported_methods": unsupported_df["key"].tolist(),

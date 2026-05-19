@@ -19,6 +19,7 @@ def build_chapter10_tables(
     return {
         "method_ranking": build_method_ranking_table(summary_df),
         "scenario_overview": build_scenario_overview_table(raw_runs_df),
+        "carbon_tradeoff": build_carbon_tradeoff_table(summary_df),
         "hypotheses": build_hypotheses_table(hypotheses_df),
     }
 
@@ -77,6 +78,50 @@ def build_hypotheses_table(hypotheses_df: pd.DataFrame) -> pd.DataFrame:
     if "hypothesis" in table.columns:
         table = table.sort_values("hypothesis").reset_index(drop=True)
     return table
+
+
+def build_carbon_tradeoff_table(summary_df: pd.DataFrame) -> pd.DataFrame:
+    """Build carbon/performance comparison table for carbon-aware study rows."""
+    if summary_df.empty:
+        return pd.DataFrame()
+    required = {
+        "study_id",
+        "method",
+        "method_label",
+        "avg_latency_mean",
+        "throughput_mean",
+        "co2_total_lb_mean",
+        "co2_per_completed_task_lb_mean",
+    }
+    if not required.issubset(set(summary_df.columns)):
+        return pd.DataFrame()
+
+    study = summary_df[summary_df["study_id"] == "E6_carbon_vs_performance"].copy()
+    table = study if not study.empty else summary_df.copy()
+    table = table[
+        [
+            "method",
+            "method_label",
+            "avg_latency_mean",
+            "throughput_mean",
+            "co2_total_lb_mean",
+            "co2_per_completed_task_lb_mean",
+        ]
+    ].copy()
+    table["co2_per_throughput_lb"] = table.apply(_co2_per_throughput, axis=1)
+    table = table.sort_values(
+        ["co2_per_completed_task_lb_mean", "avg_latency_mean", "co2_total_lb_mean"]
+    ).reset_index(drop=True)
+    table.insert(0, "rank_co2", list(range(1, len(table) + 1)))
+    return table
+
+
+def _co2_per_throughput(row: pd.Series) -> float:
+    """Compute CO2 per throughput unit with zero-protection."""
+    throughput = float(row.get("throughput_mean", 0.0))
+    if throughput <= 0.0:
+        return 0.0
+    return float(row.get("co2_total_lb_mean", 0.0)) / throughput
 
 
 def persist_chapter10_tables(

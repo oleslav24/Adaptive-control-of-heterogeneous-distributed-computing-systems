@@ -59,6 +59,14 @@ def persist_chapter10_plots(
                 formats=formats,
             )
         )
+        output_paths.update(
+            _plot_carbon_performance_frontier(
+                summary_df=summary_df,
+                output_stem=output_dir / "chapter10_carbon_performance_frontier",
+                dpi=dpi,
+                formats=formats,
+            )
+        )
     return output_paths
 
 
@@ -164,7 +172,7 @@ def _plot_method_latency_boxplot(
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.boxplot(series, labels=ordered_methods, showmeans=True)
+    ax.boxplot(series, tick_labels=ordered_methods, showmeans=True)
     ax.set_xlabel("Method")
     ax.set_ylabel("Average latency")
     ax.set_title("Chapter 10: Latency distribution by method")
@@ -173,6 +181,83 @@ def _plot_method_latency_boxplot(
     fig.tight_layout()
     paths = _save_figure(fig, output_stem, dpi=dpi, formats=formats)
     return {f"plot_method_latency_boxplot_{ext}": path for ext, path in paths.items()}
+
+
+def _plot_carbon_performance_frontier(
+    *,
+    summary_df: pd.DataFrame,
+    output_stem: Path,
+    dpi: int,
+    formats: tuple[str, ...],
+) -> dict[str, str]:
+    """Scatter plot: per-task CO2 vs latency with throughput-coded marker sizes."""
+    required = {
+        "method",
+        "avg_latency_mean",
+        "throughput_mean",
+        "co2_per_completed_task_lb_mean",
+    }
+    if summary_df.empty or not required.issubset(set(summary_df.columns)):
+        return {}
+
+    subset = summary_df
+    if "study_id" in subset.columns:
+        e6 = subset[subset["study_id"] == "E6_carbon_vs_performance"]
+        if not e6.empty:
+            subset = e6
+    if subset.empty:
+        return {}
+
+    import matplotlib.pyplot as plt
+
+    plot_df = (
+        subset.groupby("method", as_index=False)
+        .agg(
+            avg_latency_mean=("avg_latency_mean", "mean"),
+            throughput_mean=("throughput_mean", "mean"),
+            co2_per_completed_task_lb_mean=("co2_per_completed_task_lb_mean", "mean"),
+        )
+        .sort_values("co2_per_completed_task_lb_mean")
+        .reset_index(drop=True)
+    )
+    if plot_df.empty:
+        return {}
+
+    min_throughput = float(plot_df["throughput_mean"].min())
+    max_throughput = float(plot_df["throughput_mean"].max())
+    spread = max(1e-9, max_throughput - min_throughput)
+    marker_sizes = [
+        80.0 + ((float(value) - min_throughput) / spread) * 220.0
+        for value in plot_df["throughput_mean"].tolist()
+    ]
+
+    fig, ax = plt.subplots(figsize=(11, 6))
+    ax.scatter(
+        plot_df["co2_per_completed_task_lb_mean"].astype(float).tolist(),
+        plot_df["avg_latency_mean"].astype(float).tolist(),
+        s=marker_sizes,
+        alpha=0.85,
+        edgecolor="black",
+        linewidth=0.5,
+    )
+    for _, row in plot_df.iterrows():
+        ax.annotate(
+            str(row["method"]),
+            (
+                float(row["co2_per_completed_task_lb_mean"]),
+                float(row["avg_latency_mean"]),
+            ),
+            textcoords="offset points",
+            xytext=(6, 4),
+            fontsize=9,
+        )
+    ax.set_xlabel("CO2 per completed task (lb)")
+    ax.set_ylabel("Average latency")
+    ax.set_title("Chapter 10: Carbon vs performance frontier")
+    ax.grid(True, axis="both")
+    fig.tight_layout()
+    paths = _save_figure(fig, output_stem, dpi=dpi, formats=formats)
+    return {f"plot_carbon_performance_frontier_{ext}": path for ext, path in paths.items()}
 
 
 def _save_figure(

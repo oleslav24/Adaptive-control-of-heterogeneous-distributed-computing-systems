@@ -61,6 +61,16 @@ METHOD_CATALOG: list[MethodVariant] = [
         llm_enabled=False,
     ),
     MethodVariant(
+        key="carbon-aware",
+        label="Carbon-Aware",
+        family="baseline",
+        ready=True,
+        algorithm="carbon-aware",
+        intelligence_enabled=False,
+        adaptive_algorithm=False,
+        llm_enabled=False,
+    ),
+    MethodVariant(
         key="mas-basic",
         label="MAS (No ML)",
         family="multi-agent",
@@ -194,7 +204,7 @@ def build_study_specs(
                 task_type="mixed",
                 network_profile="medium",
                 topology="ring",
-                methods=["round-robin", "min-load", "mas-hybrid", "mas-llm"],
+                methods=["round-robin", "min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"],
                 seeds=seeds,
             )
             for n, t in [(10, 100), (50, 500)]
@@ -243,6 +253,17 @@ def build_study_specs(
                 methods=["min-load", "mas-hybrid", "mas-llm"],
                 seeds=seeds,
             ),
+            StudyRunSpec(
+                study_id="E6_carbon_vs_performance",
+                scenario="dynamic-load",
+                node_count=50,
+                task_count=300,
+                task_type="mixed",
+                network_profile="medium",
+                topology="ring",
+                methods=["min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"],
+                seeds=seeds,
+            ),
         ]
 
     base_specs: list[StudyRunSpec] = []
@@ -258,7 +279,7 @@ def build_study_specs(
                 task_type="mixed",
                 network_profile="medium",
                 topology="ring",
-                methods=["round-robin", "min-load", "mas-hybrid", "mas-llm"],
+                methods=["round-robin", "min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"],
                 seeds=seeds,
             )
         )
@@ -307,6 +328,17 @@ def build_study_specs(
                 network_profile="medium",
                 topology="ring",
                 methods=["min-load", "mas-hybrid", "mas-llm"],
+                seeds=seeds,
+            ),
+            StudyRunSpec(
+                study_id="E6_carbon_vs_performance",
+                scenario="dynamic-load",
+                node_count=100,
+                task_count=1000,
+                task_type="mixed",
+                network_profile="medium",
+                topology="ring",
+                methods=["min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"],
                 seeds=seeds,
             ),
         ]

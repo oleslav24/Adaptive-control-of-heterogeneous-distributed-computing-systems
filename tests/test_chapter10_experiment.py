@@ -33,6 +33,9 @@ def test_load_config_parses_chapter10_section() -> None:
     assert config.energy.egrid_level == "srl"
     assert config.energy.egrid_dataset_path.endswith("eGRID2021_data.xlsx")
     assert config.nodes[0].egrid_subregion == "CAMX"
+    assert config.carbon_study.enabled is False
+    assert config.carbon_study.quick is False
+    assert config.carbon_study.study_ids == ["E6_carbon_vs_performance"]
 
 
 def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:

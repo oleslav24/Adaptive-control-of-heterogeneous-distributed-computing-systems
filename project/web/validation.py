@@ -94,7 +94,7 @@ def validate_start_run_form(
         if repro_runs is None or repro_runs < 2 or repro_runs > 1000:
             errors.append("Repro runs must be between 2 and 1000.")
 
-    if mode in {"publication", "chapter10", "paper-bundle"}:
+    if mode in {"publication", "carbon-study", "chapter10", "paper-bundle"}:
         seeds = _first(form, "study_seeds", "42-71").strip()
         if seeds and not _is_valid_seed_expression(seeds):
             errors.append("Study seeds must be comma-list or numeric range.")

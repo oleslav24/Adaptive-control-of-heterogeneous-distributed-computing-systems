@@ -29,6 +29,8 @@ def _args(**overrides: object) -> Namespace:
         "replay_runs": 3,
         "study_seeds": "42-71",
         "study_quick": False,
+        "carbon_seeds": None,
+        "carbon_quick": False,
         "chapter10_seeds": None,
         "chapter10_quick": False,
         "paper_bundle_name": "paper_bundle",
@@ -79,6 +81,54 @@ def test_handle_publication_mode_calls_publication_runner(monkeypatch) -> None:
     assert calls["seeds"] == [10, 11, 12]
     assert calls["quick"] is True
     assert calls["save_plots"] is False
+    assert calls["print_result"] is result_marker
+
+
+def test_handle_carbon_study_mode_calls_publication_runner_with_filter(monkeypatch) -> None:
+    """Carbon-study handler should call publication runner with dedicated mode/filter."""
+    calls: dict[str, object] = {}
+    result_marker = object()
+
+    def _fake_run_publication_mode(
+        config: ExperimentConfig,
+        *,
+        seeds: list[int],
+        quick: bool,
+        save_plots: bool,
+        cli_args: list[str],
+        mode: str,
+        output_dir_name: str,
+        include_study_ids: list[str] | None,
+    ):
+        calls["config_name"] = config.name
+        calls["seeds"] = list(seeds)
+        calls["quick"] = quick
+        calls["save_plots"] = save_plots
+        calls["cli_args"] = list(cli_args)
+        calls["mode"] = mode
+        calls["output_dir_name"] = output_dir_name
+        calls["include_study_ids"] = list(include_study_ids or [])
+        return result_marker
+
+    def _fake_print(name: str, seeds: list[int], result: object) -> None:
+        calls["print_name"] = name
+        calls["print_seeds"] = list(seeds)
+        calls["print_result"] = result
+
+    monkeypatch.setattr(run, "run_publication_mode", _fake_run_publication_mode)
+    monkeypatch.setattr(run, "_print_carbon_study_result", _fake_print)
+
+    run._handle_carbon_study_mode(
+        _config(),
+        _args(carbon_seeds="21-23", carbon_quick=True, no_plots=True),
+        ["--carbon-study"],
+    )
+    assert calls["seeds"] == [21, 22, 23]
+    assert calls["quick"] is True
+    assert calls["save_plots"] is False
+    assert calls["mode"] == "carbon-study"
+    assert calls["output_dir_name"] == "carbon-study"
+    assert calls["include_study_ids"] == ["E6_carbon_vs_performance"]
     assert calls["print_result"] is result_marker
 
 

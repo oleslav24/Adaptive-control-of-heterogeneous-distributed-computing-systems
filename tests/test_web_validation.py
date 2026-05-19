@@ -86,6 +86,20 @@ def test_validate_start_run_form_accepts_chapter10_seed_expression() -> None:
     assert errors == []
 
 
+def test_validate_start_run_form_accepts_carbon_study_seed_expression() -> None:
+    """Carbon-study mode should reuse study seed-expression validation."""
+    errors = validate_start_run_form(
+        {
+            "mode": ["carbon-study"],
+            "config": ["config.yaml"],
+            "study_seeds": ["42-44"],
+        },
+        workspace_root=Path(".").resolve(),
+        default_config="config.yaml",
+    )
+    assert errors == []
+
+
 def test_validate_start_run_form_rejects_bad_paper_bundle_name() -> None:
     """Paper bundle name should reject path-like or unsafe values."""
     errors = validate_start_run_form(

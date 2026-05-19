@@ -80,6 +80,7 @@ def _build_mode_handlers() -> dict[str, ModeHandler]:
     return {
         "paper-bundle": _handle_paper_bundle_mode,
         "chapter10-study": _handle_chapter10_mode,
+        "carbon-study": _handle_carbon_study_mode,
         "publication-study": _handle_publication_mode,
         "scalability-profile": _handle_scalability_profile_mode,
         "replay-manifest": _handle_replay_manifest_mode,
@@ -133,6 +134,28 @@ def _handle_publication_mode(config: ExperimentConfig, args: Namespace, cli_args
         cli_args=cli_args,
     )
     _print_publication_result(config.name, seeds, result)
+
+
+def _handle_carbon_study_mode(config: ExperimentConfig, args: Namespace, cli_args: list[str]) -> None:
+    """Execute dedicated carbon-study mode over selected publication studies."""
+    seeds = (
+        _parse_study_seeds(args.carbon_seeds)
+        if args.carbon_seeds
+        else list(config.carbon_study.seeds)
+    )
+    quick = bool(args.carbon_quick) or bool(config.carbon_study.quick)
+    save_plots = bool((not bool(args.no_plots)) and config.carbon_study.save_plots)
+    result = run_publication_mode(
+        config,
+        seeds=seeds,
+        quick=quick,
+        save_plots=save_plots,
+        cli_args=cli_args,
+        mode="carbon-study",
+        output_dir_name="carbon-study",
+        include_study_ids=list(config.carbon_study.study_ids),
+    )
+    _print_carbon_study_result(config.name, seeds, result)
 
 
 def _handle_scalability_profile_mode(
@@ -464,6 +487,36 @@ def _print_publication_result(name: str, seeds: list[int], result: StudyResult) 
                 float_format=lambda value: f"{value:.3f}" if isinstance(value, float) else str(value),
             )
         )
+
+    for key, path in result.output_paths.items():
+        print(f"{key}: {path}")
+
+
+def _print_carbon_study_result(name: str, seeds: list[int], result: StudyResult) -> None:
+    """Print carbon-study summary with CO2-oriented columns."""
+    print(f"Experiment '{name}' carbon study")
+    print(f"Seeds: {len(seeds)} ({min(seeds)}..{max(seeds)})")
+    print(f"Output dir: {result.output_dir}")
+
+    if result.summary.empty:
+        print("No carbon-study results were produced.")
+    else:
+        print("Carbon summary rows (sorted by co2_per_completed_task_lb_mean):")
+        top = result.summary.sort_values("co2_per_completed_task_lb_mean").head(15)
+        columns = [
+            "study_id",
+            "scenario",
+            "method",
+            "node_count",
+            "task_count",
+            "n_runs",
+            "avg_latency_mean",
+            "throughput_mean",
+            "co2_total_lb_mean",
+            "co2_per_completed_task_lb_mean",
+        ]
+        available = [col for col in columns if col in top.columns]
+        print(top[available].to_string(index=False, float_format=lambda value: f"{value:.3f}"))
 
     for key, path in result.output_paths.items():
         print(f"{key}: {path}")
