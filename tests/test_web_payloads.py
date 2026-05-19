@@ -2,7 +2,9 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from threading import Lock
+from uuid import uuid4
 
 import project.web.payloads as payloads
 
@@ -61,6 +63,7 @@ def test_job_payload_localizes_runs_and_status(monkeypatch) -> None:
     assert "queued" in result["status_badge_html"]
     assert result["insights"] == ["lang=en", "status=queued", "max=6"]
     assert result["status_details"] == "-"
+    assert result["carbon_outcomes"] is None
 
 
 def test_job_payload_uses_last_run_for_researcher_analysis(monkeypatch) -> None:
@@ -83,3 +86,37 @@ def test_job_payload_uses_last_run_for_researcher_analysis(monkeypatch) -> None:
     assert fake_researcher.last_metrics is not None
     assert fake_researcher.last_metrics["time"] == [0, 1]
     assert fake_researcher.last_metrics["queue"] == [8, 7]
+
+
+def test_job_payload_extracts_carbon_outcomes_from_artifact(monkeypatch) -> None:
+    """Carbon-study payload should expose parsed carbon outcomes from CSV artifact."""
+    fake_researcher = _FakeResearcher()
+    monkeypatch.setattr(payloads, "RESEARCHER_AGENT", fake_researcher)
+
+    artifact_dir = Path("outputs") / "test-suite" / f"web-payload-carbon-{uuid4().hex[:8]}"
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    artifact = artifact_dir / "carbon_summary.csv"
+    artifact.write_text(
+        "\n".join(
+            [
+                "rank_co2,method,method_label,co2_per_completed_task_lb_mean,co2_total_lb_mean,delta_latency_vs_min_load,delta_throughput_vs_min_load,co2_per_task_reduction_vs_min_load_pct",
+                "1,carbon-aware,Carbon-Aware,1.1000,120.0,0.050,-0.040,32.0",
+                "2,min-load,Min-Load,1.6200,180.0,0.000,0.000,0.0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    job = _FakeJob(
+        command=["python", "-m", "project.experiments.run", "--carbon-study"],
+        log_lines=[
+            "Experiment 'demo' carbon study",
+            f"carbon_summary_csv: {artifact}",
+        ],
+    )
+    result = payloads.job_payload(job, "en")
+    outcomes = result["carbon_outcomes"]
+    assert isinstance(outcomes, dict)
+    assert outcomes["available"] is True
+    assert outcomes["best_method"] == "Carbon-Aware"
+    assert outcomes["baseline_method"] == "Min-Load"
+    assert outcomes["co2_per_task_lb"] == 1.1

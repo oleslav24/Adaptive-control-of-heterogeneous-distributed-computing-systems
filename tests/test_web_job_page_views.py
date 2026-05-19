@@ -31,6 +31,8 @@ def test_build_job_page_html_includes_stop_for_running_job() -> None:
     assert "chart-queue-completed" in html
     assert 'id="job-details"' in html
     assert 'id="job-diagnostics-links"' in html
+    assert 'id="carbon-outcomes-card"' in html
+    assert "renderCarbonOutcomes(" in html
 
 
 def test_build_job_page_html_hides_stop_for_non_running_job() -> None:

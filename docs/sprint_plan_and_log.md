@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-19 17:32:14 +07:00  
+Last updated: 2026-05-19 17:45:44 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -296,9 +296,9 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 |---|---|---|
 | 23.1 | Add carbon-study aggregate summary artifact with deltas vs baseline (`min-load`) | Done |
 | 23.2 | Add publication/chapter report section with explicit carbon-performance interpretation text blocks | Done |
-| 23.3 | Add web job page block for carbon-study key outcomes (CO2/task, CO2 total, latency trade-off) | Pending |
-| 23.4 | Add contract validation for carbon summary schema and numeric constraints | Pending |
-| 23.5 | Add regression/integration tests for Sprint 23 artifacts and UI exposure | In progress |
+| 23.3 | Add web job page block for carbon-study key outcomes (CO2/task, CO2 total, latency trade-off) | Done |
+| 23.4 | Add contract validation for carbon summary schema and numeric constraints | Done |
+| 23.5 | Add regression/integration tests for Sprint 23 artifacts and UI exposure | Done |
 
 ## Active Sprint Slice Log (Sprint 12)
 
@@ -442,3 +442,5 @@ Closed in `main` via PR #27 (merge commit `83372a5`).
 | 2026-05-19 17:24:58 | Sprint 22 closure recorded + Sprint 23 backlog opened | OK (process compliance and continuity) | docs only | current slice commit |
 | 2026-05-19 17:28:50 | 23.1 Carbon summary artifact (`carbon_summary.csv/json`) with baseline deltas + regression tests | OK (mapped to Sprint 23 backlog items 23.1 and 23.5) | targeted + full pytest pass (`189 passed`) | current slice commit |
 | 2026-05-19 17:32:14 | 23.2 Report interpretation sections for publication/chapter outputs + coverage updates | OK (mapped to Sprint 23 backlog items 23.2 and 23.5) | targeted + full pytest pass (`189 passed`) | current slice commit |
+| 2026-05-19 17:43:17 | 23.3 Web job page carbon outcomes block + payload parsing from `carbon_summary.csv` + UI tests | OK (mapped to Sprint 23 backlog items 23.3 and 23.5) | targeted + full pytest pass (`190 passed`) | current slice commit |
+| 2026-05-19 17:45:44 | 23.4 Carbon summary schema validation in publication pipeline + validation tests | OK (mapped to Sprint 23 backlog items 23.4 and 23.5) | targeted + full pytest pass (`192 passed`) | current slice commit |

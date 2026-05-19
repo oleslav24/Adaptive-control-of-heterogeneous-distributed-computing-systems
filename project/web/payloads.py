@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from threading import Lock
 from typing import Protocol
 
@@ -88,6 +90,8 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
     status_details = str(job.status_details or "").strip()
     if not status_details:
         status_details = _default_status_details(job)
+    command_text = job.command_text()
+    carbon_outcomes = _carbon_outcomes(lines, command_text)
     return {
         "id": job.id,
         "status": job.status,
@@ -98,10 +102,11 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
         "return_code": job.return_code,
         "timeout_seconds": job.timeout_seconds,
         "timed_out": bool(job.timed_out),
-        "command": job.command_text(),
+        "command": command_text,
         "log_text": "\n".join(lines),
         "metrics": metrics,
         "insights": insights,
+        "carbon_outcomes": carbon_outcomes,
         "lang": lang,
     }
 
@@ -121,4 +126,95 @@ def _default_status_details(job: _JobPayloadLike) -> str:
             return "failed"
         return f"exit-code:{job.return_code}"
     return "-"
+
+
+def _carbon_outcomes(lines: list[str], command_text: str) -> dict[str, object] | None:
+    """Build carbon-study outcome payload from generated artifact CSV."""
+    command = str(command_text or "")
+    if "--carbon-study" not in command and "--publication-study" not in command:
+        return None
+
+    csv_path = _extract_artifact_path(lines, "carbon_summary_csv")
+    if not csv_path:
+        return {"available": False, "reason": "pending-artifact"}
+    path = Path(csv_path)
+    if not path.exists() or not path.is_file():
+        return {"available": False, "reason": "missing-artifact", "path": str(path)}
+
+    rows: list[dict[str, str]] = []
+    with path.open("r", encoding="utf-8", newline="") as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            rows.append({str(k): str(v) for k, v in row.items() if k is not None})
+    if not rows:
+        return {"available": False, "reason": "empty-artifact", "path": str(path)}
+
+    best = _best_carbon_row(rows)
+    baseline = _baseline_row(rows)
+    if best is None:
+        return {"available": False, "reason": "invalid-artifact", "path": str(path)}
+    if baseline is None:
+        baseline = best
+
+    return {
+        "available": True,
+        "path": str(path),
+        "best_method": best.get("method_label") or best.get("method") or "unknown",
+        "baseline_method": baseline.get("method_label") or baseline.get("method") or "min-load",
+        "co2_per_task_lb": _as_float(best.get("co2_per_completed_task_lb_mean")),
+        "co2_total_lb": _as_float(best.get("co2_total_lb_mean")),
+        "latency_delta_vs_baseline": _as_float(best.get("delta_latency_vs_min_load")),
+        "throughput_delta_vs_baseline": _as_float(best.get("delta_throughput_vs_min_load")),
+        "co2_reduction_vs_baseline_pct": _as_float(
+            best.get("co2_per_task_reduction_vs_min_load_pct")
+        ),
+    }
+
+
+def _extract_artifact_path(lines: list[str], key: str) -> str | None:
+    """Extract latest '<key>: <path>' line from job log output."""
+    prefix = f"{key}:"
+    for line in reversed(lines):
+        text = str(line).strip()
+        if not text.startswith(prefix):
+            continue
+        candidate = text[len(prefix) :].strip()
+        if candidate:
+            return candidate
+    return None
+
+
+def _best_carbon_row(rows: list[dict[str, str]]) -> dict[str, str] | None:
+    """Pick row with minimal per-task CO2 value."""
+    best_row: dict[str, str] | None = None
+    best_value: float | None = None
+    for row in rows:
+        value = _as_float(row.get("co2_per_completed_task_lb_mean"))
+        if value is None:
+            continue
+        if best_value is None or value < best_value:
+            best_row = row
+            best_value = value
+    return best_row
+
+
+def _baseline_row(rows: list[dict[str, str]]) -> dict[str, str] | None:
+    """Pick min-load baseline row from carbon summary."""
+    for row in rows:
+        if str(row.get("method", "")).strip() == "min-load":
+            return row
+    return rows[0] if rows else None
+
+
+def _as_float(raw: str | None) -> float | None:
+    """Parse float from optional string."""
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
 

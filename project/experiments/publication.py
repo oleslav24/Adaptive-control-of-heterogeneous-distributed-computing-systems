@@ -32,6 +32,7 @@ from project.experiments.publication_scenarios import (
     suggest_horizon,
 )
 from project.experiments.publication_validation import (
+    validate_carbon_summary_table,
     validate_hypotheses_table,
     validate_summary_statistics,
 )
@@ -126,6 +127,11 @@ def run_publication_pipeline(
     if not hypothesis_validation.ok:
         message = "; ".join(hypothesis_validation.errors[:8])
         raise ValueError(f"Publication hypotheses validation failed: {message}")
+    carbon_summary = _build_carbon_summary(summary)
+    carbon_validation = validate_carbon_summary_table(carbon_summary)
+    if not carbon_validation.ok:
+        message = "; ".join(carbon_validation.errors[:8])
+        raise ValueError(f"Publication carbon summary validation failed: {message}")
 
     output_paths = _persist_publication_outputs(
         output_dir=output_dir,
@@ -156,6 +162,16 @@ def run_publication_pipeline(
         },
     )
     output_paths["hypotheses_validation_json"] = str(hypothesis_validation_path)
+    carbon_validation_path = output_dir / "carbon_summary_validation.json"
+    _write_json(
+        carbon_validation_path,
+        {
+            "ok": carbon_validation.ok,
+            "row_count": carbon_validation.row_count,
+            "errors": carbon_validation.errors,
+        },
+    )
+    output_paths["carbon_summary_validation_json"] = str(carbon_validation_path)
 
     manifest_path = output_dir / "publication_manifest.json"
     manifest = build_run_manifest(
