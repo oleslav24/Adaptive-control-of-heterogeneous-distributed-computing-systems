@@ -510,6 +510,7 @@ def _persist_publication_outputs(
     """Persist publication tables in CSV/JSON and optional plot artifacts."""
     output_dir.mkdir(parents=True, exist_ok=True)
     output_paths: dict[str, str] = {}
+    carbon_summary = _build_carbon_summary(summary)
 
     paths = {
         "raw_runs_csv": output_dir / "raw_runs.csv",
@@ -522,16 +523,23 @@ def _persist_publication_outputs(
         "hypotheses_json": output_dir / "hypotheses.json",
         "methods_catalog_json": output_dir / "methods_catalog.json",
     }
+    if not carbon_summary.empty:
+        paths["carbon_summary_csv"] = output_dir / "carbon_summary.csv"
+        paths["carbon_summary_json"] = output_dir / "carbon_summary.json"
     raw_runs.to_csv(paths["raw_runs_csv"], index=False)
     summary.to_csv(paths["summary_csv"], index=False)
     hypotheses.to_csv(paths["hypotheses_csv"], index=False)
     methods_df.to_csv(paths["methods_catalog_csv"], index=False)
     unsupported_df.to_csv(paths["unsupported_methods_csv"], index=False)
+    if not carbon_summary.empty:
+        carbon_summary.to_csv(paths["carbon_summary_csv"], index=False)
 
     _write_json(paths["raw_runs_json"], _records(raw_runs))
     _write_json(paths["summary_json"], _records(summary))
     _write_json(paths["hypotheses_json"], _records(hypotheses))
     _write_json(paths["methods_catalog_json"], _records(methods_df))
+    if not carbon_summary.empty:
+        _write_json(paths["carbon_summary_json"], _records(carbon_summary))
     for key, path in paths.items():
         output_paths[key] = str(path)
 
@@ -583,6 +591,75 @@ def _save_publication_plots(*, output_dir: Path, raw_runs: pd.DataFrame, summary
             title="Global Load Imbalance by Method",
             output_stem=output_dir / "global_load_imbalance_boxplot",
         )
+
+
+def _build_carbon_summary(summary: pd.DataFrame) -> pd.DataFrame:
+    """Build carbon-focused aggregate table with deltas vs min-load baseline."""
+    required = {
+        "method",
+        "method_label",
+        "avg_latency_mean",
+        "throughput_mean",
+        "co2_total_lb_mean",
+        "co2_per_completed_task_lb_mean",
+    }
+    if summary.empty or not required.issubset(set(summary.columns)):
+        return pd.DataFrame()
+
+    subset = summary
+    if "study_id" in summary.columns:
+        e6 = summary[summary["study_id"] == "E6_carbon_vs_performance"]
+        if not e6.empty:
+            subset = e6
+    if subset.empty:
+        return pd.DataFrame()
+
+    grouped = (
+        subset.groupby(["method", "method_label"], as_index=False)
+        .agg(
+            n_groups=("method", "count"),
+            avg_latency_mean=("avg_latency_mean", "mean"),
+            throughput_mean=("throughput_mean", "mean"),
+            co2_total_lb_mean=("co2_total_lb_mean", "mean"),
+            co2_per_completed_task_lb_mean=("co2_per_completed_task_lb_mean", "mean"),
+        )
+        .sort_values(["co2_per_completed_task_lb_mean", "avg_latency_mean"])
+        .reset_index(drop=True)
+    )
+    if grouped.empty:
+        return grouped
+
+    baseline_source = grouped[grouped["method"] == "min-load"]
+    baseline = baseline_source.iloc[0] if not baseline_source.empty else grouped.iloc[0]
+    baseline_latency = float(baseline["avg_latency_mean"])
+    baseline_throughput = float(baseline["throughput_mean"])
+    baseline_co2_total = float(baseline["co2_total_lb_mean"])
+    baseline_co2_task = float(baseline["co2_per_completed_task_lb_mean"])
+
+    grouped["delta_latency_vs_min_load"] = grouped["avg_latency_mean"].astype(float) - baseline_latency
+    grouped["delta_throughput_vs_min_load"] = grouped["throughput_mean"].astype(float) - baseline_throughput
+    grouped["delta_co2_total_vs_min_load_lb"] = (
+        grouped["co2_total_lb_mean"].astype(float) - baseline_co2_total
+    )
+    grouped["delta_co2_per_task_vs_min_load_lb"] = (
+        grouped["co2_per_completed_task_lb_mean"].astype(float) - baseline_co2_task
+    )
+    grouped["co2_total_reduction_vs_min_load_pct"] = grouped["delta_co2_total_vs_min_load_lb"].apply(
+        lambda value: _negative_delta_to_reduction_pct(float(value), baseline_co2_total)
+    )
+    grouped["co2_per_task_reduction_vs_min_load_pct"] = grouped[
+        "delta_co2_per_task_vs_min_load_lb"
+    ].apply(lambda value: _negative_delta_to_reduction_pct(float(value), baseline_co2_task))
+    grouped.insert(0, "rank_co2", list(range(1, len(grouped) + 1)))
+    grouped["baseline_method"] = "min-load"
+    return grouped
+
+
+def _negative_delta_to_reduction_pct(delta: float, baseline: float) -> float:
+    """Convert negative delta to positive reduction percentage."""
+    if baseline <= 0.0:
+        return 0.0
+    return max(0.0, (-delta / baseline) * 100.0)
 
 
 def _plot_scalability(*, summary: pd.DataFrame, output_dir: Path) -> None:

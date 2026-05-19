@@ -138,3 +138,56 @@ def test_write_publication_report_contains_required_sections() -> None:
     assert "Quick mode: True" in content
     assert not raw_runs.empty
 
+
+def test_persist_publication_outputs_writes_carbon_summary_when_available() -> None:
+    """Exporter should persist carbon summary artifacts when carbon metrics are present."""
+    output_dir = _workspace_test_output_dir("publication-carbon-summary")
+    raw_runs, summary, hypotheses, methods, unsupported = _sample_tables()
+    summary = pd.DataFrame(
+        [
+            {
+                "study_id": "E6_carbon_vs_performance",
+                "scenario": "dynamic-load",
+                "method": "min-load",
+                "method_label": "Min-Load",
+                "method_family": "baseline",
+                "node_count": 50,
+                "task_count": 300,
+                "n_runs": 3,
+                "avg_latency_mean": 1.20,
+                "throughput_mean": 2.10,
+                "co2_total_lb_mean": 210.0,
+                "co2_per_completed_task_lb_mean": 2.10,
+            },
+            {
+                "study_id": "E6_carbon_vs_performance",
+                "scenario": "dynamic-load",
+                "method": "carbon-aware",
+                "method_label": "Carbon-Aware",
+                "method_family": "baseline",
+                "node_count": 50,
+                "task_count": 300,
+                "n_runs": 3,
+                "avg_latency_mean": 1.35,
+                "throughput_mean": 2.00,
+                "co2_total_lb_mean": 150.0,
+                "co2_per_completed_task_lb_mean": 1.50,
+            },
+        ]
+    )
+
+    output_paths = pub._persist_publication_outputs(  # noqa: SLF001
+        output_dir=output_dir,
+        raw_runs=raw_runs,
+        summary=summary,
+        hypotheses=hypotheses,
+        methods_df=methods,
+        unsupported_df=unsupported,
+        save_plots=False,
+    )
+
+    assert "carbon_summary_csv" in output_paths
+    assert "carbon_summary_json" in output_paths
+    assert Path(output_paths["carbon_summary_csv"]).exists()
+    assert Path(output_paths["carbon_summary_json"]).exists()
+
