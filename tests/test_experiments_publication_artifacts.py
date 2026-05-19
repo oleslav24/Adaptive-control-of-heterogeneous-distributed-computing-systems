@@ -132,6 +132,7 @@ def test_write_publication_report_contains_required_sections() -> None:
     assert "## 2. Compared Methods" in content
     assert "## 3. Metrics" in content
     assert "## 4. Results" in content
+    assert "### Carbon-Performance Interpretation" in content
     assert "## 5. Hypotheses" in content
     assert "## 6. Threats to Validity" in content
     assert "Seed count: 3" in content

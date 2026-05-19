@@ -144,6 +144,9 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     for key in required_keys:
         assert Path(result.output_paths[key]).exists(), key
 
+    report_text = Path(result.output_paths["chapter10_report_md"]).read_text(encoding="utf-8")
+    assert "## Carbon Interpretation" in report_text
+
     manifest_path = Path(result.output_paths["chapter10_manifest_json"])
     with manifest_path.open("r", encoding="utf-8") as f:
         manifest = json.load(f)

@@ -11,6 +11,7 @@ import pandas as pd
 from project.core.config import ExperimentConfig
 from project.experiments.chapter10_plots import persist_chapter10_plots
 from project.experiments.chapter10_tables import (
+    build_carbon_tradeoff_table,
     build_chapter10_tables,
     persist_chapter10_tables,
 )
@@ -144,6 +145,14 @@ def _write_chapter10_report(
     else:
         top = summary.sort_values("avg_latency_mean").head(12)
         lines.append(_render_markdown_table(top))
+    lines.append("")
+    lines.append("## Carbon Interpretation")
+    carbon = build_carbon_tradeoff_table(summary)
+    if carbon.empty:
+        lines.append("- Carbon trade-off rows are unavailable for this run.")
+    else:
+        top_carbon = carbon.head(8)
+        lines.append(_render_markdown_table(top_carbon))
     lines.append("")
     lines.append("## Hypotheses")
     if hypotheses.empty:

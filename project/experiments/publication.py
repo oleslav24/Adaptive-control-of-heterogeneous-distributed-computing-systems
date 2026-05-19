@@ -768,6 +768,30 @@ def _write_publication_report(
         top_rows = summary.sort_values("avg_latency_mean").head(10)
         lines.append(_render_table(top_rows))
     lines.append("")
+    lines.append("### Carbon-Performance Interpretation")
+    carbon_summary = _build_carbon_summary(summary)
+    if carbon_summary.empty:
+        lines.append("- Carbon interpretation is unavailable for this run.")
+    else:
+        best = carbon_summary.iloc[0]
+        baseline_candidates = carbon_summary[carbon_summary["method"] == "min-load"]
+        baseline = baseline_candidates.iloc[0] if not baseline_candidates.empty else carbon_summary.iloc[-1]
+        lines.append(
+            f"- Best CO2 per task: `{best['method']}` ({float(best['co2_per_completed_task_lb_mean']):.3f} lb/task)."
+        )
+        lines.append(
+            (
+                "- Delta vs baseline `min-load`: "
+                f"CO2/task {float(best['delta_co2_per_task_vs_min_load_lb']):+.3f} lb, "
+                f"latency {float(best['delta_latency_vs_min_load']):+.3f}, "
+                f"throughput {float(best['delta_throughput_vs_min_load']):+.3f}."
+            )
+        )
+        lines.append(
+            f"- Baseline reference (`{baseline['method']}`) CO2/task: "
+            f"{float(baseline['co2_per_completed_task_lb_mean']):.3f} lb/task."
+        )
+    lines.append("")
     lines.append("## 5. Hypotheses")
     if hypotheses.empty:
         lines.append("- No hypothesis evaluation.")
