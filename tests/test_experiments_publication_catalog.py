@@ -17,11 +17,12 @@ def test_build_study_specs_quick_profile_shape() -> None:
     seeds = [42, 43]
     ready = [variant.key for variant in METHOD_CATALOG if variant.ready]
     specs = build_study_specs(seeds=seeds, ready_methods=ready, quick=True)
-    assert len(specs) == 6
+    assert len(specs) == 7
     assert specs[0].study_id == "E1_scalability"
     assert specs[0].node_count in {10, 50}
-    assert specs[-1].study_id == "E5_llm_vs_algorithmic"
-    assert specs[-1].methods == ["min-load", "mas-hybrid", "mas-llm"]
+    assert "carbon-aware" in specs[0].methods
+    assert specs[-1].study_id == "E6_carbon_vs_performance"
+    assert specs[-1].methods == ["min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"]
     assert specs[-1].seeds == seeds
 
 
@@ -45,6 +46,9 @@ def test_get_method_variant_and_method_to_row_contract() -> None:
     assert row["key"] == "mas-llm"
     assert row["ready"] is True
     assert row["llm_enabled"] is True
+    carbon = method_to_row(get_method_variant("carbon-aware"))
+    assert carbon["algorithm"] == "carbon-aware"
+    assert carbon["ready"] is True
     with pytest.raises(KeyError, match="Unknown method variant"):
         get_method_variant("missing-method")
 

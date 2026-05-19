@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-19 11:32:40 +07:00  
+Last updated: 2026-05-19 17:01:15 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -28,7 +28,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 18 | Release candidate for paper/monograph | Reproducible artifacts and final release checklist | Closed |
 | 19 | Chapter 10 package pipeline | Chapter-ready tables/plots/report + CLI mode + tests | Closed |
 | 20 | Paper bundle and chapter10 web orchestration | One-click paper bundle mode in CLI/Web with full tests | Closed |
-| 21 | Carbon-aware optimization | Carbon-aware scheduler integrated into MAS/CLI/Web with tests | In progress |
+| 21 | Carbon-aware optimization | Carbon-aware scheduler integrated into MAS/CLI/Web with tests | Closed |
+| 22 | Carbon evidence pipeline | Publication/Chapter10 carbon trade-off evidence and reproducible study outputs | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -64,7 +65,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 18 | Closed | 2026-05-15 18:45:02 +07:00 | merged via PR #21, merge commit `4b7273d` |
 | 19 | Closed | 2026-05-16 15:47:37 +07:00 | merged via PR #22, merge commit `f4b1a5c` |
 | 20 | Closed | 2026-05-19 11:32:40 +07:00 | merged to `main`, tip `54186b9` (PRs #24, #25) |
-| 21 | In progress | n/a | current working branch/slice |
+| 21 | Closed | 2026-05-19 16:45:54 +07:00 | merged to `main`, merge commit `9f83c53` (PR #26) |
+| 22 | In progress | n/a | current working branch/slice |
 
 ## Detailed Sprint Backlog And Status
 
@@ -276,6 +278,16 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 21.4 | Integrate new algorithm into config/CLI/Web catalogs | Done |
 | 21.5 | Add regression/unit tests and validate full suite | Done |
 
+### Sprint 22 - Carbon evidence pipeline
+
+| Task | Description | Status |
+|---|---|---|
+| 22.1 | Extend publication catalog with `carbon-aware` method and dedicated carbon/performance study (`E6`) | Done |
+| 22.2 | Add Chapter10 carbon trade-off tables for publication-ready interpretation | Done |
+| 22.3 | Add publication/chapter output visuals for carbon-performance frontier | Done |
+| 22.4 | Add reproducible carbon-study presets (`>=30` seeds) and manifest contract | Done |
+| 22.5 | Add regression/integration tests for Sprint 22 artifacts and CLI/Web wiring | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -394,3 +406,15 @@ Closed in `main` via PR #24 and PR #25 (tip merge commit `54186b9`).
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-19 11:32:40 | 21.1-21.5 Carbon-aware scheduler end-to-end (MAS + context + config/CLI/Web + tests) | OK (mapped to Sprint 21 backlog items 21.1-21.5) | targeted tests + full pytest pass (`178 passed`) | current slice commit |
+
+## Sprint 21 Closure
+
+Closed in `main` via PR #26 (merge commit `9f83c53`).
+
+## Active Sprint Slice Log (Sprint 22)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-19 16:50:23 | 22.1-22.2 Publication catalog + Chapter10 carbon tradeoff tables (`carbon-aware`, `E6_carbon_vs_performance`) | OK (mapped to Sprint 22 backlog items 22.1-22.2) | targeted + full pytest pass (`181 passed`) | current slice commit |
+| 2026-05-19 16:53:08 | 22.3 Carbon/performance frontier Chapter10 plot + plot regression tests + Matplotlib compatibility fix | OK (mapped to Sprint 22 backlog items 22.3, 22.5) | targeted + full pytest pass (`183 passed`) | current slice commit |
+| 2026-05-19 17:01:15 | 22.4-22.5 Reproducible `carbon-study` mode (CLI/config/manifest) + Web wiring + coverage | OK (mapped to Sprint 22 backlog items 22.4-22.5) | targeted + full pytest pass (`186 passed`) | current slice commit |

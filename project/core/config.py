@@ -164,6 +164,17 @@ class Chapter10Config:
 
 
 @dataclass(slots=True)
+class CarbonStudyConfig:
+    """Carbon-study pipeline defaults and dedicated study selection."""
+
+    enabled: bool = False
+    seeds: list[int] = field(default_factory=lambda: list(range(42, 72)))
+    quick: bool = False
+    save_plots: bool = True
+    study_ids: list[str] = field(default_factory=lambda: ["E6_carbon_vs_performance"])
+
+
+@dataclass(slots=True)
 class EnergyConfig:
     """Energy/CO2 estimation settings including eGRID dataset mapping."""
 
@@ -192,6 +203,7 @@ class ExperimentConfig:
     observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
     scenarios: ScenarioConfig = field(default_factory=ScenarioConfig)
     chapter10: Chapter10Config = field(default_factory=Chapter10Config)
+    carbon_study: CarbonStudyConfig = field(default_factory=CarbonStudyConfig)
     energy: EnergyConfig = field(default_factory=EnergyConfig)
     nodes: list[Node] = field(default_factory=list)
     network_edges: list[NetworkEdge] = field(default_factory=list)
@@ -237,6 +249,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
 
     scenarios = _load_scenario_config(raw.get("scenarios", {}))
     chapter10 = _load_chapter10_config(raw.get("chapter10", {}))
+    carbon_study = _load_carbon_study_config(raw.get("carbon_study", {}))
     energy = _load_energy_config(raw.get("energy", {}))
 
     nodes = [_build_node(item) for item in raw.get("nodes", [])]
@@ -272,6 +285,7 @@ def load_config(path: str | Path) -> ExperimentConfig:
         observability=observability,
         scenarios=scenarios,
         chapter10=chapter10,
+        carbon_study=carbon_study,
         energy=energy,
         nodes=nodes,
         network_edges=edges,
@@ -401,6 +415,30 @@ def _load_chapter10_config(raw: object) -> Chapter10Config:
         seeds=seeds,
         quick=_as_bool(data.get("quick", False)),
         save_plots=_as_bool(data.get("save_plots", True)),
+    )
+
+
+def _load_carbon_study_config(raw: object) -> CarbonStudyConfig:
+    """Parse Carbon Study defaults from config."""
+    data = raw if isinstance(raw, dict) else {}
+    seeds = _parse_int_list(data.get("seeds", list(range(42, 72))))
+    if not seeds:
+        seeds = list(range(42, 72))
+    study_ids: list[str] = []
+    raw_study_ids = data.get("study_ids", ["E6_carbon_vs_performance"])
+    if isinstance(raw_study_ids, list):
+        for item in raw_study_ids:
+            value = str(item).strip()
+            if value and value not in study_ids:
+                study_ids.append(value)
+    if not study_ids:
+        study_ids = ["E6_carbon_vs_performance"]
+    return CarbonStudyConfig(
+        enabled=_as_bool(data.get("enabled", False)),
+        seeds=seeds,
+        quick=_as_bool(data.get("quick", False)),
+        save_plots=_as_bool(data.get("save_plots", True)),
+        study_ids=study_ids,
     )
 
 

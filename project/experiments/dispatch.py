@@ -13,6 +13,7 @@ ModeHandler = Callable[[ExperimentConfig, Namespace, list[str]], None]
 MODE_FINISH_MESSAGES: dict[str, str] = {
     "paper-bundle": "Paper bundle generation finished",
     "chapter10-study": "Chapter 10 study finished",
+    "carbon-study": "Carbon study finished",
     "publication-study": "Publication study finished",
     "scalability-profile": "Scalability profile finished",
     "replay-manifest": "Replay verification finished",
@@ -31,6 +32,8 @@ def resolve_mode(args: Namespace) -> str:
         return "paper-bundle"
     if bool(getattr(args, "chapter10", False)):
         return "chapter10-study"
+    if bool(getattr(args, "carbon_study", False)):
+        return "carbon-study"
     if args.publication_study:
         return "publication-study"
     if args.scalability_profile:

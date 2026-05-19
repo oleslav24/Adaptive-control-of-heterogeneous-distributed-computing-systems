@@ -21,6 +21,9 @@ def test_parse_args_defaults() -> None:
     assert args.replay_manifest is None
     assert args.replay_runs == 3
     assert args.publication_study is False
+    assert args.carbon_study is False
+    assert args.carbon_seeds is None
+    assert args.carbon_quick is False
     assert args.chapter10 is False
     assert args.chapter10_seeds is None
     assert args.chapter10_quick is False
@@ -103,6 +106,10 @@ def test_parse_args_ab_publication_and_repro_flags() -> None:
             "--replay-runs",
             "5",
             "--publication-study",
+            "--carbon-study",
+            "--carbon-seeds",
+            "20-22",
+            "--carbon-quick",
             "--chapter10",
             "--chapter10-seeds",
             "10-12",
@@ -136,6 +143,9 @@ def test_parse_args_ab_publication_and_repro_flags() -> None:
     assert args.replay_manifest == "outputs/demo/run_manifest.json"
     assert args.replay_runs == 5
     assert args.publication_study is True
+    assert args.carbon_study is True
+    assert args.carbon_seeds == "20-22"
+    assert args.carbon_quick is True
     assert args.chapter10 is True
     assert args.chapter10_seeds == "10-12"
     assert args.chapter10_quick is True

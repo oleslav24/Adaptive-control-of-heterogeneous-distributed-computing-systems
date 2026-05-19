@@ -15,6 +15,7 @@ def _minimal_args(**overrides: object) -> Namespace:
     defaults = {
         "paper_bundle": False,
         "chapter10": False,
+        "carbon_study": False,
         "publication_study": False,
         "scalability_profile": False,
         "ab_llm": False,
@@ -32,6 +33,7 @@ def test_resolve_mode_uses_expected_priority_order() -> None:
     """Mode resolution should follow explicit priority from most specific to fallback."""
     assert resolve_mode(_minimal_args(paper_bundle=True, chapter10=True)) == "paper-bundle"
     assert resolve_mode(_minimal_args(chapter10=True, publication_study=True)) == "chapter10-study"
+    assert resolve_mode(_minimal_args(carbon_study=True, publication_study=True)) == "carbon-study"
     assert resolve_mode(_minimal_args(publication_study=True, batch=True)) == "publication-study"
     assert resolve_mode(_minimal_args(scalability_profile=True, compare=True)) == "scalability-profile"
     assert (

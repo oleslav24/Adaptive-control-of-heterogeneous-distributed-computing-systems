@@ -57,6 +57,13 @@ chapter10:
   quick: false
   save_plots: true
 
+carbon_study:
+  enabled: false
+  seeds: [42, 43, 44, 45, 46]
+  quick: false
+  save_plots: true
+  study_ids: [E6_carbon_vs_performance]
+
 energy:
   enabled: true
   egrid_dataset_path: data/DataSet/eGRID2021_data.xlsx

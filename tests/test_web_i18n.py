@@ -48,3 +48,5 @@ def test_mode_catalog_contains_chapter10() -> None:
     assert MODE_LABELS["en"]["chapter10"] == "Chapter 10"
     assert "paper-bundle" in MODE_OPTIONS
     assert MODE_LABELS["en"]["paper-bundle"] == "Paper Bundle"
+    assert "carbon-study" in MODE_OPTIONS
+    assert MODE_LABELS["en"]["carbon-study"] == "Carbon Study"

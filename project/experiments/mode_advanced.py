@@ -36,6 +36,9 @@ def run_publication_mode(
     quick: bool,
     save_plots: bool,
     cli_args: list[str],
+    mode: str = "publication-study",
+    output_dir_name: str = "publication",
+    include_study_ids: list[str] | None = None,
 ) -> StudyResult:
     """Run publication-study pipeline and return produced study result."""
     return run_publication_pipeline(
@@ -44,6 +47,9 @@ def run_publication_mode(
         quick=quick,
         save_plots=save_plots,
         cli_args=cli_args,
+        mode=mode,
+        output_dir_name=output_dir_name,
+        include_study_ids=include_study_ids,
     )
 
 

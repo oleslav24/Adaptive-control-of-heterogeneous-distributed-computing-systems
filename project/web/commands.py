@@ -149,6 +149,14 @@ def build_run_command(
         if study_seeds:
             command.extend(["--study-seeds", study_seeds])
 
+    elif mode == "carbon-study":
+        command.append("--carbon-study")
+        if _is_checked(form, "study_quick"):
+            command.append("--carbon-quick")
+        study_seeds = _first(form, "study_seeds", "42-71").strip()
+        if study_seeds:
+            command.extend(["--carbon-seeds", study_seeds])
+
     elif mode == "chapter10":
         command.append("--chapter10")
         if _is_checked(form, "study_quick"):
