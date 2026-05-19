@@ -16,7 +16,7 @@ MODE_OPTIONS = (
     "ab-llm",
     "repro-check",
 )
-ALGORITHM_OPTIONS = ("", "round-robin", "min-load", "greedy")
+ALGORITHM_OPTIONS = ("", "round-robin", "min-load", "greedy", "carbon-aware")
 SCENARIO_OPTIONS = (
     "",
     "static",
@@ -65,11 +65,13 @@ ALGORITHM_LABELS: dict[str, dict[str, str]] = {
         "round-robin": "Round-robin",
         "min-load": "Min-load",
         "greedy": "Greedy",
+        "carbon-aware": "Carbon-aware",
     },
     "ru": {
         "round-robin": "РљСЂСѓРіРѕРІРѕР№ (Round-robin)",
         "min-load": "РњРёРЅРёРјР°Р»СЊРЅР°СЏ РЅР°РіСЂСѓР·РєР°",
         "greedy": "Р–Р°РґРЅС‹Р№",
+        "carbon-aware": "Углеродно-осознанный",
     },
 }
 

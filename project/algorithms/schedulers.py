@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from project.core.models import Node, Task
 
-SUPPORTED_ALGORITHMS = ("round-robin", "min-load", "greedy")
+SUPPORTED_ALGORITHMS = ("round-robin", "min-load", "greedy", "carbon-aware")
 
 
 def normalize_algorithm(name: str) -> str:
@@ -22,6 +22,7 @@ def choose_node(
     all_node_ids: list[str],
     node_bandwidth: dict[str, float],
     rr_cursor: int,
+    node_carbon: dict[str, float] | None = None,
 ) -> tuple[Node | None, int]:
     """Select a node with the requested strategy and return next RR cursor."""
     algorithm = normalize_algorithm(algorithm)
@@ -31,6 +32,8 @@ def choose_node(
         return _round_robin(candidates, all_node_ids, rr_cursor)
     if algorithm == "greedy":
         return _greedy(task, candidates, node_bandwidth), rr_cursor
+    if algorithm == "carbon-aware":
+        return _carbon_aware(candidates, node_bandwidth, node_carbon or {}), rr_cursor
     return _min_load(candidates, node_bandwidth), rr_cursor
 
 
@@ -75,5 +78,22 @@ def _greedy(task: Task, candidates: list[Node], node_bandwidth: dict[str, float]
             + 0.1 * (node.memory - (node.used_memory + task.memory_required)),
             node.load,
             -node_bandwidth.get(node.id, float("inf")),
+        ),
+    )
+
+
+def _carbon_aware(
+    candidates: list[Node],
+    node_bandwidth: dict[str, float],
+    node_carbon: dict[str, float],
+) -> Node:
+    """Prefer lower-carbon nodes while keeping load and bandwidth balanced."""
+    return min(
+        candidates,
+        key=lambda node: (
+            node_carbon.get(node.id, float("inf")),
+            node.load,
+            -node_bandwidth.get(node.id, float("inf")),
+            -node.cpu,
         ),
     )

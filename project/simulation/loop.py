@@ -115,6 +115,18 @@ class SimulationLoop:
             network=self.network,
             current_time=0,
             active_algorithm=self.config.optimization.algorithm,
+            node_co2_lb_per_mwh={
+                node_id: self._resolve_node_factors(node_id).co2_lb_per_mwh
+                for node_id in self.nodes
+            },
+            node_co2e_lb_per_mwh={
+                node_id: self._resolve_node_factors(node_id).co2e_lb_per_mwh
+                for node_id in self.nodes
+            },
+            node_renewable_share={
+                node_id: self._resolve_node_factors(node_id).renewable_share
+                for node_id in self.nodes
+            },
         )
         if not self.agents:
             agents: list[Agent] = [MonitoringAgent()]
@@ -153,7 +165,11 @@ class SimulationLoop:
                         algorithm=self.config.optimization.algorithm,
                         adaptive_algorithm=self.config.intelligence.adaptive_algorithm,
                     ),
-                    ComputeAgent(),
+                    ComputeAgent(
+                        carbon_weight=self.config.energy.carbon_weight,
+                        load_weight=self.config.energy.load_weight,
+                        bandwidth_weight=self.config.energy.bandwidth_weight,
+                    ),
                 ]
             )
             self.agents = agents

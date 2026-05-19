@@ -20,6 +20,7 @@ def test_normalize_algorithm_unknown_falls_back_to_min_load() -> None:
     """Unsupported external names should map to min-load."""
     assert normalize_algorithm("UNKNOWN") == "min-load"
     assert normalize_algorithm("round_robin") == "round-robin"
+    assert normalize_algorithm("carbon_aware") == "carbon-aware"
 
 
 def test_round_robin_uses_global_node_order_and_updates_cursor() -> None:
@@ -73,3 +74,21 @@ def test_greedy_selection_is_deterministic_with_residual_resource_score() -> Non
     assert selected is not None
     assert selected.id == "weak"
     assert cursor == 5
+
+
+def test_carbon_aware_prefers_lower_co2_factor() -> None:
+    """Carbon-aware strategy should prefer node with lower mapped CO2 factor."""
+    dirty = Node(id="dirty", cpu=16.0, memory=32.0, gpu=0.0, used_cpu=1.0, used_memory=1.0)
+    green = Node(id="green", cpu=16.0, memory=32.0, gpu=0.0, used_cpu=2.0, used_memory=1.0)
+    selected, cursor = choose_node(
+        algorithm="carbon-aware",
+        task=_task(),
+        candidates=[dirty, green],
+        all_node_ids=[dirty.id, green.id],
+        node_bandwidth={dirty.id: 1000.0, green.id: 800.0},
+        rr_cursor=2,
+        node_carbon={dirty.id: 1200.0, green.id: 450.0},
+    )
+    assert selected is not None
+    assert selected.id == "green"
+    assert cursor == 2

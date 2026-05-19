@@ -32,6 +32,9 @@ class SimulationContext:
     llm_source: str = "none"
     llm_raw_response: str = ""
     llm_actions_applied: int = 0
+    node_co2_lb_per_mwh: dict[str, float] = field(default_factory=dict)
+    node_co2e_lb_per_mwh: dict[str, float] = field(default_factory=dict)
+    node_renewable_share: dict[str, float] = field(default_factory=dict)
     assignment_log: list[dict[str, object]] = field(default_factory=list)
 
     def pop_queued_tasks(self) -> list[Task]:

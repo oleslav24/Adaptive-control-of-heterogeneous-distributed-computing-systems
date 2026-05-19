@@ -90,9 +90,9 @@ def build_dashboard_html(
         for name in ALGORITHM_OPTIONS
         if name
     )
-    default_compare_count = len([name for name in ALGORITHM_OPTIONS if name])
+    default_compare_count = len(compare_default_checked)
     default_batch_scenario_count = len(DEFAULT_BATCH_SCENARIOS)
-    default_batch_algorithm_count = default_compare_count
+    default_batch_algorithm_count = len(batch_algorithm_default_checked)
     switcher = language_switcher(lang, "/")
 
     body = f"""

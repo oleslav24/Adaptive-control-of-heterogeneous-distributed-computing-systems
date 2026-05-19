@@ -12,6 +12,7 @@ optimization:
     - round-robin
     - min-load
     - greedy
+    - carbon-aware
 
 intelligence:
   enabled: true
@@ -38,6 +39,7 @@ llm:
     - round-robin
     - min-load
     - greedy
+    - carbon-aware
 
 observability:
   output_dir: outputs
@@ -63,6 +65,9 @@ energy:
   default_co2e_lb_per_mwh: 900.0
   node_power_idle_kw: 0.12
   node_power_max_kw: 0.35
+  carbon_weight: 0.65
+  load_weight: 0.25
+  bandwidth_weight: 0.10
 
 scenarios:
   dynamic_load:
