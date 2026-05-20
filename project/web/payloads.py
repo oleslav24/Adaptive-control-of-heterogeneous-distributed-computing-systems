@@ -10,6 +10,11 @@ from threading import Lock
 from typing import Protocol
 
 from project.agents import ResearcherAgent
+from project.literature_evidence import (
+    build_query_from_metrics,
+    search_literature,
+    validate_evidence_items,
+)
 from project.web.i18n import (
     ALGORITHM_LABELS,
     SCENARIO_LABELS,
@@ -54,6 +59,7 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
         "avg_load": list(metrics.get("avg_load", [])),
     }
     run_segments = metrics.get("runs", [])
+    last_run: dict[str, object] | None = None
     if isinstance(run_segments, list):
         for run in run_segments:
             if not isinstance(run, dict):
@@ -73,6 +79,7 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
     if isinstance(run_segments, list) and run_segments:
         last = run_segments[-1]
         if isinstance(last, dict):
+            last_run = last
             analysis_metrics = {
                 "time": list(last.get("time", [])),
                 "queue": list(last.get("queue", [])),
@@ -87,6 +94,28 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
         status=job.status,
         max_items=6,
     )
+    literature_query = build_query_from_metrics(
+        analysis_metrics,
+        scenario=str((last_run or {}).get("scenario", "")),
+        algorithm=str((last_run or {}).get("algorithm", "")),
+    )
+    literature_evidence = search_literature(
+        literature_query,
+        top_k=5,
+        min_score=0.03,
+    )
+    literature_gate: dict[str, object] = {
+        "ok": False,
+        "errors": [],
+        "source_count": 0,
+        "min_sources": 2,
+        "skipped": False,
+    }
+    if not literature_evidence.get("available", False):
+        literature_gate["skipped"] = True
+    else:
+        validation = validate_evidence_items(literature_evidence.get("items", []), min_sources=2)
+        literature_gate.update(validation)
     status_details = str(job.status_details or "").strip()
     if not status_details:
         status_details = _default_status_details(job)
@@ -107,6 +136,8 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
         "metrics": metrics,
         "insights": insights,
         "carbon_outcomes": carbon_outcomes,
+        "literature_evidence": literature_evidence,
+        "literature_evidence_gate": literature_gate,
         "lang": lang,
     }
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ from project.experiments.chapter10_tables import (
 from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest, write_manifest
 from project.experiments.publication import run_publication_pipeline
+from project.literature_evidence import build_report_evidence, render_markdown_evidence
 
 
 @dataclass(slots=True)
@@ -86,6 +88,9 @@ def run_chapter10_experiment(
     output_paths.update(table_paths)
     output_paths.update(plot_paths)
     output_paths["chapter10_report_md"] = str(report_path)
+    chapter10_lit_gate = chapter10_dir / "chapter10_literature_evidence_gate.json"
+    if chapter10_lit_gate.exists():
+        output_paths["chapter10_literature_evidence_gate_json"] = str(chapter10_lit_gate)
     for key, path in publication_result.output_paths.items():
         output_paths[f"publication_{key}"] = str(path)
 
@@ -160,9 +165,46 @@ def _write_chapter10_report(
     else:
         lines.append(_render_markdown_table(hypotheses))
     lines.append("")
+    lines.append("## Related Literature Evidence (Local RAG)")
+    literature = build_report_evidence(
+        summary_df=summary,
+        hypotheses_df=hypotheses,
+        top_k=5,
+        min_score=0.03,
+        min_sources=2,
+    )
+    evidence_payload = literature["evidence"]
+    gate_payload = literature["gate"]
+    if not evidence_payload.get("available", False):
+        lines.append(
+            "- Local evidence is unavailable for this run "
+            f"(`{str(evidence_payload.get('reason', 'unknown'))}`)."
+        )
+    else:
+        lines.append(f"- Query: `{str(literature.get('query', '')).strip()}`")
+        lines.extend(render_markdown_evidence(evidence_payload.get("items", []), limit=5))
+    if gate_payload.get("skipped", False):
+        lines.append(
+            "- Evidence quality gate: skipped "
+            f"(`{str(evidence_payload.get('reason', 'unknown'))}`)."
+        )
+    elif gate_payload.get("ok", False):
+        lines.append(
+            "- Evidence quality gate: pass "
+            f"({int(gate_payload.get('source_count', 0))} sources)."
+        )
+    else:
+        lines.append("- Evidence quality gate: fail.")
+        for error in list(gate_payload.get("errors", []))[:3]:
+            lines.append(f"  - {error}")
+    lines.append("")
     lines.append("## Notes")
     lines.append("- Tables and plots in this folder are normalized for Chapter 10 text.")
     path.write_text("\n".join(lines), encoding="utf-8")
+    (output_dir / "chapter10_literature_evidence_gate.json").write_text(
+        json.dumps(gate_payload, ensure_ascii=False, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
     return path
 
 

@@ -36,6 +36,10 @@ from project.experiments.publication_validation import (
     validate_hypotheses_table,
     validate_summary_statistics,
 )
+from project.literature_evidence import (
+    build_report_evidence,
+    render_markdown_evidence,
+)
 from project.simulation import init_system
 
 
@@ -201,6 +205,9 @@ def run_publication_pipeline(
         quick_mode=quick,
     )
     output_paths["publication_report_md"] = str(report_path)
+    literature_gate_path = output_dir / "literature_evidence_gate.json"
+    if literature_gate_path.exists():
+        output_paths["literature_evidence_gate_json"] = str(literature_gate_path)
     output_paths["artifact_integrity_json"] = write_artifact_integrity_file(
         output_dir / "artifact_integrity.json",
         output_paths,
@@ -808,6 +815,39 @@ def _write_publication_report(
             f"{float(baseline['co2_per_completed_task_lb_mean']):.3f} lb/task."
         )
     lines.append("")
+    lines.append("### Related Literature Evidence (Local RAG)")
+    literature = build_report_evidence(
+        summary_df=summary,
+        hypotheses_df=hypotheses,
+        top_k=5,
+        min_score=0.03,
+        min_sources=2,
+    )
+    evidence_payload = literature["evidence"]
+    gate_payload = literature["gate"]
+    if not evidence_payload.get("available", False):
+        lines.append(
+            "- Local evidence is unavailable for this run "
+            f"(`{str(evidence_payload.get('reason', 'unknown'))}`)."
+        )
+    else:
+        lines.append(f"- Query: `{str(literature.get('query', '')).strip()}`")
+        lines.extend(render_markdown_evidence(evidence_payload.get("items", []), limit=5))
+    if gate_payload.get("skipped", False):
+        lines.append(
+            "- Evidence quality gate: skipped "
+            f"(`{str(evidence_payload.get('reason', 'unknown'))}`)."
+        )
+    elif gate_payload.get("ok", False):
+        lines.append(
+            "- Evidence quality gate: pass "
+            f"({int(gate_payload.get('source_count', 0))} sources)."
+        )
+    else:
+        lines.append("- Evidence quality gate: fail.")
+        for error in list(gate_payload.get("errors", []))[:3]:
+            lines.append(f"  - {error}")
+    lines.append("")
     lines.append("## 5. Hypotheses")
     if hypotheses.empty:
         lines.append("- No hypothesis evaluation.")
@@ -820,6 +860,7 @@ def _write_publication_report(
     lines.append("- Construct validity: adaptivity metric uses throughput/load deltas in current implementation.")
     lines.append("- Reproducibility: fixed seeds and run manifests are exported per experiment.")
     report_path.write_text("\n".join(lines), encoding="utf-8")
+    _write_json(output_dir / "literature_evidence_gate.json", gate_payload)
     return report_path
 
 

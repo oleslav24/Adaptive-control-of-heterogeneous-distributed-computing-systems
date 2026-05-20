@@ -86,6 +86,13 @@ def build_job_page_html(job: _JobLike, lang: str) -> str:
     <li>{escape(insights_placeholder(lang))}</li>
   </ul>
 </div>
+<div class="card" id="literature-evidence-card">
+  <h2>{escape(tr(lang, "literature_evidence_title"))}</h2>
+  <p id="literature-evidence-query" class="chart-note">{escape(tr(lang, "literature_query_pending"))}</p>
+  <ul id="job-literature-evidence" class="insights-list">
+    <li>{escape(tr(lang, "literature_evidence_pending"))}</li>
+  </ul>
+</div>
 <div class="card" id="carbon-outcomes-card" style="display:none;">
   <h2>{escape(tr(lang, "carbon_outcomes_title"))}</h2>
   <ul id="job-carbon-outcomes" class="insights-list">
@@ -118,7 +125,12 @@ const i18n = {{
   carbonCo2Total: {json.dumps(tr(lang, "carbon_co2_total"))},
   carbonLatencyDelta: {json.dumps(tr(lang, "carbon_latency_delta"))},
   carbonThroughputDelta: {json.dumps(tr(lang, "carbon_throughput_delta"))},
-  carbonCo2ReductionPct: {json.dumps(tr(lang, "carbon_co2_reduction_pct"))}
+  carbonCo2ReductionPct: {json.dumps(tr(lang, "carbon_co2_reduction_pct"))},
+  literatureEvidencePending: {json.dumps(tr(lang, "literature_evidence_pending"))},
+  literatureEvidenceUnavailable: {json.dumps(tr(lang, "literature_evidence_unavailable"))},
+  literatureEvidenceGateFailed: {json.dumps(tr(lang, "literature_evidence_gate_failed"))},
+  literatureEvidenceSourceCount: {json.dumps(tr(lang, "literature_evidence_source_count"))},
+  literatureEvidenceQuery: {json.dumps(tr(lang, "literature_evidence_query"))}
 }};
 
 const runPalette = [
@@ -596,6 +608,10 @@ function updateJobView(data) {{
     "legend-queue-completed"
   );
   renderInsights(data.insights || []);
+  renderLiteratureEvidence(
+    data.literature_evidence || null,
+    data.literature_evidence_gate || null
+  );
   renderCarbonOutcomes(data.carbon_outcomes || null);
 }}
 
@@ -625,6 +641,68 @@ function _fmtMetric(value, digits = 3, suffix = "") {{
     return i18n.unknown;
   }}
   return `${{num.toFixed(digits)}}${{suffix}}`;
+}}
+
+function renderLiteratureEvidence(payload, gate) {{
+  const list = document.getElementById("job-literature-evidence");
+  const queryLabel = document.getElementById("literature-evidence-query");
+  if (!list || !queryLabel) return;
+  while (list.firstChild) {{
+    list.removeChild(list.firstChild);
+  }}
+
+  const evidence = (payload && typeof payload === "object") ? payload : null;
+  const gateInfo = (gate && typeof gate === "object") ? gate : null;
+  if (!evidence) {{
+    queryLabel.textContent = i18n.literatureEvidenceUnavailable;
+    const li = document.createElement("li");
+    li.textContent = i18n.literatureEvidencePending;
+    list.appendChild(li);
+    return;
+  }}
+  const query = String(evidence.query || "").trim();
+  queryLabel.textContent = query
+    ? `${{i18n.literatureEvidenceQuery}}: ${{query}}`
+    : i18n.literatureEvidenceUnavailable;
+
+  if (!evidence.available) {{
+    const li = document.createElement("li");
+    li.textContent = `${{i18n.literatureEvidenceUnavailable}} (${{String(evidence.reason || i18n.unknown)}})`;
+    list.appendChild(li);
+    return;
+  }}
+
+  if (gateInfo && !gateInfo.skipped) {{
+    const sourceCount = Number(gateInfo.source_count);
+    const minSources = Number(gateInfo.min_sources);
+    const quality = document.createElement("li");
+    quality.textContent = `${{i18n.literatureEvidenceSourceCount}}: ${{sourceCount}} / ${{minSources}}`;
+    list.appendChild(quality);
+    if (gateInfo.ok === false) {{
+      const warn = document.createElement("li");
+      warn.textContent = i18n.literatureEvidenceGateFailed;
+      list.appendChild(warn);
+    }}
+  }}
+
+  const items = Array.isArray(evidence.items) ? evidence.items : [];
+  if (!items.length) {{
+    const li = document.createElement("li");
+    li.textContent = i18n.literatureEvidenceUnavailable;
+    list.appendChild(li);
+    return;
+  }}
+  for (const item of items) {{
+    const articleId = String(item.article_id || i18n.unknown);
+    const page = Number.isFinite(Number(item.page)) ? Number(item.page) : 0;
+    const title = String(item.title || i18n.unknown);
+    const score = Number(item.score);
+    const scoreText = Number.isFinite(score) ? score.toFixed(4) : "n/a";
+    const snippet = String(item.snippet || "");
+    const li = document.createElement("li");
+    li.textContent = `[${{articleId}}, p. ${{page}}] ${{title}} (score=${{scoreText}}): ${{snippet}}`;
+    list.appendChild(li);
+  }}
 }}
 
 function renderCarbonOutcomes(payload) {{

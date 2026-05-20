@@ -190,6 +190,13 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "carbon_latency_delta": "Latency delta vs baseline",
         "carbon_throughput_delta": "Throughput delta vs baseline",
         "carbon_co2_reduction_pct": "CO2/task reduction vs baseline",
+        "literature_evidence_title": "Literature Evidence (Local RAG)",
+        "literature_query_pending": "Literature query will be generated after first metrics arrive.",
+        "literature_evidence_pending": "Evidence is not available yet.",
+        "literature_evidence_unavailable": "Evidence is unavailable.",
+        "literature_evidence_gate_failed": "Evidence quality gate did not pass (insufficient or malformed sources).",
+        "literature_evidence_source_count": "Sources",
+        "literature_evidence_query": "Query",
     },
     "ru": {
         "console_title": "Р’РµР±-РєРѕРЅСЃРѕР»СЊ СЌРєСЃРїРµСЂРёРјРµРЅС‚Р°Р»СЊРЅРѕРіРѕ СЃС‚РµРЅРґР°",
@@ -278,6 +285,13 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "carbon_latency_delta": "Дельта latency к базовому",
         "carbon_throughput_delta": "Дельта throughput к базовому",
         "carbon_co2_reduction_pct": "Снижение CO2/задачу к базовому",
+        "literature_evidence_title": "Литературные источники (локальный RAG)",
+        "literature_query_pending": "Поисковый запрос к литературе появится после первых метрик.",
+        "literature_evidence_pending": "Источники пока недоступны.",
+        "literature_evidence_unavailable": "Источники недоступны.",
+        "literature_evidence_gate_failed": "Контроль качества источников не пройден (недостаточно или некорректные ссылки).",
+        "literature_evidence_source_count": "Источников",
+        "literature_evidence_query": "Запрос",
     },
 }
 
