@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-19 17:45:44 +07:00  
+Last updated: 2026-05-20 15:49:34 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -30,7 +30,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 20 | Paper bundle and chapter10 web orchestration | One-click paper bundle mode in CLI/Web with full tests | Closed |
 | 21 | Carbon-aware optimization | Carbon-aware scheduler integrated into MAS/CLI/Web with tests | Closed |
 | 22 | Carbon evidence pipeline | Publication/Chapter10 carbon trade-off evidence and reproducible study outputs | Closed |
-| 23 | Carbon analytics and publication quality | Carbon-specific dashboards/summary contracts and interpretation layer for paper results | In progress |
+| 23 | Carbon analytics and publication quality | Carbon-specific dashboards/summary contracts and interpretation layer for paper results | Closed |
+| 24 | Literature RAG integration for evidence-backed analysis | Researcher/Web/Report evidence flow + quality gate + tests | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -68,7 +69,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 20 | Closed | 2026-05-19 11:32:40 +07:00 | merged to `main`, tip `54186b9` (PRs #24, #25) |
 | 21 | Closed | 2026-05-19 16:45:54 +07:00 | merged to `main`, merge commit `9f83c53` (PR #26) |
 | 22 | Closed | 2026-05-19 17:24:58 +07:00 | merged to `main`, merge commit `83372a5` (PR #27) |
-| 23 | In progress | n/a | current working branch/slice |
+| 23 | Closed | 2026-05-20 15:13:57 +07:00 | merged to `main`, merge commit `ca916a6` (PR #28) |
+| 24 | In progress | n/a | branch `codex/sprint23-carbon-reporting` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -300,6 +302,16 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 23.4 | Add contract validation for carbon summary schema and numeric constraints | Done |
 | 23.5 | Add regression/integration tests for Sprint 23 artifacts and UI exposure | Done |
 
+### Sprint 24 - Literature RAG integration for evidence-backed analysis
+
+| Task | Description | Status |
+|---|---|---|
+| 24.1 | Integrate local RAG evidence retrieval into researcher/web runtime payload flow | Done |
+| 24.2 | Add publication and Chapter10 report sections with explicit local literature evidence references | Done |
+| 24.3 | Add web job-page evidence block with query, citations, and quality indicator | Done |
+| 24.4 | Add evidence quality gate (minimum source coverage + citation schema checks) with persisted gate artifacts | Done |
+| 24.5 | Add regression/unit tests for Sprint 24 integrations and run full suite | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -444,3 +456,13 @@ Closed in `main` via PR #27 (merge commit `83372a5`).
 | 2026-05-19 17:32:14 | 23.2 Report interpretation sections for publication/chapter outputs + coverage updates | OK (mapped to Sprint 23 backlog items 23.2 and 23.5) | targeted + full pytest pass (`189 passed`) | current slice commit |
 | 2026-05-19 17:43:17 | 23.3 Web job page carbon outcomes block + payload parsing from `carbon_summary.csv` + UI tests | OK (mapped to Sprint 23 backlog items 23.3 and 23.5) | targeted + full pytest pass (`190 passed`) | current slice commit |
 | 2026-05-19 17:45:44 | 23.4 Carbon summary schema validation in publication pipeline + validation tests | OK (mapped to Sprint 23 backlog items 23.4 and 23.5) | targeted + full pytest pass (`192 passed`) | current slice commit |
+
+## Sprint 23 Closure
+
+Closed in `main` via PR #28 (merge commit `ca916a6`).
+
+## Active Sprint Slice Log (Sprint 24)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-20 15:49:34 | 24.1-24.5 Literature evidence integration across researcher/web/reports + evidence quality gate + tests | OK (mapped to Sprint 24 backlog items 24.1-24.5) | targeted tests + full pytest pass (`198 passed`) | current slice commit |
