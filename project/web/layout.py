@@ -188,6 +188,37 @@ def render_layout(title: str, body: str, auto_refresh_seconds: int = 0, lang: st
     .insights-list li {{
       margin: 8px 0;
     }}
+    .control-row {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      align-items: end;
+      margin: 8px 0 10px 0;
+    }}
+    .control-row label {{
+      display: inline-flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 150px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }}
+    .control-row input,
+    .control-row select {{
+      width: auto;
+      min-width: 130px;
+    }}
+    .control-row input[type="checkbox"] {{
+      width: auto;
+      min-width: 0;
+    }}
+    .control-row .check-inline {{
+      flex-direction: row;
+      align-items: center;
+      min-width: 190px;
+      padding-bottom: 8px;
+    }}
     .chart-grid {{
       display: grid;
       grid-template-columns: 1fr 1fr;

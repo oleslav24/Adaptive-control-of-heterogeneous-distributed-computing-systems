@@ -147,8 +147,11 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     report_text = Path(result.output_paths["chapter10_report_md"]).read_text(encoding="utf-8")
     assert "## Carbon Interpretation" in report_text
     assert "## Related Literature Evidence (Local RAG)" in report_text
+    assert "## Evidence-backed Claims" in report_text
     assert "chapter10_literature_evidence_gate_json" in result.output_paths
     assert Path(result.output_paths["chapter10_literature_evidence_gate_json"]).exists()
+    assert "chapter10_claims_report_json" in result.output_paths
+    assert Path(result.output_paths["chapter10_claims_report_json"]).exists()
 
     manifest_path = Path(result.output_paths["chapter10_manifest_json"])
     with manifest_path.open("r", encoding="utf-8") as f:

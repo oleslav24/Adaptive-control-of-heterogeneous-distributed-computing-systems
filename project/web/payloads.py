@@ -10,6 +10,7 @@ from threading import Lock
 from typing import Protocol
 
 from project.agents import ResearcherAgent
+from project.evidence_claims import build_runtime_claims
 from project.literature_evidence import (
     build_query_from_metrics,
     search_literature,
@@ -116,6 +117,14 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
     else:
         validation = validate_evidence_items(literature_evidence.get("items", []), min_sources=2)
         literature_gate.update(validation)
+    claims_payload = build_runtime_claims(
+        analysis_metrics,
+        literature_evidence,
+        scenario=str((last_run or {}).get("scenario", "")),
+        algorithm=str((last_run or {}).get("algorithm", "")),
+        min_sources_per_claim=2,
+        min_score=0.03,
+    )
     status_details = str(job.status_details or "").strip()
     if not status_details:
         status_details = _default_status_details(job)
@@ -138,6 +147,8 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
         "carbon_outcomes": carbon_outcomes,
         "literature_evidence": literature_evidence,
         "literature_evidence_gate": literature_gate,
+        "claims": claims_payload["claims"],
+        "claims_gate": claims_payload["gate"],
         "lang": lang,
     }
 
