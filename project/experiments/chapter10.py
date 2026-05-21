@@ -19,6 +19,11 @@ from project.experiments.chapter10_tables import (
 from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest, write_manifest
 from project.experiments.publication import run_publication_pipeline
+from project.evidence_claims import (
+    build_report_claims,
+    render_markdown_claims,
+    write_claims_report,
+)
 from project.literature_evidence import build_report_evidence, render_markdown_evidence
 
 
@@ -91,6 +96,9 @@ def run_chapter10_experiment(
     chapter10_lit_gate = chapter10_dir / "chapter10_literature_evidence_gate.json"
     if chapter10_lit_gate.exists():
         output_paths["chapter10_literature_evidence_gate_json"] = str(chapter10_lit_gate)
+    chapter10_claims = chapter10_dir / "claims_report.json"
+    if chapter10_claims.exists():
+        output_paths["chapter10_claims_report_json"] = str(chapter10_claims)
     for key, path in publication_result.output_paths.items():
         output_paths[f"publication_{key}"] = str(path)
 
@@ -197,6 +205,27 @@ def _write_chapter10_report(
         lines.append("- Evidence quality gate: fail.")
         for error in list(gate_payload.get("errors", []))[:3]:
             lines.append(f"  - {error}")
+    claims_payload = build_report_claims(
+        summary_df=summary,
+        hypotheses_df=hypotheses,
+        evidence_payload=evidence_payload,
+        min_sources_per_claim=2,
+        min_score=0.03,
+    )
+    claims = claims_payload["claims"]
+    claims_gate = claims_payload["gate"]
+    lines.append("")
+    lines.append("## Evidence-backed Claims")
+    lines.extend(render_markdown_claims(claims, limit=8))
+    if claims_gate.get("ok", False):
+        lines.append(
+            "- Claims quality gate: pass "
+            f"({int(claims_gate.get('claim_count', 0))} claims)."
+        )
+    else:
+        lines.append("- Claims quality gate: fail.")
+        for error in list(claims_gate.get("errors", []))[:3]:
+            lines.append(f"  - {error}")
     lines.append("")
     lines.append("## Notes")
     lines.append("- Tables and plots in this folder are normalized for Chapter 10 text.")
@@ -204,6 +233,12 @@ def _write_chapter10_report(
     (output_dir / "chapter10_literature_evidence_gate.json").write_text(
         json.dumps(gate_payload, ensure_ascii=False, indent=2, sort_keys=True),
         encoding="utf-8",
+    )
+    write_claims_report(
+        output_dir / "claims_report.json",
+        claims=claims,
+        gate=claims_gate,
+        context={"report": "chapter10", "seed_count": len(seeds), "quick": quick},
     )
     return path
 

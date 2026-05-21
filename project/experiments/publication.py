@@ -36,6 +36,11 @@ from project.experiments.publication_validation import (
     validate_hypotheses_table,
     validate_summary_statistics,
 )
+from project.evidence_claims import (
+    build_report_claims,
+    render_markdown_claims,
+    write_claims_report,
+)
 from project.literature_evidence import (
     build_report_evidence,
     render_markdown_evidence,
@@ -208,6 +213,9 @@ def run_publication_pipeline(
     literature_gate_path = output_dir / "literature_evidence_gate.json"
     if literature_gate_path.exists():
         output_paths["literature_evidence_gate_json"] = str(literature_gate_path)
+    claims_report_path = output_dir / "claims_report.json"
+    if claims_report_path.exists():
+        output_paths["claims_report_json"] = str(claims_report_path)
     output_paths["artifact_integrity_json"] = write_artifact_integrity_file(
         output_dir / "artifact_integrity.json",
         output_paths,
@@ -847,6 +855,27 @@ def _write_publication_report(
         lines.append("- Evidence quality gate: fail.")
         for error in list(gate_payload.get("errors", []))[:3]:
             lines.append(f"  - {error}")
+    claims_payload = build_report_claims(
+        summary_df=summary,
+        hypotheses_df=hypotheses,
+        evidence_payload=evidence_payload,
+        min_sources_per_claim=2,
+        min_score=0.03,
+    )
+    claims = claims_payload["claims"]
+    claims_gate = claims_payload["gate"]
+    lines.append("")
+    lines.append("### Evidence-backed Claims")
+    lines.extend(render_markdown_claims(claims, limit=8))
+    if claims_gate.get("ok", False):
+        lines.append(
+            "- Claims quality gate: pass "
+            f"({int(claims_gate.get('claim_count', 0))} claims)."
+        )
+    else:
+        lines.append("- Claims quality gate: fail.")
+        for error in list(claims_gate.get("errors", []))[:3]:
+            lines.append(f"  - {error}")
     lines.append("")
     lines.append("## 5. Hypotheses")
     if hypotheses.empty:
@@ -861,6 +890,12 @@ def _write_publication_report(
     lines.append("- Reproducibility: fixed seeds and run manifests are exported per experiment.")
     report_path.write_text("\n".join(lines), encoding="utf-8")
     _write_json(output_dir / "literature_evidence_gate.json", gate_payload)
+    write_claims_report(
+        output_dir / "claims_report.json",
+        claims=claims,
+        gate=claims_gate,
+        context={"report": "publication", "seed_count": seed_count, "quick_mode": quick_mode},
+    )
     return report_path
 
 

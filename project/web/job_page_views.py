@@ -93,6 +93,32 @@ def build_job_page_html(job: _JobLike, lang: str) -> str:
     <li>{escape(tr(lang, "literature_evidence_pending"))}</li>
   </ul>
 </div>
+<div class="card" id="claims-card">
+  <h2>{escape(tr(lang, "claims_title"))}</h2>
+  <div class="control-row">
+    <label>{escape(tr(lang, "claims_hypothesis_filter"))}
+      <select id="claims-hypothesis-filter">
+        <option value="">{escape(tr(lang, "claims_all_hypotheses"))}</option>
+        <option value="H1">H1</option>
+        <option value="H2">H2</option>
+        <option value="H3">H3</option>
+        <option value="H4">H4</option>
+        <option value="H5">H5</option>
+      </select>
+    </label>
+    <label>{escape(tr(lang, "claims_min_confidence"))}
+      <input id="claims-confidence-filter" type="number" min="0" max="1" step="0.1" value="0" />
+    </label>
+    <label class="check-inline">
+      <input id="claims-evidence-filter" type="checkbox" />
+      {escape(tr(lang, "claims_with_evidence_only"))}
+    </label>
+  </div>
+  <p id="claims-gate-status" class="chart-note"></p>
+  <ul id="job-claims" class="insights-list">
+    <li>{escape(tr(lang, "claims_pending"))}</li>
+  </ul>
+</div>
 <div class="card" id="carbon-outcomes-card" style="display:none;">
   <h2>{escape(tr(lang, "carbon_outcomes_title"))}</h2>
   <ul id="job-carbon-outcomes" class="insights-list">
@@ -130,8 +156,17 @@ const i18n = {{
   literatureEvidenceUnavailable: {json.dumps(tr(lang, "literature_evidence_unavailable"))},
   literatureEvidenceGateFailed: {json.dumps(tr(lang, "literature_evidence_gate_failed"))},
   literatureEvidenceSourceCount: {json.dumps(tr(lang, "literature_evidence_source_count"))},
-  literatureEvidenceQuery: {json.dumps(tr(lang, "literature_evidence_query"))}
+  literatureEvidenceQuery: {json.dumps(tr(lang, "literature_evidence_query"))},
+  claimsPending: {json.dumps(tr(lang, "claims_pending"))},
+  claimsGateFailed: {json.dumps(tr(lang, "claims_gate_failed"))},
+  claimsNoMatches: {json.dumps(tr(lang, "claims_no_matches"))},
+  claimsStatus: {json.dumps(tr(lang, "claims_status"))},
+  claimsConfidence: {json.dumps(tr(lang, "claims_confidence"))},
+  claimsEvidence: {json.dumps(tr(lang, "claims_evidence"))}
 }};
+
+let latestClaims = [];
+let latestClaimsGate = null;
 
 const runPalette = [
   "#2563eb",
@@ -612,6 +647,9 @@ function updateJobView(data) {{
     data.literature_evidence || null,
     data.literature_evidence_gate || null
   );
+  latestClaims = Array.isArray(data.claims) ? data.claims : [];
+  latestClaimsGate = data.claims_gate || null;
+  renderClaims(latestClaims, latestClaimsGate);
   renderCarbonOutcomes(data.carbon_outcomes || null);
 }}
 
@@ -641,6 +679,71 @@ function _fmtMetric(value, digits = 3, suffix = "") {{
     return i18n.unknown;
   }}
   return `${{num.toFixed(digits)}}${{suffix}}`;
+}}
+
+function renderClaims(claims, gate) {{
+  const list = document.getElementById("job-claims");
+  const gateEl = document.getElementById("claims-gate-status");
+  const hypothesisEl = document.getElementById("claims-hypothesis-filter");
+  const confidenceEl = document.getElementById("claims-confidence-filter");
+  const evidenceEl = document.getElementById("claims-evidence-filter");
+  if (!list || !gateEl) return;
+  while (list.firstChild) {{
+    list.removeChild(list.firstChild);
+  }}
+
+  const gateInfo = (gate && typeof gate === "object") ? gate : null;
+  if (gateInfo && gateInfo.ok === false) {{
+    const errors = Array.isArray(gateInfo.errors) ? gateInfo.errors.slice(0, 2).join("; ") : "";
+    gateEl.textContent = errors ? `${{i18n.claimsGateFailed}} ${{errors}}` : i18n.claimsGateFailed;
+  }} else {{
+    gateEl.textContent = "";
+  }}
+
+  const values = Array.isArray(claims) ? claims : [];
+  if (!values.length) {{
+    const li = document.createElement("li");
+    li.textContent = i18n.claimsPending;
+    list.appendChild(li);
+    return;
+  }}
+
+  const hypothesis = hypothesisEl ? String(hypothesisEl.value || "") : "";
+  const minConfidence = confidenceEl ? Number(confidenceEl.value || 0) : 0;
+  const evidenceOnly = evidenceEl ? Boolean(evidenceEl.checked) : false;
+  const filtered = values.filter((claim) => {{
+    const claimHypothesis = String(claim.hypothesis || "");
+    const confidence = Number(claim.confidence || 0);
+    const evidence = Array.isArray(claim.evidence) ? claim.evidence : [];
+    if (hypothesis && claimHypothesis !== hypothesis) return false;
+    if (Number.isFinite(minConfidence) && confidence < minConfidence) return false;
+    if (evidenceOnly && !evidence.length) return false;
+    return true;
+  }});
+
+  if (!filtered.length) {{
+    const li = document.createElement("li");
+    li.textContent = i18n.claimsNoMatches;
+    list.appendChild(li);
+    return;
+  }}
+
+  for (const claim of filtered) {{
+    const hypothesisText = String(claim.hypothesis || i18n.unknown);
+    const status = String(claim.status || i18n.unknown);
+    const confidence = Number(claim.confidence || 0);
+    const statement = String(claim.statement || "");
+    const evidence = Array.isArray(claim.evidence) ? claim.evidence : [];
+    const citations = evidence.slice(0, 3).map((item) => {{
+      const articleId = String(item.article_id || i18n.unknown);
+      const page = Number.isFinite(Number(item.page)) ? Number(item.page) : "?";
+      return `[${{articleId}}, p. ${{page}}]`;
+    }}).join(", ");
+    const li = document.createElement("li");
+    const confidenceText = Number.isFinite(confidence) ? confidence.toFixed(2) : "0.00";
+    li.textContent = `${{hypothesisText}} | ${{i18n.claimsStatus}}: ${{status}} | ${{i18n.claimsConfidence}}: ${{confidenceText}} | ${{statement}}${{citations ? " | " + i18n.claimsEvidence + ": " + citations : ""}}`;
+    list.appendChild(li);
+  }}
 }}
 
 function renderLiteratureEvidence(payload, gate) {{
@@ -743,6 +846,13 @@ function renderCarbonOutcomes(payload) {{
 }}
 
 let pollTimer = null;
+const claimsFilterIds = ["claims-hypothesis-filter", "claims-confidence-filter", "claims-evidence-filter"];
+for (const filterId of claimsFilterIds) {{
+  const element = document.getElementById(filterId);
+  if (element) {{
+    element.addEventListener("change", () => renderClaims(latestClaims, latestClaimsGate));
+  }}
+}}
 async function pollJobData() {{
   try {{
     const response = await fetch(`/job-data?id=${{encodeURIComponent(jobId)}}&lang=${{encodeURIComponent(lang)}}`, {{

@@ -64,6 +64,8 @@ def test_job_payload_localizes_runs_and_status(monkeypatch) -> None:
     assert result["insights"] == ["lang=en", "status=queued", "max=6"]
     assert result["status_details"] == "-"
     assert result["carbon_outcomes"] is None
+    assert "claims" in result
+    assert "claims_gate" in result
 
 
 def test_job_payload_uses_last_run_for_researcher_analysis(monkeypatch) -> None:
@@ -176,8 +178,14 @@ def test_job_payload_includes_literature_evidence_payload(monkeypatch) -> None:
 
     evidence = result["literature_evidence"]
     gate = result["literature_evidence_gate"]
+    claims = result["claims"]
+    claims_gate = result["claims_gate"]
     assert evidence["available"] is True
     assert evidence["query"] == "demo query"
     assert len(evidence["items"]) == 2
     assert gate["ok"] is True
     assert gate["source_count"] == 2
+    assert len(claims) >= 2
+    assert claims[0]["hypothesis"] == "H1"
+    assert claims[0]["evidence"][0]["article_id"] == "doc-1"
+    assert claims_gate["ok"] is True

@@ -134,12 +134,16 @@ def test_write_publication_report_contains_required_sections() -> None:
     assert "## 4. Results" in content
     assert "### Carbon-Performance Interpretation" in content
     assert "### Related Literature Evidence (Local RAG)" in content
+    assert "### Evidence-backed Claims" in content
     assert "## 5. Hypotheses" in content
     assert "## 6. Threats to Validity" in content
     assert "Seed count: 3" in content
     assert "Quick mode: True" in content
     gate_path = output_dir / "literature_evidence_gate.json"
+    claims_path = output_dir / "claims_report.json"
     assert gate_path.exists()
+    assert claims_path.exists()
+    assert "report-H1" in claims_path.read_text(encoding="utf-8")
     assert not raw_runs.empty
 
 

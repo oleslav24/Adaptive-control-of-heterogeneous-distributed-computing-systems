@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-20 15:49:34 +07:00  
+Last updated: 2026-05-21 14:53:17 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -31,7 +31,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 21 | Carbon-aware optimization | Carbon-aware scheduler integrated into MAS/CLI/Web with tests | Closed |
 | 22 | Carbon evidence pipeline | Publication/Chapter10 carbon trade-off evidence and reproducible study outputs | Closed |
 | 23 | Carbon analytics and publication quality | Carbon-specific dashboards/summary contracts and interpretation layer for paper results | Closed |
-| 24 | Literature RAG integration for evidence-backed analysis | Researcher/Web/Report evidence flow + quality gate + tests | In progress |
+| 24 | Literature RAG integration for evidence-backed analysis | Researcher/Web/Report evidence flow + quality gate + tests | Closed |
+| 25 | Evidence-to-claim pipeline | Structured claims + evidence quality gates + Web/Report exposure | PR ready |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -70,7 +71,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 21 | Closed | 2026-05-19 16:45:54 +07:00 | merged to `main`, merge commit `9f83c53` (PR #26) |
 | 22 | Closed | 2026-05-19 17:24:58 +07:00 | merged to `main`, merge commit `83372a5` (PR #27) |
 | 23 | Closed | 2026-05-20 15:13:57 +07:00 | merged to `main`, merge commit `ca916a6` (PR #28) |
-| 24 | In progress | n/a | branch `codex/sprint23-carbon-reporting` |
+| 24 | Closed | 2026-05-20 16:56:45 +07:00 | merged to `main`, merge commit `058cc61` (PR #29) |
+| 25 | PR ready | n/a | branch `codex/sprint25-evidence-claims`; full pytest `203 passed` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -312,6 +314,17 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 24.4 | Add evidence quality gate (minimum source coverage + citation schema checks) with persisted gate artifacts | Done |
 | 24.5 | Add regression/unit tests for Sprint 24 integrations and run full suite | Done |
 
+### Sprint 25 - Evidence-to-claim pipeline
+
+| Task | Description | Status |
+|---|---|---|
+| 25.1 | Add structured claim model (`claim_id`, `hypothesis`, `statement`, `evidence`, `confidence`, `status`) | Done |
+| 25.2 | Generate runtime claims from researcher metrics + local RAG evidence | Done |
+| 25.3 | Add claims quality gate v2 (sources per claim, retrieval score, H1-H5 coverage, insufficient evidence status) | Done |
+| 25.4 | Add publication and Chapter10 `Evidence-backed Claims` sections plus `claims_report.json` artifacts | Done |
+| 25.5 | Add Web job-page claims block with hypothesis/confidence/evidence filters | Done |
+| 25.6 | Add regression/unit tests and validate full suite | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -466,3 +479,13 @@ Closed in `main` via PR #28 (merge commit `ca916a6`).
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-20 15:49:34 | 24.1-24.5 Literature evidence integration across researcher/web/reports + evidence quality gate + tests | OK (mapped to Sprint 24 backlog items 24.1-24.5) | targeted tests + full pytest pass (`198 passed`) | current slice commit |
+
+## Sprint 24 Closure
+
+Closed in `main` via PR #29 (merge commit `058cc61`).
+
+## Active Sprint Slice Log (Sprint 25)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-21 14:53:17 | 25.1-25.6 Structured evidence-backed claims across runtime Web payloads and publication/chapter reports | OK (mapped to Sprint 25 backlog items 25.1-25.6) | targeted tests pass (`18 passed`), full pytest pass (`203 passed`) | current slice commit |
