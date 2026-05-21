@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-21 14:53:17 +07:00  
+Last updated: 2026-05-21 15:02:53 +07:00  
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -32,7 +32,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 22 | Carbon evidence pipeline | Publication/Chapter10 carbon trade-off evidence and reproducible study outputs | Closed |
 | 23 | Carbon analytics and publication quality | Carbon-specific dashboards/summary contracts and interpretation layer for paper results | Closed |
 | 24 | Literature RAG integration for evidence-backed analysis | Researcher/Web/Report evidence flow + quality gate + tests | Closed |
-| 25 | Evidence-to-claim pipeline | Structured claims + evidence quality gates + Web/Report exposure | PR ready |
+| 25 | Evidence-to-claim pipeline | Structured claims + evidence quality gates + Web/Report exposure | Closed |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -72,7 +72,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 22 | Closed | 2026-05-19 17:24:58 +07:00 | merged to `main`, merge commit `83372a5` (PR #27) |
 | 23 | Closed | 2026-05-20 15:13:57 +07:00 | merged to `main`, merge commit `ca916a6` (PR #28) |
 | 24 | Closed | 2026-05-20 16:56:45 +07:00 | merged to `main`, merge commit `058cc61` (PR #29) |
-| 25 | PR ready | n/a | branch `codex/sprint25-evidence-claims`; full pytest `203 passed` |
+| 25 | Closed | 2026-05-21 15:01:55 +07:00 | merged to `main`, merge commit `e364dfb` (PR #30) |
 
 ## Detailed Sprint Backlog And Status
 
@@ -489,3 +489,7 @@ Closed in `main` via PR #29 (merge commit `058cc61`).
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-21 14:53:17 | 25.1-25.6 Structured evidence-backed claims across runtime Web payloads and publication/chapter reports | OK (mapped to Sprint 25 backlog items 25.1-25.6) | targeted tests pass (`18 passed`), full pytest pass (`203 passed`) | current slice commit |
+
+## Sprint 25 Closure
+
+Closed in `main` via PR #30 (merge commit `e364dfb`).
