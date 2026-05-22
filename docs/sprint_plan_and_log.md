@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-22 14:59:43 +07:00
+Last updated: 2026-05-22 16:05:41 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -36,7 +36,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 26 | Monograph P0 smoke reproducibility | Smoke/golden/reproducibility stabilized without mechanical golden refresh | Closed |
 | 27 | Monograph P1 publication calibration and method catalog | H2-H5 evidence calibrated, reports avoid unsupported claims, method catalog gaps resolved or explicit | Closed |
 | 28 | Monograph P2 Chapter 10 package hardening | Chapter 10 artifacts/report/integrity are publication-ready and traceable | Closed |
-| 29 | Monograph P2 decision trace observability | Per-run decision trace artifacts explain MAS/ML/ZNN/LLM policy decisions | Ready for PR |
+| 29 | Monograph P2 decision trace observability | Per-run decision trace artifacts explain MAS/ML/ZNN/LLM policy decisions | Closed |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -80,7 +80,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 26 | Closed | 2026-05-22 10:38:44 +07:00 | merged to `main`, merge commit `6169ba2` (PR #32) |
 | 27 | Closed | 2026-05-22 11:52:11 +07:00 | merged to `main`, merge commit `ec2d6f6` (PR #33) |
 | 28 | Closed | 2026-05-22 14:43:09 +07:00 | merged to `main`, merge commit `762ca2a` (PR #34) |
-| 29 | Ready for PR | n/a | branch `codex/sprint29-decision-trace`; merge pending |
+| 29 | Closed | 2026-05-22 16:05:41 +07:00 | merged to `main`, merge commit `be1bae4` (PR #35) |
 
 ## Detailed Sprint Backlog And Status
 
@@ -581,3 +581,7 @@ Closed in `main` via PR #34 (merge commit `762ca2a`).
 |---|---|---|---|---|
 | 2026-05-22 14:43:09 | 29.1 Open Sprint 29 after Sprint 28 merge | OK (mapped to monograph plan P2 decision trace observability) | not run yet | pending |
 | 2026-05-22 14:59:43 | 29.1-29.6 Decision trace artifacts for MAS/ML/ZNN/LLM policy explainability | OK (mapped to monograph plan P2 decision trace observability) | targeted tests pass (`10 passed`), smoke PASS, publication quick PASS, Chapter10 quick PASS, integrity PASS, full pytest pass (`210 passed`) | current slice commit |
+
+## Sprint 29 Closure
+
+Closed in `main` via PR #35 (merge commit `be1bae4`).
