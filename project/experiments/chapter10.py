@@ -26,6 +26,23 @@ from project.evidence_claims import (
 )
 from project.literature_evidence import build_report_evidence, render_markdown_evidence
 
+REQUIRED_CHAPTER10_ARTIFACT_KEYS = (
+    "method_ranking_csv",
+    "method_ranking_json",
+    "scenario_overview_csv",
+    "scenario_overview_json",
+    "carbon_tradeoff_csv",
+    "carbon_tradeoff_json",
+    "hypotheses_csv",
+    "hypotheses_json",
+    "chapter10_report_md",
+    "chapter10_literature_evidence_gate_json",
+    "chapter10_claims_report_json",
+    "chapter10_manifest_json",
+    "publication_publication_manifest_json",
+    "publication_artifact_integrity_json",
+)
+
 
 @dataclass(slots=True)
 class Chapter10Result:
@@ -87,6 +104,7 @@ def run_chapter10_experiment(
         hypotheses=publication_result.hypothesis_df,
         seeds=effective_seeds,
         quick=effective_quick,
+        publication_output_dir=publication_result.output_dir,
     )
 
     output_paths: dict[str, str] = {}
@@ -121,6 +139,13 @@ def run_chapter10_experiment(
         ),
     )
     output_paths["chapter10_manifest_json"] = str(manifest_path)
+    package_validation = validate_chapter10_package(output_paths)
+    validation_path = chapter10_dir / "chapter10_package_validation.json"
+    validation_path.write_text(
+        json.dumps(package_validation, ensure_ascii=False, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    output_paths["chapter10_package_validation_json"] = str(validation_path)
     output_paths["chapter10_artifact_integrity_json"] = write_artifact_integrity_file(
         chapter10_dir / "chapter10_artifact_integrity.json",
         output_paths,
@@ -141,6 +166,7 @@ def _write_chapter10_report(
     hypotheses: pd.DataFrame,
     seeds: list[int],
     quick: bool,
+    publication_output_dir: Path,
 ) -> Path:
     """Persist compact Chapter 10 markdown report from generated artifacts."""
     path = output_dir / "chapter10_report.md"
@@ -230,6 +256,58 @@ def _write_chapter10_report(
         for error in list(claims_gate.get("errors", []))[:3]:
             lines.append(f"  - {error}")
     lines.append("")
+    lines.append("## Reproducibility Links")
+    lines.append("- Run manifest: `chapter10_manifest.json`.")
+    lines.append("- Artifact integrity: `chapter10_artifact_integrity.json`.")
+    lines.append("- Package validation: `chapter10_package_validation.json`.")
+    lines.append(
+        "- Source publication package: "
+        f"`{_display_path(publication_output_dir)}`."
+    )
+    lines.append("- Source publication manifest: `../publication/publication_manifest.json`.")
+    lines.append("")
+    lines.append("## Monograph Alignment")
+    lines.append(
+        _render_markdown_table(
+            pd.DataFrame(
+                [
+                    {
+                        "Monograph section": "Chapter 2-3",
+                        "Code/artifact": "formal model, scenario overview",
+                        "Usage": "system model, topology, workload parameters",
+                    },
+                    {
+                        "Monograph section": "Chapter 4-5",
+                        "Code/artifact": "method_ranking.csv/json",
+                        "Usage": "MAS and algorithm comparison evidence",
+                    },
+                    {
+                        "Monograph section": "Chapter 6",
+                        "Code/artifact": "scenario_overview.csv/json",
+                        "Usage": "metrics and observability evidence",
+                    },
+                    {
+                        "Monograph section": "Chapter 7-8",
+                        "Code/artifact": "hypotheses.csv/json, claims_report.json",
+                        "Usage": "ML/ZNN and LLM hypothesis status",
+                    },
+                    {
+                        "Monograph section": "Chapter 10",
+                        "Code/artifact": "chapter10_manifest.json, integrity JSON",
+                        "Usage": "reproducible experimental package",
+                    },
+                ]
+            )
+        )
+    )
+    lines.append("")
+    lines.append("## Threats to Validity")
+    lines.append("- External validity: synthetic workloads may not reproduce production traces.")
+    lines.append("- Internal validity: quick mode uses a reduced seed set and should not be overclaimed.")
+    lines.append("- Construct validity: H1-H5 are interpreted from current metric deltas only.")
+    lines.append("- LLM validity: reproducible runs use mock LLM policy unless another provider is configured.")
+    lines.append("- Carbon validity: carbon-aware E6 results are an extension and should be interpreted separately.")
+    lines.append("")
     lines.append("## Notes")
     lines.append("- Tables and plots in this folder are normalized for Chapter 10 text.")
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -244,6 +322,31 @@ def _write_chapter10_report(
         context={"report": "chapter10", "seed_count": len(seeds), "quick": quick},
     )
     return path
+
+
+def validate_chapter10_package(output_paths: dict[str, str]) -> dict[str, Any]:
+    """Validate that the Chapter 10 package exposes the expected core artifacts."""
+    missing_keys: list[str] = []
+    missing_files: list[str] = []
+    for key in REQUIRED_CHAPTER10_ARTIFACT_KEYS:
+        path = str(output_paths.get(key, "")).strip()
+        if not path:
+            missing_keys.append(key)
+            continue
+        if not Path(path).exists():
+            missing_files.append(path)
+    return {
+        "ok": not missing_keys and not missing_files,
+        "required_keys": list(REQUIRED_CHAPTER10_ARTIFACT_KEYS),
+        "missing_keys": missing_keys,
+        "missing_files": missing_files,
+        "artifact_count": len(output_paths),
+    }
+
+
+def _display_path(path: Path) -> str:
+    """Render a stable local path string for markdown reports."""
+    return str(path).replace("\\", "/")
 
 
 def _render_markdown_table(df: pd.DataFrame) -> str:
