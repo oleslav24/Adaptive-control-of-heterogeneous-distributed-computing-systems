@@ -142,6 +142,32 @@ def validate_hypotheses_table(hypotheses: pd.DataFrame) -> SummaryValidationResu
                 continue
             if _as_float(row.get(column)) is None:
                 errors.append(f"Row {hypothesis}: metric '{column}' must be finite numeric.")
+        if "significance_supported" in hypotheses.columns:
+            if not isinstance(row.get("significance_supported"), (bool, np.bool_)):
+                errors.append(f"Row {hypothesis}: 'significance_supported' must be boolean.")
+
+    optional_significance_numeric_prefixes = ("p_value_", "effect_size_", "sample_size_")
+    optional_significance_boolean_prefixes = ("significant_",)
+    for idx, row in hypotheses.iterrows():
+        for column in hypotheses.columns:
+            if str(column).startswith(optional_significance_numeric_prefixes):
+                value = row.get(column)
+                if pd.isna(value):
+                    continue
+                numeric = _as_float(value)
+                if numeric is None:
+                    errors.append(f"Row {idx}: optional metric '{column}' must be finite numeric.")
+                    continue
+                if str(column).startswith("p_value_") and (numeric < 0.0 or numeric > 1.0):
+                    errors.append(f"Row {idx}: optional metric '{column}' must be in [0, 1].")
+                if str(column).startswith("sample_size_") and numeric < 0.0:
+                    errors.append(f"Row {idx}: optional metric '{column}' must be >= 0.")
+            if str(column).startswith(optional_significance_boolean_prefixes):
+                value = row.get(column)
+                if pd.isna(value):
+                    continue
+                if not isinstance(value, (bool, np.bool_)):
+                    errors.append(f"Row {idx}: optional metric '{column}' must be boolean.")
 
     return SummaryValidationResult(
         ok=not errors,
