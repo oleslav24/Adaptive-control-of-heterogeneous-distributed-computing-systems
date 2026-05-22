@@ -110,7 +110,7 @@ def validate_start_run_form(
 
 def _resolve_workspace_path(raw: str, workspace_root: Path) -> Path | None:
     """Resolve input path and ensure it stays under workspace root."""
-    text = str(raw).strip()
+    text = _normalize_user_path_text(raw)
     if not text:
         return None
     candidate = Path(text)
@@ -124,6 +124,15 @@ def _resolve_workspace_path(raw: str, workspace_root: Path) -> Path | None:
     if not _is_relative_to(resolved, workspace):
         return None
     return resolved
+
+
+def _normalize_user_path_text(raw: str) -> str:
+    """Normalize user-provided paths for cross-platform containment checks."""
+    text = str(raw).strip()
+    if not text:
+        return ""
+    # Web forms may submit Windows-style separators on non-Windows CI runners.
+    return text.replace("\\", "/")
 
 
 def _is_relative_to(path: Path, base: Path) -> bool:

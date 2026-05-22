@@ -164,6 +164,10 @@ def test_write_publication_report_contains_required_sections() -> None:
     assert "`H1` `supported`" in content
     assert "`H2` `not-supported`" in content
     assert "## 6. Threats to Validity" in content
+    assert "E6` results are reported separately" in content
+    assert "## 7. Monograph Alignment" in content
+    assert "docs/monograph_alignment.md" in content
+    assert "## 8. Known Gaps / Future Work" in content
     assert "Seed count: 3" in content
     assert "Quick mode: True" in content
     gate_path = output_dir / "literature_evidence_gate.json"

@@ -1,0 +1,49 @@
+# Monograph Alignment Matrix (v0.9.1)
+
+Source monograph: `txt/monograph/v0.9.1.pdf` (metadata timestamp: `2026-05-20 18:34:20 +07`).
+
+## Goal
+
+This document maps monograph claims to concrete code modules and reproducible artifacts.
+It is used as a traceability contract between the manuscript text and the implementation.
+
+## Chapter-to-Code Traceability
+
+| Monograph chapter | Scope in monograph | Code modules | Primary artifacts |
+|---|---|---|---|
+| Chapter 2 | Formal model of heterogeneous distributed system | `project/core/models.py`, `project/simulation/bootstrap.py`, `project/simulation/network.py` | `summary.csv`, `scenario_overview.csv` |
+| Chapter 3 | System architecture and control loop | `project/simulation/loop.py`, `project/simulation/context.py`, `project/experiments/controller.py` | `manifest.json`, run history CSV/JSON |
+| Chapter 4 | Multi-agent system design | `project/agents/*.py`, `project/simulation/mas.py` | `decision_trace.csv/json`, `scenario_overview.csv` |
+| Chapter 5 | Scheduling and optimization methods | `project/algorithms/schedulers.py`, `project/experiments/publication_catalog.py` | `method_ranking.csv/json`, `hypotheses.csv/json` |
+| Chapter 6 | Metrics and observability | `project/metrics/reporter.py`, `project/experiments/publication_validation.py` | `summary.csv/json`, plots, validation JSONs |
+| Chapter 7 | ML and ZNN intelligence layer | `project/intelligence/ml.py`, `project/intelligence/znn.py`, `project/agents/prediction.py` | `hypotheses.csv/json` (H3), `decision_trace.csv/json` |
+| Chapter 8 | LLM-assisted control with safety policy | `project/llm/prompt.py`, `project/llm/client.py`, `project/llm/policy.py`, `project/agents/llm.py` | `hypotheses.csv/json` (H5), `claims_report.json`, `decision_trace.csv/json` |
+| Chapter 9 | Integrated architecture and orchestration | `project/simulation/loop.py`, `project/experiments/run.py`, `project/experiments/dispatch.py` | run and batch manifests, integrity JSON |
+| Chapter 10 | Experimental evaluation and publication package | `project/experiments/publication.py`, `project/experiments/chapter10.py`, `project/experiments/chapter10_tables.py`, `project/experiments/chapter10_plots.py` | `chapter10_report.md`, `chapter10_manifest.json`, `chapter10_artifact_integrity.json`, publication package |
+
+## Scope Boundaries
+
+- Hypotheses `H1-H5` are evaluated from the publication baseline studies `E1-E5`.
+- Carbon-aware study `E6` is an extension slice and must be interpreted separately from `H1-H5`.
+- Quick mode is useful for smoke validation but not for strong scientific claims.
+
+## Known Gaps / Future Work
+
+- Reinforcement learning is conceptual in monograph context and not implemented as a production-ready method family.
+- `transport` and `abc` families remain placeholders unless explicitly implemented in future sprint slices.
+- LLM experiments are reproducible with `mock` provider by default; real provider runs require separate configuration and are not equivalent baselines.
+- Full production distributed deployment (real cluster/network stack) is out of current simulation scope.
+
+## Verification Commands
+
+```powershell
+python -m project.experiments.smoke --config config.yaml
+python -m pytest -q
+python -m project.experiments.run --config config.yaml --publication-study --study-quick --study-seeds 42,43
+python -m project.experiments.run --config config.yaml --chapter10 --chapter10-quick --chapter10-seeds 42,43
+```
+
+## Usage In Reports
+
+- `publication_report.md` references this document for monograph traceability and scope boundaries.
+- `chapter10_report.md` references this document and repeats threats-to-validity constraints for publication-safe interpretation.

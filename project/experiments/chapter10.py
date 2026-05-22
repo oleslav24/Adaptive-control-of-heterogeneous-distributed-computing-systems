@@ -265,6 +265,7 @@ def _write_chapter10_report(
         f"`{_display_path(publication_output_dir)}`."
     )
     lines.append("- Source publication manifest: `../publication/publication_manifest.json`.")
+    lines.append("- Monograph alignment matrix: `docs/monograph_alignment.md`.")
     lines.append("")
     lines.append("## Monograph Alignment")
     lines.append(
@@ -306,7 +307,8 @@ def _write_chapter10_report(
     lines.append("- Internal validity: quick mode uses a reduced seed set and should not be overclaimed.")
     lines.append("- Construct validity: H1-H5 are interpreted from current metric deltas only.")
     lines.append("- LLM validity: reproducible runs use mock LLM policy unless another provider is configured.")
-    lines.append("- Carbon validity: carbon-aware E6 results are an extension and should be interpreted separately.")
+    lines.append("- Carbon validity: carbon-aware E6 results are an extension and should be interpreted separately from H1-H5.")
+    lines.append("- Method coverage validity: placeholder families (`transport`, `abc`) are treated as future work unless implemented.")
     lines.append("")
     lines.append("## Notes")
     lines.append("- Tables and plots in this folder are normalized for Chapter 10 text.")
