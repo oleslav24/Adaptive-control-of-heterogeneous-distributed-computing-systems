@@ -20,6 +20,7 @@ def test_normalize_algorithm_unknown_falls_back_to_min_load() -> None:
     """Unsupported external names should map to min-load."""
     assert normalize_algorithm("UNKNOWN") == "min-load"
     assert normalize_algorithm("round_robin") == "round-robin"
+    assert normalize_algorithm("max_min") == "max-min"
     assert normalize_algorithm("carbon_aware") == "carbon-aware"
 
 
@@ -92,3 +93,20 @@ def test_carbon_aware_prefers_lower_co2_factor() -> None:
     assert selected is not None
     assert selected.id == "green"
     assert cursor == 2
+
+
+def test_max_min_preserves_best_bottleneck_residual_ratio() -> None:
+    """Max-Min should prefer the node with the strongest post-assignment bottleneck."""
+    memory_tight = Node(id="memory-tight", cpu=16.0, memory=8.0, gpu=0.0)
+    balanced = Node(id="balanced", cpu=10.0, memory=20.0, gpu=0.0)
+    selected, cursor = choose_node(
+        algorithm="max-min",
+        task=_task(),
+        candidates=[memory_tight, balanced],
+        all_node_ids=[memory_tight.id, balanced.id],
+        node_bandwidth={memory_tight.id: 2000.0, balanced.id: 1000.0},
+        rr_cursor=3,
+    )
+    assert selected is not None
+    assert selected.id == "balanced"
+    assert cursor == 3

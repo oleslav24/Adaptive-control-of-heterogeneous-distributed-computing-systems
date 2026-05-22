@@ -186,6 +186,8 @@ class ComputeAgent(Agent):
             return selected
         if self._algorithm == "greedy":
             return min(candidates, key=lambda node: self._greedy_score(task, node))
+        if self._algorithm == "max-min":
+            return min(candidates, key=lambda node: self._max_min_score(task, node))
         if self._algorithm == "carbon-aware":
             return min(candidates, key=lambda node: self._carbon_aware_score(task, node))
         return min(candidates, key=self._min_load_score)
@@ -224,6 +226,28 @@ class ComputeAgent(Agent):
             + 0.25 * projected_over_target
             - 0.25 * bias
             + 0.06 * (self._predicted_queue / max(1.0, len(self._node_bandwidth)))
+        )
+
+    def _max_min_score(self, task: Task, node: Node) -> float:
+        """Score function that maximizes the minimum residual resource ratio."""
+        cpu_ratio = (node.cpu - (node.used_cpu + task.cpu_required)) / max(node.cpu, 1e-9)
+        memory_ratio = (
+            node.memory - (node.used_memory + task.memory_required)
+        ) / max(node.memory, 1e-9)
+        bottleneck_ratio = min(cpu_ratio, memory_ratio)
+        bias = self._node_bias.get(node.id, 0.0) + (
+            self._llm_bias.get(node.id, 0.0) * self._llm_confidence
+        )
+        bandwidth = self._node_bandwidth.get(node.id, 1.0)
+        bandwidth_penalty = 1.0 / (1.0 + max(0.0, bandwidth))
+        projected_over_target = max(0.0, node.load - self._predicted_avg_load)
+        pressure = self._predicted_queue / max(1.0, float(len(self._node_bandwidth)))
+        return (
+            -bottleneck_ratio
+            + 0.20 * projected_over_target
+            + 0.05 * pressure
+            + bandwidth_penalty
+            - 0.25 * bias
         )
 
     def _carbon_aware_score(self, task: Task, node: Node) -> float:

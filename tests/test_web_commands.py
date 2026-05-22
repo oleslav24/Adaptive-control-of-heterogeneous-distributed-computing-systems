@@ -81,6 +81,19 @@ def test_build_run_command_accepts_carbon_aware_algorithm() -> None:
     assert command[command.index("--algorithm") + 1] == "carbon-aware"
 
 
+def test_build_run_command_accepts_max_min_algorithm() -> None:
+    """Single mode should pass through max-min algorithm value."""
+    command = build_run_command(
+        {
+            "mode": ["single"],
+            "algorithm": ["max-min"],
+        },
+        python_executable="python",
+    )
+    assert "--algorithm" in command
+    assert command[command.index("--algorithm") + 1] == "max-min"
+
+
 def test_build_run_command_batch_parses_lists_and_clamps_runs() -> None:
     """Batch mode parses comma-list fallbacks and clamps batch-runs to minimum."""
     form = {

@@ -12,6 +12,7 @@ optimization:
     - round-robin
     - min-load
     - greedy
+    - max-min
     - carbon-aware
 
 intelligence:
@@ -39,6 +40,7 @@ llm:
     - round-robin
     - min-load
     - greedy
+    - max-min
     - carbon-aware
 
 observability:

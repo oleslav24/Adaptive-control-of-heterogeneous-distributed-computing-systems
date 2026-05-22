@@ -453,7 +453,8 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
     if raw_runs.empty:
         return pd.DataFrame()
 
-    baseline = raw_runs[raw_runs["method"].isin(["round-robin", "min-load", "greedy"])]
+    baseline_methods = ["round-robin", "min-load", "greedy", "max-min"]
+    baseline = raw_runs[raw_runs["method"].isin(baseline_methods)]
     adaptive = raw_runs[raw_runs["method"].isin(["mas-hybrid", "mas-ml", "mas-znn", "mas-llm"])]
     mas = raw_runs[raw_runs["method"].isin(["mas-basic", "mas-hybrid", "mas-ml", "mas-znn", "mas-llm"])]
 
@@ -510,7 +511,7 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
     )
 
     e4_runs = raw_runs[raw_runs["study_id"] == "E4_hybrid_vs_classical"]
-    e4_baseline = e4_runs[e4_runs["method"].isin(["round-robin", "min-load", "greedy"])]
+    e4_baseline = e4_runs[e4_runs["method"].isin(baseline_methods)]
     hybrid = e4_runs[e4_runs["method"] == "mas-hybrid"]
     key_cols = ["seed", "scenario", "node_count", "task_count"]
     best_baseline_latency = (
@@ -911,6 +912,9 @@ def _write_publication_report(
     if hypotheses.empty:
         lines.append("- No hypothesis evaluation.")
     else:
+        lines.append("### Hypothesis Support Status")
+        lines.extend(render_hypothesis_support(hypotheses))
+        lines.append("")
         lines.append(_render_table(hypotheses))
     lines.append("")
     lines.append("## 6. Threats to Validity")
@@ -943,6 +947,48 @@ def _render_table(df: pd.DataFrame) -> str:
         return df.to_markdown(index=False)
     except (ImportError, ModuleNotFoundError):
         return df.to_string(index=False)
+
+
+def render_hypothesis_support(hypotheses: pd.DataFrame) -> list[str]:
+    """Render supported/not-supported bullets for H1-H5 report sections."""
+    if hypotheses.empty:
+        return ["- No hypothesis support status."]
+
+    rows: list[str] = []
+    table = hypotheses.copy()
+    if "hypothesis" in table.columns:
+        table = table.sort_values("hypothesis").reset_index(drop=True)
+    for record in _records(table):
+        hypothesis = str(record.get("hypothesis", "")).strip() or "H?"
+        title = str(record.get("title", "")).strip() or "Untitled"
+        criterion = str(record.get("criterion", "")).strip()
+        status = "supported" if bool(record.get("confirmed", False)) else "not-supported"
+        metrics = _format_hypothesis_metrics(record)
+        sentence = f"- `{hypothesis}` `{status}`: {title}"
+        if criterion:
+            sentence += f". Criterion: {criterion}"
+        if metrics:
+            sentence += f" Metrics: {metrics}."
+        rows.append(sentence)
+    return rows
+
+
+def _format_hypothesis_metrics(record: dict[str, Any]) -> str:
+    """Format numeric delta columns from a hypothesis row."""
+    pairs: list[str] = []
+    for key, value in record.items():
+        if not str(key).startswith("delta_"):
+            continue
+        if value is None:
+            continue
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            continue
+        if not math.isfinite(number):
+            continue
+        pairs.append(f"{key}={number:+.4f}")
+    return ", ".join(pairs)
 
 
 def _write_json(path: Path, payload: Any) -> None:

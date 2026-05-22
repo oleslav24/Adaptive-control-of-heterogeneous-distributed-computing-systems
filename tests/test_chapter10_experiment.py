@@ -96,7 +96,7 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
         hypotheses = pd.DataFrame(
             [
                 {"hypothesis": "H1", "title": "Adaptivity", "confirmed": True},
-                {"hypothesis": "H2", "title": "MAS", "confirmed": True},
+                {"hypothesis": "H2", "title": "MAS", "confirmed": False},
             ]
         )
         return StudyResult(
@@ -146,6 +146,9 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
 
     report_text = Path(result.output_paths["chapter10_report_md"]).read_text(encoding="utf-8")
     assert "## Carbon Interpretation" in report_text
+    assert "### Hypothesis Support Status" in report_text
+    assert "`H1` `supported`" in report_text
+    assert "`H2` `not-supported`" in report_text
     assert "## Related Literature Evidence (Local RAG)" in report_text
     assert "## Evidence-backed Claims" in report_text
     assert "chapter10_literature_evidence_gate_json" in result.output_paths
