@@ -39,6 +39,35 @@ def test_build_study_specs_filters_unavailable_methods() -> None:
         assert all(method in {"min-load", "mas-hybrid"} for method in spec.methods)
 
 
+def test_build_study_specs_filters_quick_profile_methods() -> None:
+    """Quick smoke specs should respect the same ready-method filter as full specs."""
+    specs = build_study_specs(
+        seeds=[7],
+        ready_methods=["round-robin", "greedy"],
+        quick=True,
+    )
+    assert specs
+    for spec in specs:
+        assert spec.methods
+        assert all(method in {"round-robin", "greedy"} for method in spec.methods)
+
+
+def test_build_study_specs_applies_study_specific_method_overrides() -> None:
+    """Study overrides should trim only the selected study."""
+    specs = build_study_specs(
+        seeds=[7],
+        ready_methods=["round-robin", "min-load", "greedy", "mas-hybrid"],
+        quick=True,
+        method_overrides_by_study={"E1_scalability": ["round-robin", "min-load"]},
+    )
+    e1_specs = [spec for spec in specs if spec.study_id == "E1_scalability"]
+    e4_specs = [spec for spec in specs if spec.study_id == "E4_hybrid_vs_classical"]
+    assert e1_specs
+    assert e4_specs
+    assert all(spec.methods == ["round-robin", "min-load"] for spec in e1_specs)
+    assert "greedy" in e4_specs[0].methods
+
+
 def test_get_method_variant_and_method_to_row_contract() -> None:
     """Catalog lookup and serialization should preserve stable method keys."""
     variant = get_method_variant("mas-llm")

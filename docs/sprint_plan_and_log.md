@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-21 15:02:53 +07:00  
+Last updated: 2026-05-22 10:34:10 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -33,6 +33,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 23 | Carbon analytics and publication quality | Carbon-specific dashboards/summary contracts and interpretation layer for paper results | Closed |
 | 24 | Literature RAG integration for evidence-backed analysis | Researcher/Web/Report evidence flow + quality gate + tests | Closed |
 | 25 | Evidence-to-claim pipeline | Structured claims + evidence quality gates + Web/Report exposure | Closed |
+| 26 | Monograph P0 smoke reproducibility | Smoke/golden/reproducibility stabilized without mechanical golden refresh | Ready for PR |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -73,6 +74,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 23 | Closed | 2026-05-20 15:13:57 +07:00 | merged to `main`, merge commit `ca916a6` (PR #28) |
 | 24 | Closed | 2026-05-20 16:56:45 +07:00 | merged to `main`, merge commit `058cc61` (PR #29) |
 | 25 | Closed | 2026-05-21 15:01:55 +07:00 | merged to `main`, merge commit `e364dfb` (PR #30) |
+| 26 | Ready for PR | 2026-05-22 10:34:10 +07:00 | smoke PASS against golden, full pytest pass (`205 passed`) |
 
 ## Detailed Sprint Backlog And Status
 
@@ -325,6 +327,16 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 25.5 | Add Web job-page claims block with hypothesis/confidence/evidence filters | Done |
 | 25.6 | Add regression/unit tests and validate full suite | Done |
 
+### Sprint 26 - Monograph P0 smoke reproducibility
+
+| Task | Description | Status |
+|---|---|---|
+| 26.1 | Run `python -m project.experiments.smoke --config config.yaml` and inspect fingerprint drift | Done |
+| 26.2 | Compare current smoke payloads against `docs/baselines/smoke_baseline.json` before any golden update | Done |
+| 26.3 | Isolate carbon-aware/E6 and new quick-study coverage from legacy smoke fingerprints | Done |
+| 26.4 | Add tests for quick-study filtering and study-specific method overrides | Done |
+| 26.5 | Re-run smoke, full pytest, commit, push, and prepare PR | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -493,3 +505,9 @@ Closed in `main` via PR #29 (merge commit `058cc61`).
 ## Sprint 25 Closure
 
 Closed in `main` via PR #30 (merge commit `e364dfb`).
+
+## Active Sprint Slice Log (Sprint 26)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-22 10:34:10 | 26.1-26.5 P0 smoke baseline drift investigation and isolation | OK (mapped to monograph plan P0 smoke/golden/reproducibility) | targeted tests pass (`7 passed`), smoke PASS against golden, full pytest pass (`205 passed`) | current slice commit |

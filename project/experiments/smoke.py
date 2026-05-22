@@ -24,6 +24,28 @@ from project.experiments.publication import run_publication_pipeline
 from project.experiments.runner import BatchRunSpec, ExperimentRunner
 from project.metrics import persist_observability, summarize_state
 
+SMOKE_LEGACY_COMPARE_ALGORITHMS = ("round-robin", "min-load", "greedy")
+SMOKE_LEGACY_PUBLICATION_METHODS = (
+    "round-robin",
+    "min-load",
+    "greedy",
+    "mas-basic",
+    "mas-ml",
+    "mas-znn",
+    "mas-hybrid",
+    "mas-llm",
+)
+SMOKE_LEGACY_PUBLICATION_STUDIES = (
+    "E1_scalability",
+    "E2_adaptivity",
+    "E3_robustness",
+    "E4_hybrid_vs_classical",
+    "E5_llm_vs_algorithmic",
+)
+SMOKE_LEGACY_STUDY_METHODS = {
+    "E1_scalability": ["round-robin", "min-load", "mas-hybrid", "mas-llm"],
+}
+
 
 def _build_parser() -> ArgumentParser:
     """Build CLI parser for smoke baseline workflow."""
@@ -238,10 +260,10 @@ def _run_single_case(config: ExperimentConfig) -> dict[str, Any]:
 
 
 def _run_compare_case(config: ExperimentConfig) -> dict[str, Any]:
-    """Run compare-mode smoke case over configured algorithms."""
+    """Run compare-mode smoke case over the stable legacy algorithm set."""
     rows: list[dict[str, Any]] = []
     manifests: list[dict[str, Any]] = []
-    for raw_algorithm in config.optimization.compare_algorithms:
+    for raw_algorithm in SMOKE_LEGACY_COMPARE_ALGORITHMS:
         algorithm = normalize_algorithm(raw_algorithm)
         run_config = replace(
             config,
@@ -322,6 +344,9 @@ def _run_publication_case(
         quick=True,
         save_plots=False,
         cli_args=["--smoke-baseline", "--study-quick"],
+        include_study_ids=list(SMOKE_LEGACY_PUBLICATION_STUDIES),
+        ready_method_keys=list(SMOKE_LEGACY_PUBLICATION_METHODS),
+        study_method_overrides=SMOKE_LEGACY_STUDY_METHODS,
     )
     summary_columns = [
         "study_id",

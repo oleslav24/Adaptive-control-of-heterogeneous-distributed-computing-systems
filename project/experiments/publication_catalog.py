@@ -192,10 +192,11 @@ def build_study_specs(
     seeds: list[int],
     ready_methods: list[str],
     quick: bool,
+    method_overrides_by_study: dict[str, list[str]] | None = None,
 ) -> list[StudyRunSpec]:
     """Build study specs for quick smoke or full publication execution."""
     if quick:
-        return [
+        quick_specs = [
             StudyRunSpec(
                 study_id="E1_scalability",
                 scenario="static",
@@ -265,6 +266,10 @@ def build_study_specs(
                 seeds=seeds,
             ),
         ]
+        return _apply_method_overrides(
+            _filter_specs_by_ready_methods(quick_specs, ready_methods),
+            method_overrides_by_study,
+        )
 
     base_specs: list[StudyRunSpec] = []
     scalability_nodes = [10, 50, 100, 500]
@@ -344,11 +349,47 @@ def build_study_specs(
         ]
     )
 
+    return _apply_method_overrides(
+        _filter_specs_by_ready_methods(base_specs, ready_methods),
+        method_overrides_by_study,
+    )
+
+
+def _filter_specs_by_ready_methods(
+    specs: list[StudyRunSpec],
+    ready_methods: list[str],
+) -> list[StudyRunSpec]:
+    """Remove unavailable methods from study specs without changing study order."""
+    ready_set = set(ready_methods)
     filtered_specs: list[StudyRunSpec] = []
-    for spec in base_specs:
-        available = [method for method in spec.methods if method in ready_methods]
+    for spec in specs:
+        available = [method for method in spec.methods if method in ready_set]
         if available:
             filtered_specs.append(replace(spec, methods=available))
+    return filtered_specs
+
+
+def _apply_method_overrides(
+    specs: list[StudyRunSpec],
+    method_overrides_by_study: dict[str, list[str]] | None,
+) -> list[StudyRunSpec]:
+    """Apply optional per-study method whitelists while preserving spec order."""
+    if not method_overrides_by_study:
+        return specs
+
+    overrides: dict[str, set[str]] = {
+        str(study_id): {str(method).strip() for method in methods if str(method).strip()}
+        for study_id, methods in method_overrides_by_study.items()
+    }
+    filtered_specs: list[StudyRunSpec] = []
+    for spec in specs:
+        allowed = overrides.get(spec.study_id)
+        if allowed is None:
+            filtered_specs.append(spec)
+            continue
+        methods = [method for method in spec.methods if method in allowed]
+        if methods:
+            filtered_specs.append(replace(spec, methods=methods))
     return filtered_specs
 
 
