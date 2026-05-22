@@ -46,6 +46,10 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     publication_out.mkdir(parents=True, exist_ok=True)
     publication_stub = publication_out / "publication_stub.txt"
     publication_stub.write_text("ok", encoding="utf-8")
+    publication_manifest = publication_out / "publication_manifest.json"
+    publication_manifest.write_text("{}", encoding="utf-8")
+    publication_integrity = publication_out / "artifact_integrity.json"
+    publication_integrity.write_text("{}", encoding="utf-8")
 
     def _fake_publication_pipeline(*, base_config, seeds, quick, save_plots, cli_args):
         _ = base_config
@@ -105,7 +109,11 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
             summary=summary,
             hypothesis_df=hypotheses,
             methods_df=pd.DataFrame(),
-            output_paths={"publication_stub_txt": str(publication_stub)},
+            output_paths={
+                "publication_stub_txt": str(publication_stub),
+                "publication_manifest_json": str(publication_manifest),
+                "artifact_integrity_json": str(publication_integrity),
+            },
         )
 
     monkeypatch.setattr(chapter10, "run_publication_pipeline", _fake_publication_pipeline)
@@ -136,9 +144,12 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
         "hypotheses_csv",
         "hypotheses_json",
         "chapter10_report_md",
+        "chapter10_package_validation_json",
         "chapter10_manifest_json",
         "chapter10_artifact_integrity_json",
         "publication_publication_stub_txt",
+        "publication_publication_manifest_json",
+        "publication_artifact_integrity_json",
     }
     assert required_keys.issubset(set(result.output_paths.keys()))
     for key in required_keys:
@@ -151,10 +162,22 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     assert "`H2` `not-supported`" in report_text
     assert "## Related Literature Evidence (Local RAG)" in report_text
     assert "## Evidence-backed Claims" in report_text
+    assert "## Reproducibility Links" in report_text
+    assert "chapter10_manifest.json" in report_text
+    assert "chapter10_artifact_integrity.json" in report_text
+    assert "chapter10_package_validation.json" in report_text
+    assert "## Monograph Alignment" in report_text
+    assert "Chapter 10" in report_text
+    assert "## Threats to Validity" in report_text
     assert "chapter10_literature_evidence_gate_json" in result.output_paths
     assert Path(result.output_paths["chapter10_literature_evidence_gate_json"]).exists()
     assert "chapter10_claims_report_json" in result.output_paths
     assert Path(result.output_paths["chapter10_claims_report_json"]).exists()
+    validation_path = Path(result.output_paths["chapter10_package_validation_json"])
+    validation = json.loads(validation_path.read_text(encoding="utf-8"))
+    assert validation["ok"] is True
+    assert validation["missing_keys"] == []
+    assert validation["missing_files"] == []
 
     manifest_path = Path(result.output_paths["chapter10_manifest_json"])
     with manifest_path.open("r", encoding="utf-8") as f:
