@@ -907,6 +907,9 @@ def _write_publication_report(
             f"- Baseline reference (`{baseline['method']}`) CO2/task: "
             f"{float(baseline['co2_per_completed_task_lb_mean']):.3f} lb/task."
         )
+    lines.append(
+        "- Scope boundary: carbon-aware `E6` results are reported separately and do not redefine H1-H5 support flags."
+    )
     lines.append("")
     lines.append("### Related Literature Evidence (Local RAG)")
     literature = build_report_evidence(
@@ -975,7 +978,19 @@ def _write_publication_report(
     lines.append("- External validity: synthetic workload generator may differ from production traces.")
     lines.append("- Internal validity: some method families are placeholders and not yet implemented.")
     lines.append("- Construct validity: adaptivity metric uses throughput/load deltas in current implementation.")
+    lines.append("- LLM validity: reproducible baselines default to `mock` provider unless a real provider is configured.")
+    lines.append("- Carbon validity: E6 carbon trade-off is an extension slice and is interpreted independently from H1-H5.")
     lines.append("- Reproducibility: fixed seeds and run manifests are exported per experiment.")
+    lines.append("")
+    lines.append("## 7. Monograph Alignment")
+    lines.append("- Traceability matrix: `docs/monograph_alignment.md`.")
+    lines.append("- This report maps directly to E1-E5 baseline hypotheses and keeps E6 in a separate interpretation scope.")
+    lines.append("")
+    lines.append("## 8. Known Gaps / Future Work")
+    lines.append("- RL-based control remains conceptual and is not production-implemented in this repository.")
+    lines.append("- `transport` and `abc` families are placeholders unless explicitly implemented in later sprints.")
+    lines.append("- Reproducible LLM experiments use `mock`; real-provider experiments require separate configuration and validation.")
+    lines.append("- Full production distributed deployment is outside the current simulation scope.")
     report_path.write_text("\n".join(lines), encoding="utf-8")
     _write_json(output_dir / "literature_evidence_gate.json", gate_payload)
     write_claims_report(

@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-22 16:05:41 +07:00
+Last updated: 2026-05-22 16:33:48 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -37,6 +37,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 27 | Monograph P1 publication calibration and method catalog | H2-H5 evidence calibrated, reports avoid unsupported claims, method catalog gaps resolved or explicit | Closed |
 | 28 | Monograph P2 Chapter 10 package hardening | Chapter 10 artifacts/report/integrity are publication-ready and traceable | Closed |
 | 29 | Monograph P2 decision trace observability | Per-run decision trace artifacts explain MAS/ML/ZNN/LLM policy decisions | Closed |
+| 30 | Monograph P3 alignment and validity packaging | Explicit monograph-to-code traceability and bounded carbon scope in publication reports | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -81,6 +82,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 27 | Closed | 2026-05-22 11:52:11 +07:00 | merged to `main`, merge commit `ec2d6f6` (PR #33) |
 | 28 | Closed | 2026-05-22 14:43:09 +07:00 | merged to `main`, merge commit `762ca2a` (PR #34) |
 | 29 | Closed | 2026-05-22 16:05:41 +07:00 | merged to `main`, merge commit `be1bae4` (PR #35) |
+| 30 | In progress | n/a | branch `codex/sprint30-monograph-alignment` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -375,6 +377,16 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 29.5 | Add tests for policy guard clamping, whitelist, invalid decision handling, and trace completeness | Done |
 | 29.6 | Run targeted tests, smoke, full pytest, commit, push, and prepare PR | Done |
 
+### Sprint 30 - Monograph P3 alignment and validity packaging
+
+| Task | Description | Status |
+|---|---|---|
+| 30.1 | Add `docs/monograph_alignment.md` with chapter-to-code/artifact traceability matrix | Done |
+| 30.2 | Add explicit carbon-scope boundary section in publication/chapter10 reports (`E6` as extension) | Done |
+| 30.3 | Add explicit known gaps/future work statements linked to implementation status | Done |
+| 30.4 | Add regression tests for new report sections and alignment doc references | Done |
+| 30.5 | Run targeted tests + full pytest, commit, push, and prepare PR | In progress |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -585,3 +597,11 @@ Closed in `main` via PR #34 (merge commit `762ca2a`).
 ## Sprint 29 Closure
 
 Closed in `main` via PR #35 (merge commit `be1bae4`).
+
+## Active Sprint Slice Log (Sprint 30)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-22 16:25:22 | 30.1 Open Sprint 30 after Sprint 29 merge | OK (mapped to monograph plan P3 alignment and validity packaging) | not run yet | pending |
+| 2026-05-22 16:31:25 | 30.1-30.4 Monograph alignment doc + publication/chapter10 scope boundaries + known gaps + web validation path-escape CI fix | OK (mapped to Sprint 30 backlog items 30.1-30.4, plus CI stability hotfix) | targeted tests pass (`14 passed`), full pytest pass (`210 passed`) | current slice commit |
+| 2026-05-22 16:33:48 | 30.5 Reproducibility gate before PR | OK (pre-PR smoke gate for regression safety) | smoke PASS (`baseline match: true`) | current slice commit |

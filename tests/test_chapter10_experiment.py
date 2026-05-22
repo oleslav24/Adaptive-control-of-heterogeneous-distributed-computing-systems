@@ -166,9 +166,11 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     assert "chapter10_manifest.json" in report_text
     assert "chapter10_artifact_integrity.json" in report_text
     assert "chapter10_package_validation.json" in report_text
+    assert "docs/monograph_alignment.md" in report_text
     assert "## Monograph Alignment" in report_text
     assert "Chapter 10" in report_text
     assert "## Threats to Validity" in report_text
+    assert "placeholder families (`transport`, `abc`)" in report_text
     assert "chapter10_literature_evidence_gate_json" in result.output_paths
     assert Path(result.output_paths["chapter10_literature_evidence_gate_json"]).exists()
     assert "chapter10_claims_report_json" in result.output_paths
