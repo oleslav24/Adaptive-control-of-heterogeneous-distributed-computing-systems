@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-22 16:33:48 +07:00
+Last updated: 2026-05-22 16:35:51 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -385,7 +385,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 30.2 | Add explicit carbon-scope boundary section in publication/chapter10 reports (`E6` as extension) | Done |
 | 30.3 | Add explicit known gaps/future work statements linked to implementation status | Done |
 | 30.4 | Add regression tests for new report sections and alignment doc references | Done |
-| 30.5 | Run targeted tests + full pytest, commit, push, and prepare PR | In progress |
+| 30.5 | Run targeted tests + full pytest, commit, push, and prepare PR | In progress (commit+push done, PR creation blocked by repository collaborator permission) |
 
 ## Active Sprint Slice Log (Sprint 12)
 
@@ -605,3 +605,4 @@ Closed in `main` via PR #35 (merge commit `be1bae4`).
 | 2026-05-22 16:25:22 | 30.1 Open Sprint 30 after Sprint 29 merge | OK (mapped to monograph plan P3 alignment and validity packaging) | not run yet | pending |
 | 2026-05-22 16:31:25 | 30.1-30.4 Monograph alignment doc + publication/chapter10 scope boundaries + known gaps + web validation path-escape CI fix | OK (mapped to Sprint 30 backlog items 30.1-30.4, plus CI stability hotfix) | targeted tests pass (`14 passed`), full pytest pass (`210 passed`) | current slice commit |
 | 2026-05-22 16:33:48 | 30.5 Reproducibility gate before PR | OK (pre-PR smoke gate for regression safety) | smoke PASS (`baseline match: true`) | current slice commit |
+| 2026-05-22 16:35:51 | 30.5 Commit/push/PR attempt | Partial (commit + push completed; GitHub API PR creation blocked: `must be a collaborator`) | n/a | commit `d70c813`, branch `codex/sprint30-monograph-alignment` |
