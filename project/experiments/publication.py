@@ -45,6 +45,10 @@ from project.literature_evidence import (
     build_report_evidence,
     render_markdown_evidence,
 )
+from project.metrics.decision_trace import (
+    build_decision_trace_dataframe,
+    normalize_decision_trace,
+)
 from project.simulation import init_system
 
 
@@ -108,6 +112,7 @@ def run_publication_pipeline(
         raise ValueError("No study specifications selected for publication pipeline run.")
 
     rows: list[dict[str, Any]] = []
+    decision_trace_rows: list[dict[str, Any]] = []
     for spec in experiment_specs:
         for seed in spec.seeds:
             for method_key in spec.methods:
@@ -135,8 +140,17 @@ def run_publication_pipeline(
                     **_derive_metrics(final_state),
                 }
                 rows.append(row)
+                decision_trace_rows.extend(
+                    _publication_decision_trace_rows(
+                        state=final_state,
+                        spec=spec,
+                        seed=seed,
+                        variant=variant,
+                    )
+                )
 
     raw_runs = pd.DataFrame(rows)
+    decision_trace = pd.DataFrame(decision_trace_rows)
     summary = _summarize_runs(raw_runs)
     validation = validate_summary_statistics(summary)
     if not validation.ok:
@@ -160,6 +174,7 @@ def run_publication_pipeline(
         hypotheses=hypothesis_df,
         methods_df=methods_df,
         unsupported_df=unsupported_df,
+        decision_trace=decision_trace,
         save_plots=save_plots,
     )
     validation_path = output_dir / "summary_validation.json"
@@ -345,6 +360,7 @@ def _derive_metrics(state) -> dict[str, float | int]:
     stability_throughput = _series_variance(
         [float(item.get("throughput", 0.0)) for item in state.history]
     )
+    decision_trace = list(getattr(state, "decision_trace", []))
     return {
         "completed_tasks": int(state.completed_tasks),
         "pending_tasks": int(state.pending_tasks),
@@ -362,7 +378,38 @@ def _derive_metrics(state) -> dict[str, float | int]:
         "adaptivity": float(adaptivity),
         "stability_latency_var": float(stability_latency),
         "stability_throughput_var": float(stability_throughput),
+        "decision_trace_events": len(decision_trace),
+        "algorithm_switches": sum(
+            1
+            for item in decision_trace
+            if item.get("event") == "algorithm_policy" and bool(item.get("switched"))
+        ),
+        "llm_guarded_decisions": sum(
+            1 for item in decision_trace if item.get("event") == "llm_policy_guard"
+        ),
     }
+
+
+def _publication_decision_trace_rows(
+    *,
+    state,
+    spec: StudyRunSpec,
+    seed: int,
+    variant: MethodVariant,
+) -> list[dict[str, Any]]:
+    """Attach publication run dimensions to per-run decision trace records."""
+    rows: list[dict[str, Any]] = []
+    prefix = {
+        "study_id": spec.study_id,
+        "scenario": spec.scenario,
+        "seed": int(seed),
+        "method": variant.key,
+        "method_label": variant.label,
+        "algorithm": state.selected_algorithm,
+    }
+    for record in normalize_decision_trace(getattr(state, "decision_trace", [])):
+        rows.append({**prefix, **record})
+    return rows
 
 
 def _compute_adaptivity(history: list[dict[str, object]]) -> float:
@@ -567,6 +614,7 @@ def _persist_publication_outputs(
     hypotheses: pd.DataFrame,
     methods_df: pd.DataFrame,
     unsupported_df: pd.DataFrame,
+    decision_trace: pd.DataFrame,
     save_plots: bool,
 ) -> dict[str, str]:
     """Persist publication tables in CSV/JSON and optional plot artifacts."""
@@ -580,10 +628,12 @@ def _persist_publication_outputs(
         "hypotheses_csv": output_dir / "hypotheses.csv",
         "methods_catalog_csv": output_dir / "methods_catalog.csv",
         "unsupported_methods_csv": output_dir / "unsupported_methods.csv",
+        "decision_trace_csv": output_dir / "decision_trace.csv",
         "raw_runs_json": output_dir / "raw_runs.json",
         "summary_json": output_dir / "summary.json",
         "hypotheses_json": output_dir / "hypotheses.json",
         "methods_catalog_json": output_dir / "methods_catalog.json",
+        "decision_trace_json": output_dir / "decision_trace.json",
     }
     if not carbon_summary.empty:
         paths["carbon_summary_csv"] = output_dir / "carbon_summary.csv"
@@ -593,6 +643,9 @@ def _persist_publication_outputs(
     hypotheses.to_csv(paths["hypotheses_csv"], index=False)
     methods_df.to_csv(paths["methods_catalog_csv"], index=False)
     unsupported_df.to_csv(paths["unsupported_methods_csv"], index=False)
+    decision_trace_records = _records(decision_trace) if not decision_trace.empty else []
+    decision_trace_table = build_decision_trace_dataframe(decision_trace_records)
+    decision_trace_table.to_csv(paths["decision_trace_csv"], index=False)
     if not carbon_summary.empty:
         carbon_summary.to_csv(paths["carbon_summary_csv"], index=False)
 
@@ -600,6 +653,7 @@ def _persist_publication_outputs(
     _write_json(paths["summary_json"], _records(summary))
     _write_json(paths["hypotheses_json"], _records(hypotheses))
     _write_json(paths["methods_catalog_json"], _records(methods_df))
+    _write_json(paths["decision_trace_json"], decision_trace_records)
     if not carbon_summary.empty:
         _write_json(paths["carbon_summary_json"], _records(carbon_summary))
     for key, path in paths.items():

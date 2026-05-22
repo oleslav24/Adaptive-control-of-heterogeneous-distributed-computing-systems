@@ -64,6 +64,18 @@ class ComputeAgent(Agent):
             self._plan.append((task, node.id))
 
         self.context.requeue_tasks(unassigned)
+        self.context.record_decision(
+            self.name,
+            "compute_plan",
+            algorithm=self._algorithm,
+            predicted_queue=self._predicted_queue,
+            predicted_avg_load=self._predicted_avg_load,
+            znn_node_bias=dict(self._node_bias),
+            llm_node_bias=dict(self._llm_bias),
+            llm_confidence=self._llm_confidence,
+            planned_assignments=len(self._plan),
+            unassigned_tasks=[task.id for task in unassigned],
+        )
         self.send(
             AgentMessage(
                 sender=self.name,
@@ -96,6 +108,13 @@ class ComputeAgent(Agent):
 
         self.context.requeue_tasks(deferred)
         self._plan = []
+        self.context.record_decision(
+            self.name,
+            "applied_policy",
+            algorithm=self._algorithm,
+            assigned_count=assigned_count,
+            deferred_tasks=[task.id for task in deferred],
+        )
         self.send(
             AgentMessage(
                 sender=self.name,

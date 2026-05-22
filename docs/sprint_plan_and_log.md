@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-22 12:00:23 +07:00
+Last updated: 2026-05-22 14:59:43 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -35,7 +35,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 25 | Evidence-to-claim pipeline | Structured claims + evidence quality gates + Web/Report exposure | Closed |
 | 26 | Monograph P0 smoke reproducibility | Smoke/golden/reproducibility stabilized without mechanical golden refresh | Closed |
 | 27 | Monograph P1 publication calibration and method catalog | H2-H5 evidence calibrated, reports avoid unsupported claims, method catalog gaps resolved or explicit | Closed |
-| 28 | Monograph P2 Chapter 10 package hardening | Chapter 10 artifacts/report/integrity are publication-ready and traceable | Ready for PR |
+| 28 | Monograph P2 Chapter 10 package hardening | Chapter 10 artifacts/report/integrity are publication-ready and traceable | Closed |
+| 29 | Monograph P2 decision trace observability | Per-run decision trace artifacts explain MAS/ML/ZNN/LLM policy decisions | Ready for PR |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -78,7 +79,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 25 | Closed | 2026-05-21 15:01:55 +07:00 | merged to `main`, merge commit `e364dfb` (PR #30) |
 | 26 | Closed | 2026-05-22 10:38:44 +07:00 | merged to `main`, merge commit `6169ba2` (PR #32) |
 | 27 | Closed | 2026-05-22 11:52:11 +07:00 | merged to `main`, merge commit `ec2d6f6` (PR #33) |
-| 28 | Ready for PR | n/a | branch `codex/sprint28-chapter10-package`; merge pending |
+| 28 | Closed | 2026-05-22 14:43:09 +07:00 | merged to `main`, merge commit `762ca2a` (PR #34) |
+| 29 | Ready for PR | n/a | branch `codex/sprint29-decision-trace`; merge pending |
 
 ## Detailed Sprint Backlog And Status
 
@@ -362,6 +364,17 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 28.4 | Add regression tests for Chapter 10 report completeness and artifact links | Done |
 | 28.5 | Run chapter10/publication integrity, smoke, full pytest, commit, push, and prepare PR | Done |
 
+### Sprint 29 - Monograph P2 decision trace observability
+
+| Task | Description | Status |
+|---|---|---|
+| 29.1 | Audit current simulation/MAS/LLM event history and identify trace insertion points | Done |
+| 29.2 | Add compact `decision_trace.csv/json` schema and artifact writers | Done |
+| 29.3 | Capture algorithm switches, prediction hints, ZNN node bias, LLM raw/clamped decisions, and applied policy | Done |
+| 29.4 | Wire decision trace into run/publication/Chapter 10 manifests without polluting unrelated baselines | Done |
+| 29.5 | Add tests for policy guard clamping, whitelist, invalid decision handling, and trace completeness | Done |
+| 29.6 | Run targeted tests, smoke, full pytest, commit, push, and prepare PR | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -557,3 +570,14 @@ Closed in `main` via PR #33 (merge commit `ec2d6f6`).
 |---|---|---|---|---|
 | 2026-05-22 11:52:11 | 28.1 Open Sprint 28 after Sprint 27 merge | OK (mapped to monograph plan P2 Chapter 10 package) | not run yet | pending |
 | 2026-05-22 12:00:23 | 28.1-28.5 Chapter 10 package hardening: required artifact validation, report traceability, integrity coverage | OK (mapped to monograph plan P2 Chapter 10 package) | targeted tests pass (`7 passed`), chapter10 quick PASS, chapter10 integrity PASS, smoke PASS, full pytest pass (`208 passed`) | current slice commit |
+
+## Sprint 28 Closure
+
+Closed in `main` via PR #34 (merge commit `762ca2a`).
+
+## Active Sprint Slice Log (Sprint 29)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-22 14:43:09 | 29.1 Open Sprint 29 after Sprint 28 merge | OK (mapped to monograph plan P2 decision trace observability) | not run yet | pending |
+| 2026-05-22 14:59:43 | 29.1-29.6 Decision trace artifacts for MAS/ML/ZNN/LLM policy explainability | OK (mapped to monograph plan P2 decision trace observability) | targeted tests pass (`10 passed`), smoke PASS, publication quick PASS, Chapter10 quick PASS, integrity PASS, full pytest pass (`210 passed`) | current slice commit |

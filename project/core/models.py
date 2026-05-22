@@ -121,4 +121,5 @@ class SystemState:
     mas_assignments: int = 0
     completed_task_records: list[dict[str, object]] = field(default_factory=list)
     scenario_events: list[dict[str, object]] = field(default_factory=list)
+    decision_trace: list[dict[str, object]] = field(default_factory=list)
     history: list[dict[str, object]] = field(default_factory=list)

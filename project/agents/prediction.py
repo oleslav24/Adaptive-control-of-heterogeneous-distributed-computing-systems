@@ -72,6 +72,17 @@ class PredictionAgent(Agent):
                 or predicted_avg_load >= self.high_load_threshold
             ):
                 hint = self.congestion_algorithm
+        else:
+            hint = None
+        self.context.record_decision(
+            self.name,
+            "prediction_signal",
+            predicted_queue=predicted_queue,
+            predicted_avg_load=predicted_avg_load,
+            znn_node_bias=dict(node_bias),
+            algorithm_hint=hint,
+        )
+        if hint is not None:
             self.send(
                 AgentMessage(
                     sender=self.name,
