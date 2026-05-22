@@ -31,6 +31,7 @@ from project.experiments.publication_scenarios import (
     generate_tasks,
     suggest_horizon,
 )
+from project.experiments.statistics import mean_difference, significance_payload
 from project.experiments.publication_validation import (
     validate_carbon_summary_table,
     validate_hypotheses_table,
@@ -507,8 +508,20 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
 
     rows: list[dict[str, Any]] = []
 
-    h1_latency_delta = baseline["avg_latency"].mean() - adaptive["avg_latency"].mean()
-    h1_imbalance_delta = baseline["load_imbalance"].mean() - adaptive["load_imbalance"].mean()
+    h1_latency_delta = mean_difference(baseline["avg_latency"], adaptive["avg_latency"])
+    h1_imbalance_delta = mean_difference(baseline["load_imbalance"], adaptive["load_imbalance"])
+    h1_latency_stats = significance_payload(
+        baseline["avg_latency"],
+        adaptive["avg_latency"],
+        alternative="greater",
+        seed=1201,
+    )
+    h1_imbalance_stats = significance_payload(
+        baseline["load_imbalance"],
+        adaptive["load_imbalance"],
+        alternative="greater",
+        seed=1202,
+    )
     rows.append(
         {
             "hypothesis": "H1",
@@ -517,17 +530,36 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
             "delta_latency": float(h1_latency_delta),
             "delta_load_imbalance": float(h1_imbalance_delta),
             "confirmed": bool(h1_latency_delta > 0 and h1_imbalance_delta > 0),
+            "significance_supported": bool(
+                h1_latency_stats["statistically_significant"]
+                and h1_imbalance_stats["statistically_significant"]
+            ),
+            **_map_significance("latency", h1_latency_stats),
+            **_map_significance("load_imbalance", h1_imbalance_stats),
         }
     )
 
     robustness_baseline = baseline[baseline["scenario"] == "node-failures"]
     robustness_mas = mas[mas["scenario"] == "node-failures"]
-    h2_throughput_delta = (
-        robustness_mas["throughput"].mean() - robustness_baseline["throughput"].mean()
+    h2_throughput_delta = mean_difference(
+        robustness_mas["throughput"],
+        robustness_baseline["throughput"],
     )
-    h2_stability_delta = (
-        robustness_baseline["stability_latency_var"].mean()
-        - robustness_mas["stability_latency_var"].mean()
+    h2_stability_delta = mean_difference(
+        robustness_baseline["stability_latency_var"],
+        robustness_mas["stability_latency_var"],
+    )
+    h2_throughput_stats = significance_payload(
+        robustness_mas["throughput"],
+        robustness_baseline["throughput"],
+        alternative="greater",
+        seed=2201,
+    )
+    h2_stability_stats = significance_payload(
+        robustness_baseline["stability_latency_var"],
+        robustness_mas["stability_latency_var"],
+        alternative="greater",
+        seed=2202,
     )
     rows.append(
         {
@@ -537,6 +569,12 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
             "delta_throughput_failures": float(h2_throughput_delta),
             "delta_stability_failures": float(h2_stability_delta),
             "confirmed": bool(h2_throughput_delta > 0 and h2_stability_delta > 0),
+            "significance_supported": bool(
+                h2_throughput_stats["statistically_significant"]
+                and h2_stability_stats["statistically_significant"]
+            ),
+            **_map_significance("throughput_failures", h2_throughput_stats),
+            **_map_significance("stability_failures", h2_stability_stats),
         }
     )
 
@@ -546,7 +584,13 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
     ]
     ml_znn = dynamic[dynamic["method"].isin(["mas-ml", "mas-znn"])]
     mas_basic = dynamic[dynamic["method"] == "mas-basic"]
-    h3_latency_delta = mas_basic["avg_latency"].mean() - ml_znn["avg_latency"].mean()
+    h3_latency_delta = mean_difference(mas_basic["avg_latency"], ml_znn["avg_latency"])
+    h3_latency_stats = significance_payload(
+        mas_basic["avg_latency"],
+        ml_znn["avg_latency"],
+        alternative="greater",
+        seed=3201,
+    )
     rows.append(
         {
             "hypothesis": "H3",
@@ -554,6 +598,8 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
             "criterion": "ML/ZNN improve decisions under dynamic load.",
             "delta_latency_dynamic": float(h3_latency_delta),
             "confirmed": bool(h3_latency_delta > 0),
+            "significance_supported": bool(h3_latency_stats["statistically_significant"]),
+            **_map_significance("latency_dynamic", h3_latency_stats),
         }
     )
 
@@ -572,10 +618,15 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
         on=key_cols,
         suffixes=("_hybrid", "_baseline"),
     )
-    h4_delta = (
-        merged_h4["avg_latency_baseline"].mean() - merged_h4["avg_latency_hybrid"].mean()
-        if not merged_h4.empty
-        else 0.0
+    h4_delta = mean_difference(
+        merged_h4["avg_latency_baseline"],
+        merged_h4["avg_latency_hybrid"],
+    )
+    h4_latency_stats = significance_payload(
+        merged_h4["avg_latency_baseline"],
+        merged_h4["avg_latency_hybrid"],
+        alternative="greater",
+        seed=4201,
     )
     rows.append(
         {
@@ -584,14 +635,28 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
             "criterion": "Hybrid method outperforms standalone baselines.",
             "delta_latency_hybrid_vs_best_baseline": float(h4_delta),
             "confirmed": bool(h4_delta > 0),
+            "significance_supported": bool(h4_latency_stats["statistically_significant"]),
+            **_map_significance("latency_hybrid_vs_best_baseline", h4_latency_stats),
         }
     )
 
     e5_runs = raw_runs[raw_runs["study_id"] == "E5_llm_vs_algorithmic"]
     llm = e5_runs[e5_runs["method"] == "mas-llm"]
     algo = e5_runs[e5_runs["method"] == "mas-hybrid"]
-    h5_adaptivity_delta = llm["adaptivity"].mean() - algo["adaptivity"].mean()
-    h5_latency_delta = algo["avg_latency"].mean() - llm["avg_latency"].mean()
+    h5_adaptivity_delta = mean_difference(llm["adaptivity"], algo["adaptivity"])
+    h5_latency_delta = mean_difference(algo["avg_latency"], llm["avg_latency"])
+    h5_adaptivity_stats = significance_payload(
+        llm["adaptivity"],
+        algo["adaptivity"],
+        alternative="greater",
+        seed=5201,
+    )
+    h5_latency_stats = significance_payload(
+        algo["avg_latency"],
+        llm["avg_latency"],
+        alternative="greater",
+        seed=5202,
+    )
     rows.append(
         {
             "hypothesis": "H5",
@@ -600,6 +665,12 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
             "delta_adaptivity_llm_vs_algorithmic": float(h5_adaptivity_delta),
             "delta_latency_llm_vs_algorithmic": float(h5_latency_delta),
             "confirmed": bool(h5_adaptivity_delta > 0 or h5_latency_delta > 0),
+            "significance_supported": bool(
+                h5_adaptivity_stats["statistically_significant"]
+                or h5_latency_stats["statistically_significant"]
+            ),
+            **_map_significance("adaptivity_llm_vs_algorithmic", h5_adaptivity_stats),
+            **_map_significance("latency_llm_vs_algorithmic", h5_latency_stats),
         }
     )
 
@@ -1057,7 +1128,29 @@ def _format_hypothesis_metrics(record: dict[str, Any]) -> str:
         if not math.isfinite(number):
             continue
         pairs.append(f"{key}={number:+.4f}")
+    for key, value in record.items():
+        text_key = str(key)
+        if not text_key.startswith("p_value_"):
+            continue
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            continue
+        if not math.isfinite(number):
+            continue
+        pairs.append(f"{text_key}={number:.4f}")
     return ", ".join(pairs)
+
+
+def _map_significance(prefix: str, payload: dict[str, float]) -> dict[str, float | bool]:
+    """Map generic significance payload keys to stable hypothesis columns."""
+    return {
+        f"sample_size_{prefix}_left": float(payload["sample_size_left"]),
+        f"sample_size_{prefix}_right": float(payload["sample_size_right"]),
+        f"effect_size_{prefix}_cliffs_delta": float(payload["effect_size_cliffs_delta"]),
+        f"p_value_{prefix}": float(payload["p_value_permutation"]),
+        f"significant_{prefix}": bool(payload["statistically_significant"]),
+    }
 
 
 def _write_json(path: Path, payload: Any) -> None:

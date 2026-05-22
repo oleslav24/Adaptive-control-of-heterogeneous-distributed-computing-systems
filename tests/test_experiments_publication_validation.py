@@ -83,6 +83,12 @@ def _valid_hypotheses_df() -> pd.DataFrame:
                 "delta_latency": 0.2,
                 "delta_load_imbalance": 0.1,
                 "confirmed": True,
+                "significance_supported": True,
+                "p_value_core": 0.03,
+                "effect_size_core_cliffs_delta": 0.4,
+                "sample_size_core_left": 12.0,
+                "sample_size_core_right": 12.0,
+                "significant_core": True,
             },
             {
                 "hypothesis": "H2",
@@ -91,6 +97,12 @@ def _valid_hypotheses_df() -> pd.DataFrame:
                 "delta_throughput_failures": 0.3,
                 "delta_stability_failures": 0.15,
                 "confirmed": True,
+                "significance_supported": True,
+                "p_value_core": 0.02,
+                "effect_size_core_cliffs_delta": 0.45,
+                "sample_size_core_left": 10.0,
+                "sample_size_core_right": 10.0,
+                "significant_core": True,
             },
             {
                 "hypothesis": "H3",
@@ -98,6 +110,12 @@ def _valid_hypotheses_df() -> pd.DataFrame:
                 "criterion": "c",
                 "delta_latency_dynamic": 0.05,
                 "confirmed": True,
+                "significance_supported": True,
+                "p_value_core": 0.04,
+                "effect_size_core_cliffs_delta": 0.3,
+                "sample_size_core_left": 8.0,
+                "sample_size_core_right": 8.0,
+                "significant_core": True,
             },
             {
                 "hypothesis": "H4",
@@ -105,6 +123,12 @@ def _valid_hypotheses_df() -> pd.DataFrame:
                 "criterion": "c",
                 "delta_latency_hybrid_vs_best_baseline": 0.07,
                 "confirmed": True,
+                "significance_supported": True,
+                "p_value_core": 0.01,
+                "effect_size_core_cliffs_delta": 0.5,
+                "sample_size_core_left": 6.0,
+                "sample_size_core_right": 6.0,
+                "significant_core": True,
             },
             {
                 "hypothesis": "H5",
@@ -113,6 +137,12 @@ def _valid_hypotheses_df() -> pd.DataFrame:
                 "delta_adaptivity_llm_vs_algorithmic": 0.12,
                 "delta_latency_llm_vs_algorithmic": 0.04,
                 "confirmed": False,
+                "significance_supported": False,
+                "p_value_core": 0.30,
+                "effect_size_core_cliffs_delta": 0.15,
+                "sample_size_core_left": 6.0,
+                "sample_size_core_right": 6.0,
+                "significant_core": False,
             },
         ]
     )
@@ -133,6 +163,9 @@ def test_validate_hypotheses_table_reports_contract_errors() -> None:
     bad.loc[0, "hypothesis"] = "HX"
     bad.loc[1, "confirmed"] = "yes"
     bad.loc[2, "delta_latency_dynamic"] = float("nan")
+    bad.loc[3, "p_value_core"] = 1.5
+    bad["significant_core"] = bad["significant_core"].astype(object)
+    bad.loc[4, "significant_core"] = "yes"
     bad = bad.drop(columns=["delta_latency_hybrid_vs_best_baseline"])
     result = validate_hypotheses_table(bad)
     assert result.ok is False
@@ -140,6 +173,8 @@ def test_validate_hypotheses_table_reports_contract_errors() -> None:
     assert any("Unexpected hypothesis rows" in err for err in result.errors)
     assert any("missing metric column 'delta_latency_hybrid_vs_best_baseline'" in err for err in result.errors)
     assert any("'confirmed' must be boolean" in err for err in result.errors)
+    assert any("optional metric 'p_value_core' must be in [0, 1]" in err for err in result.errors)
+    assert any("optional metric 'significant_core' must be boolean" in err for err in result.errors)
 
 
 def test_validate_carbon_summary_table_ok() -> None:
