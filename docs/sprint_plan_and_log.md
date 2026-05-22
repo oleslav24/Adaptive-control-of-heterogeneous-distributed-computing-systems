@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-22 14:59:43 +07:00
+Last updated: 2026-05-22 15:10:22 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -374,6 +374,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 29.4 | Wire decision trace into run/publication/Chapter 10 manifests without polluting unrelated baselines | Done |
 | 29.5 | Add tests for policy guard clamping, whitelist, invalid decision handling, and trace completeness | Done |
 | 29.6 | Run targeted tests, smoke, full pytest, commit, push, and prepare PR | Done |
+| 29.7 | Fix GitHub Linux CI path-escape regression in Web validation | Done |
 
 ## Active Sprint Slice Log (Sprint 12)
 
@@ -581,3 +582,4 @@ Closed in `main` via PR #34 (merge commit `762ca2a`).
 |---|---|---|---|---|
 | 2026-05-22 14:43:09 | 29.1 Open Sprint 29 after Sprint 28 merge | OK (mapped to monograph plan P2 decision trace observability) | not run yet | pending |
 | 2026-05-22 14:59:43 | 29.1-29.6 Decision trace artifacts for MAS/ML/ZNN/LLM policy explainability | OK (mapped to monograph plan P2 decision trace observability) | targeted tests pass (`10 passed`), smoke PASS, publication quick PASS, Chapter10 quick PASS, integrity PASS, full pytest pass (`210 passed`) | current slice commit |
+| 2026-05-22 15:10:22 | 29.7 CI hotfix: normalize Windows-style path separators in Web workspace validation | OK (keeps Sprint 29 PR green on Linux CI) | `tests/test_web_validation.py` pass (`9 passed`), full pytest pass (`211 passed`) | current slice commit |

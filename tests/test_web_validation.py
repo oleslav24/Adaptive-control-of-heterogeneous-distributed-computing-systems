@@ -58,6 +58,20 @@ def test_validate_start_run_form_rejects_path_escape() -> None:
     assert any("inside workspace" in item for item in errors)
 
 
+def test_validate_start_run_form_rejects_windows_style_output_escape() -> None:
+    """Output path validation should treat backslash as a separator on Linux CI too."""
+    errors = validate_start_run_form(
+        {
+            "mode": ["single"],
+            "config": ["config.yaml"],
+            "output_dir": ["..\\outside-output"],
+        },
+        workspace_root=Path(".").resolve(),
+        default_config="config.yaml",
+    )
+    assert any("inside workspace" in item for item in errors)
+
+
 def test_validate_start_run_form_rejects_bad_seed_expression() -> None:
     """Publication mode should reject malformed study seeds expression."""
     errors = validate_start_run_form(

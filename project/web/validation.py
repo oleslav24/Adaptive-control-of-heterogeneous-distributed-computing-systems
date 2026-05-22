@@ -110,7 +110,7 @@ def validate_start_run_form(
 
 def _resolve_workspace_path(raw: str, workspace_root: Path) -> Path | None:
     """Resolve input path and ensure it stays under workspace root."""
-    text = str(raw).strip()
+    text = _normalize_path_separators(str(raw).strip())
     if not text:
         return None
     candidate = Path(text)
@@ -124,6 +124,11 @@ def _resolve_workspace_path(raw: str, workspace_root: Path) -> Path | None:
     if not _is_relative_to(resolved, workspace):
         return None
     return resolved
+
+
+def _normalize_path_separators(text: str) -> str:
+    """Treat Windows-style separators as path separators on every platform."""
+    return text.replace("\\", "/")
 
 
 def _is_relative_to(path: Path, base: Path) -> bool:
