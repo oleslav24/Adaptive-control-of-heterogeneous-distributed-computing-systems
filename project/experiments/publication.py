@@ -70,6 +70,8 @@ def run_publication_pipeline(
     mode: str = "publication-study",
     output_dir_name: str = "publication",
     include_study_ids: list[str] | None = None,
+    ready_method_keys: list[str] | None = None,
+    study_method_overrides: dict[str, list[str]] | None = None,
 ) -> StudyResult:
     """Run full publication pipeline and export tables, report, and plots."""
     cli_args = list(cli_args or [])
@@ -81,10 +83,19 @@ def run_publication_pipeline(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     methods_df = pd.DataFrame([method_to_row(m) for m in METHOD_CATALOG])
-    ready_methods = [m.key for m in METHOD_CATALOG if m.ready]
+    catalog_ready_methods = [m.key for m in METHOD_CATALOG if m.ready]
+    ready_methods = _select_ready_methods(
+        catalog_ready_methods,
+        ready_method_keys=ready_method_keys,
+    )
     unsupported_df = methods_df[methods_df["ready"] == False].copy()  # noqa: E712
 
-    experiment_specs = build_study_specs(seeds=seeds, ready_methods=ready_methods, quick=quick)
+    experiment_specs = build_study_specs(
+        seeds=seeds,
+        ready_methods=ready_methods,
+        quick=quick,
+        method_overrides_by_study=study_method_overrides,
+    )
     normalized_study_ids: list[str] = []
     if include_study_ids:
         for item in include_study_ids:
@@ -194,6 +205,8 @@ def run_publication_pipeline(
             "study_ids_filter": normalized_study_ids,
             "study_specs": [asdict(spec) for spec in experiment_specs],
             "ready_methods": ready_methods,
+            "ready_method_keys_filter": list(ready_method_keys or []),
+            "study_method_overrides": study_method_overrides or {},
             "unsupported_methods": unsupported_df["key"].tolist(),
             "output_files": output_paths,
         },
@@ -229,6 +242,23 @@ def run_publication_pipeline(
         methods_df=methods_df,
         output_paths=output_paths,
     )
+
+
+def _select_ready_methods(
+    catalog_ready_methods: list[str],
+    *,
+    ready_method_keys: list[str] | None,
+) -> list[str]:
+    """Apply an optional method whitelist while preserving catalog order."""
+    if ready_method_keys is None:
+        return list(catalog_ready_methods)
+
+    allowed: set[str] = set()
+    for item in ready_method_keys:
+        value = str(item).strip()
+        if value:
+            allowed.add(value)
+    return [method for method in catalog_ready_methods if method in allowed]
 
 
 def _build_run_config(
