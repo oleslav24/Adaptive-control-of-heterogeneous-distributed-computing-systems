@@ -67,7 +67,7 @@ def _sample_tables() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataF
     hypotheses = pd.DataFrame(
         [
             {"hypothesis": "H1", "title": "Adaptivity", "criterion": "c", "confirmed": True},
-            {"hypothesis": "H2", "title": "MAS", "criterion": "c", "confirmed": True},
+            {"hypothesis": "H2", "title": "MAS", "criterion": "c", "confirmed": False},
             {"hypothesis": "H3", "title": "ML/ZNN", "criterion": "c", "confirmed": True},
             {"hypothesis": "H4", "title": "Hybrid", "criterion": "c", "confirmed": True},
             {"hypothesis": "H5", "title": "LLM", "criterion": "c", "confirmed": True},
@@ -136,6 +136,9 @@ def test_write_publication_report_contains_required_sections() -> None:
     assert "### Related Literature Evidence (Local RAG)" in content
     assert "### Evidence-backed Claims" in content
     assert "## 5. Hypotheses" in content
+    assert "### Hypothesis Support Status" in content
+    assert "`H1` `supported`" in content
+    assert "`H2` `not-supported`" in content
     assert "## 6. Threats to Validity" in content
     assert "Seed count: 3" in content
     assert "Quick mode: True" in content

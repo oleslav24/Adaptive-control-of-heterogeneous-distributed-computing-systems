@@ -88,3 +88,31 @@ def test_compute_agent_carbon_aware_fallback_without_carbon_map() -> None:
 
     assert task.assigned_node in {"dirty", "green"}
     assert sum(len(tasks) for tasks in context.running_tasks.values()) == 1
+
+
+def test_compute_agent_max_min_prefers_best_bottleneck_node() -> None:
+    """Max-Min policy should preserve the strongest CPU/memory bottleneck margin."""
+    context = _context()
+    context.nodes["dirty"].cpu = 16.0
+    context.nodes["dirty"].memory = 4.0
+    context.nodes["green"].cpu = 10.0
+    context.nodes["green"].memory = 20.0
+    task = _task("task-3")
+    context.queue.enqueue(task)
+
+    agent = ComputeAgent()
+    agent.bind(context)
+    agent.receive(
+        AgentMessage(
+            sender="optimization",
+            recipient="compute",
+            topic="optimization_policy",
+            payload={"algorithm": "max-min"},
+        )
+    )
+
+    agent.decide()
+    agent.act()
+
+    assert context.active_algorithm == "max-min"
+    assert task.assigned_node == "green"

@@ -151,12 +151,12 @@ METHOD_CATALOG: list[MethodVariant] = [
         key="max-min",
         label="Max-Min",
         family="metaheuristic",
-        ready=False,
-        algorithm="min-load",
+        ready=True,
+        algorithm="max-min",
         intelligence_enabled=False,
         adaptive_algorithm=False,
         llm_enabled=False,
-        note="Placeholder for Max-Min heuristic implementation.",
+        note="Deterministic bottleneck-preserving Max-Min resource heuristic.",
     ),
     MethodVariant(
         key="abc-max-min",
@@ -205,7 +205,15 @@ def build_study_specs(
                 task_type="mixed",
                 network_profile="medium",
                 topology="ring",
-                methods=["round-robin", "min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"],
+                methods=[
+                    "round-robin",
+                    "min-load",
+                    "greedy",
+                    "max-min",
+                    "carbon-aware",
+                    "mas-hybrid",
+                    "mas-llm",
+                ],
                 seeds=seeds,
             )
             for n, t in [(10, 100), (50, 500)]
@@ -240,7 +248,7 @@ def build_study_specs(
                 task_type="mixed",
                 network_profile="medium",
                 topology="ring",
-                methods=["round-robin", "min-load", "greedy", "mas-hybrid"],
+                methods=["round-robin", "min-load", "greedy", "max-min", "mas-hybrid"],
                 seeds=seeds,
             ),
             StudyRunSpec(
@@ -284,7 +292,15 @@ def build_study_specs(
                 task_type="mixed",
                 network_profile="medium",
                 topology="ring",
-                methods=["round-robin", "min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"],
+                methods=[
+                    "round-robin",
+                    "min-load",
+                    "greedy",
+                    "max-min",
+                    "carbon-aware",
+                    "mas-hybrid",
+                    "mas-llm",
+                ],
                 seeds=seeds,
             )
         )
@@ -321,7 +337,7 @@ def build_study_specs(
                 task_type="mixed",
                 network_profile="medium",
                 topology="ring",
-                methods=["round-robin", "min-load", "greedy", "mas-hybrid"],
+                methods=["round-robin", "min-load", "greedy", "max-min", "mas-hybrid"],
                 seeds=seeds,
             ),
             StudyRunSpec(

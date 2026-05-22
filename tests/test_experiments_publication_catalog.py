@@ -20,6 +20,7 @@ def test_build_study_specs_quick_profile_shape() -> None:
     assert len(specs) == 7
     assert specs[0].study_id == "E1_scalability"
     assert specs[0].node_count in {10, 50}
+    assert "max-min" in specs[0].methods
     assert "carbon-aware" in specs[0].methods
     assert specs[-1].study_id == "E6_carbon_vs_performance"
     assert specs[-1].methods == ["min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"]
@@ -78,6 +79,9 @@ def test_get_method_variant_and_method_to_row_contract() -> None:
     carbon = method_to_row(get_method_variant("carbon-aware"))
     assert carbon["algorithm"] == "carbon-aware"
     assert carbon["ready"] is True
+    max_min = method_to_row(get_method_variant("max-min"))
+    assert max_min["algorithm"] == "max-min"
+    assert max_min["ready"] is True
     with pytest.raises(KeyError, match="Unknown method variant"):
         get_method_variant("missing-method")
 

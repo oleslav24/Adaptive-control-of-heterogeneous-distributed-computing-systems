@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-22 10:34:10 +07:00
+Last updated: 2026-05-22 10:55:35 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -33,7 +33,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 23 | Carbon analytics and publication quality | Carbon-specific dashboards/summary contracts and interpretation layer for paper results | Closed |
 | 24 | Literature RAG integration for evidence-backed analysis | Researcher/Web/Report evidence flow + quality gate + tests | Closed |
 | 25 | Evidence-to-claim pipeline | Structured claims + evidence quality gates + Web/Report exposure | Closed |
-| 26 | Monograph P0 smoke reproducibility | Smoke/golden/reproducibility stabilized without mechanical golden refresh | Ready for PR |
+| 26 | Monograph P0 smoke reproducibility | Smoke/golden/reproducibility stabilized without mechanical golden refresh | Closed |
+| 27 | Monograph P1 publication calibration and method catalog | H2-H5 evidence calibrated, reports avoid unsupported claims, method catalog gaps resolved or explicit | Ready for PR |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -74,7 +75,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 23 | Closed | 2026-05-20 15:13:57 +07:00 | merged to `main`, merge commit `ca916a6` (PR #28) |
 | 24 | Closed | 2026-05-20 16:56:45 +07:00 | merged to `main`, merge commit `058cc61` (PR #29) |
 | 25 | Closed | 2026-05-21 15:01:55 +07:00 | merged to `main`, merge commit `e364dfb` (PR #30) |
-| 26 | Ready for PR | 2026-05-22 10:34:10 +07:00 | smoke PASS against golden, full pytest pass (`205 passed`) |
+| 26 | Closed | 2026-05-22 10:38:44 +07:00 | merged to `main`, merge commit `6169ba2` (PR #32) |
+| 27 | Ready for PR | 2026-05-22 10:55:35 +07:00 | publication/chapter10 quick PASS, integrity PASS, smoke PASS, full pytest pass (`208 passed`) |
 
 ## Detailed Sprint Backlog And Status
 
@@ -337,6 +339,17 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 26.4 | Add tests for quick-study filtering and study-specific method overrides | Done |
 | 26.5 | Re-run smoke, full pytest, commit, push, and prepare PR | Done |
 
+### Sprint 27 - Monograph P1 publication calibration and method catalog
+
+| Task | Description | Status |
+|---|---|---|
+| 27.1 | Run quick publication and Chapter 10 pipelines and inspect `hypotheses.csv` / report claims | Done |
+| 27.2 | Identify whether H2-H5 gaps are caused by scenarios, metrics, implementation, or over-strong text | Done |
+| 27.3 | Calibrate scenario/report behavior so unsupported hypotheses are clearly marked `not-supported` | Done |
+| 27.4 | Resolve method catalog placeholders by implementing `max-min` or excluding placeholders from ready comparisons | Done |
+| 27.5 | Add regression tests for calibrated hypotheses/report/method catalog behavior | Done |
+| 27.6 | Run smoke/full pytest, commit, push, and prepare PR | Done |
+
 ## Active Sprint Slice Log (Sprint 12)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
@@ -511,3 +524,13 @@ Closed in `main` via PR #30 (merge commit `e364dfb`).
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-22 10:34:10 | 26.1-26.5 P0 smoke baseline drift investigation and isolation | OK (mapped to monograph plan P0 smoke/golden/reproducibility) | targeted tests pass (`7 passed`), smoke PASS against golden, full pytest pass (`205 passed`) | current slice commit |
+
+## Sprint 26 Closure
+
+Closed in `main` via PR #32 (merge commit `6169ba2`).
+
+## Active Sprint Slice Log (Sprint 27)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-22 10:55:35 | 27.1-27.6 P1 publication calibration + `max-min` method catalog gap closure | OK (mapped to monograph plan P1 hypotheses/scenario calibration + method catalog gaps) | targeted tests pass (`35 passed`), publication/chapter10 quick PASS, integrity PASS, smoke PASS, full pytest pass (`208 passed`) | current slice commit |

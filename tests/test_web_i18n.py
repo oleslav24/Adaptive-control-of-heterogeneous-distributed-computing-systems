@@ -31,6 +31,7 @@ def test_tr_fallback_chain() -> None:
 def test_catalog_label_fallback_chain() -> None:
     """`catalog_label` returns localized label and falls back safely."""
     assert catalog_label(ALGORITHM_LABELS, "xx", "greedy", "greedy") == "Greedy"
+    assert catalog_label(ALGORITHM_LABELS, "en", "max-min", "max-min") == "Max-Min"
     assert catalog_label(ALGORITHM_LABELS, "en", "carbon-aware", "carbon-aware") == "Carbon-aware"
     assert catalog_label(ALGORITHM_LABELS, "ru", "missing", "missing") == "missing"
 

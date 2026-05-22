@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from project.core.models import Node, Task
 
-SUPPORTED_ALGORITHMS = ("round-robin", "min-load", "greedy", "carbon-aware")
+SUPPORTED_ALGORITHMS = ("round-robin", "min-load", "greedy", "max-min", "carbon-aware")
 
 
 def normalize_algorithm(name: str) -> str:
@@ -32,6 +32,8 @@ def choose_node(
         return _round_robin(candidates, all_node_ids, rr_cursor)
     if algorithm == "greedy":
         return _greedy(task, candidates, node_bandwidth), rr_cursor
+    if algorithm == "max-min":
+        return _max_min(task, candidates, node_bandwidth), rr_cursor
     if algorithm == "carbon-aware":
         return _carbon_aware(candidates, node_bandwidth, node_carbon or {}), rr_cursor
     return _min_load(candidates, node_bandwidth), rr_cursor
@@ -80,6 +82,28 @@ def _greedy(task: Task, candidates: list[Node], node_bandwidth: dict[str, float]
             -node_bandwidth.get(node.id, float("inf")),
         ),
     )
+
+
+def _max_min(task: Task, candidates: list[Node], node_bandwidth: dict[str, float]) -> Node:
+    """Prefer the node with the best post-assignment bottleneck resource margin."""
+    return min(
+        candidates,
+        key=lambda node: (
+            -_bottleneck_residual_ratio(task, node),
+            node.load,
+            -node_bandwidth.get(node.id, float("inf")),
+            node.id,
+        ),
+    )
+
+
+def _bottleneck_residual_ratio(task: Task, node: Node) -> float:
+    """Return minimum residual resource ratio after assigning task to node."""
+    cpu_ratio = (node.cpu - (node.used_cpu + task.cpu_required)) / max(node.cpu, 1e-9)
+    memory_ratio = (
+        node.memory - (node.used_memory + task.memory_required)
+    ) / max(node.memory, 1e-9)
+    return min(cpu_ratio, memory_ratio)
 
 
 def _carbon_aware(
