@@ -17,7 +17,14 @@ def _workspace_test_output_dir(suffix: str) -> Path:
     return target
 
 
-def _sample_tables() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _sample_tables() -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]:
     """Build minimal publication tables for artifact persistence tests."""
     raw_runs = pd.DataFrame(
         [
@@ -80,13 +87,27 @@ def _sample_tables() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataF
         ]
     )
     unsupported = methods[methods["ready"] == False].copy()  # noqa: E712
-    return raw_runs, summary, hypotheses, methods, unsupported
+    decision_trace = pd.DataFrame(
+        [
+            {
+                "study_id": "E1_scalability",
+                "scenario": "static",
+                "seed": 42,
+                "method": "min-load",
+                "time": 0,
+                "agent": "optimization",
+                "event": "algorithm_policy",
+                "selected_algorithm": "min-load",
+            }
+        ]
+    )
+    return raw_runs, summary, hypotheses, methods, unsupported, decision_trace
 
 
 def test_persist_publication_outputs_writes_expected_files() -> None:
     """Exporter should persist all base CSV/JSON publication artifacts."""
     output_dir = _workspace_test_output_dir("publication-artifacts")
-    raw_runs, summary, hypotheses, methods, unsupported = _sample_tables()
+    raw_runs, summary, hypotheses, methods, unsupported, decision_trace = _sample_tables()
 
     output_paths = pub._persist_publication_outputs(  # noqa: SLF001
         output_dir=output_dir,
@@ -95,6 +116,7 @@ def test_persist_publication_outputs_writes_expected_files() -> None:
         hypotheses=hypotheses,
         methods_df=methods,
         unsupported_df=unsupported,
+        decision_trace=decision_trace,
         save_plots=False,
     )
 
@@ -104,10 +126,12 @@ def test_persist_publication_outputs_writes_expected_files() -> None:
         "hypotheses_csv",
         "methods_catalog_csv",
         "unsupported_methods_csv",
+        "decision_trace_csv",
         "raw_runs_json",
         "summary_json",
         "hypotheses_json",
         "methods_catalog_json",
+        "decision_trace_json",
     }
     assert required.issubset(set(output_paths.keys()))
     for key in required:
@@ -117,7 +141,7 @@ def test_persist_publication_outputs_writes_expected_files() -> None:
 def test_write_publication_report_contains_required_sections() -> None:
     """Markdown publication report should include expected section headings."""
     output_dir = _workspace_test_output_dir("publication-report")
-    raw_runs, summary, hypotheses, methods, _unsupported = _sample_tables()
+    raw_runs, summary, hypotheses, methods, _unsupported, _decision_trace = _sample_tables()
     report_path = pub._write_publication_report(  # noqa: SLF001
         output_dir=output_dir,
         summary=summary,
@@ -153,7 +177,7 @@ def test_write_publication_report_contains_required_sections() -> None:
 def test_persist_publication_outputs_writes_carbon_summary_when_available() -> None:
     """Exporter should persist carbon summary artifacts when carbon metrics are present."""
     output_dir = _workspace_test_output_dir("publication-carbon-summary")
-    raw_runs, summary, hypotheses, methods, unsupported = _sample_tables()
+    raw_runs, summary, hypotheses, methods, unsupported, decision_trace = _sample_tables()
     summary = pd.DataFrame(
         [
             {
@@ -194,6 +218,7 @@ def test_persist_publication_outputs_writes_carbon_summary_when_available() -> N
         hypotheses=hypotheses,
         methods_df=methods,
         unsupported_df=unsupported,
+        decision_trace=decision_trace,
         save_plots=False,
     )
 

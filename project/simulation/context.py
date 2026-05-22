@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
+from typing import Any
 
 from project.core.models import Node, Task
 from project.simulation.network import NetworkModel
@@ -36,6 +37,7 @@ class SimulationContext:
     node_co2e_lb_per_mwh: dict[str, float] = field(default_factory=dict)
     node_renewable_share: dict[str, float] = field(default_factory=dict)
     assignment_log: list[dict[str, object]] = field(default_factory=list)
+    decision_trace: list[dict[str, Any]] = field(default_factory=list)
 
     def pop_queued_tasks(self) -> list[Task]:
         """Pop all currently queued tasks."""
@@ -55,6 +57,17 @@ class SimulationContext:
         for tasks in self.running_tasks.values():
             items.extend(tasks)
         return items
+
+    def record_decision(self, agent: str, event: str, **details: Any) -> None:
+        """Append a compact, timestamped decision trace record."""
+        record: dict[str, Any] = {
+            "time": self.current_time,
+            "agent": str(agent),
+            "event": str(event),
+            "active_algorithm": self.active_algorithm,
+        }
+        record.update(details)
+        self.decision_trace.append(record)
 
     def assign_task(self, task: Task, node_id: str) -> bool:
         """Assign task to node if capacity allows and record assignment log."""

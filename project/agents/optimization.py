@@ -23,20 +23,35 @@ class OptimizationAgent(Agent):
         """Resolve final algorithm and send policy update to compute agent."""
         if self.context is None:
             return
+        previous = self.context.active_algorithm
         selected = self.base_algorithm
         messages = self.read_messages()
+        prediction_hint: str | None = None
+        llm_hint: str | None = None
         if self.adaptive_algorithm:
             for message in messages:
                 if message.topic != "prediction_algorithm_hint":
                     continue
                 hint = message.payload.get("algorithm", selected)
-                selected = normalize_algorithm(str(hint))
+                prediction_hint = normalize_algorithm(str(hint))
+                selected = prediction_hint
         for message in messages:
             if message.topic != "llm_algorithm_hint":
                 continue
             hint = message.payload.get("algorithm", selected)
-            selected = normalize_algorithm(str(hint))
+            llm_hint = normalize_algorithm(str(hint))
+            selected = llm_hint
         self.context.active_algorithm = selected
+        self.context.record_decision(
+            self.name,
+            "algorithm_policy",
+            base_algorithm=self.base_algorithm,
+            previous_algorithm=previous,
+            selected_algorithm=selected,
+            prediction_hint=prediction_hint,
+            llm_hint=llm_hint,
+            switched=selected != previous,
+        )
         self.send(
             AgentMessage(
                 sender=self.name,

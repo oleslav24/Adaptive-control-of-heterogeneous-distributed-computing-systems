@@ -63,6 +63,21 @@ class LLMAgent(Agent):
             allow_algorithm_override=self.allow_algorithm_override,
             allow_node_bias_override=self.allow_node_bias_override,
         )
+        self.context.record_decision(
+            self.name,
+            "llm_policy_guard",
+            source=source,
+            raw_algorithm_hint=parsed.algorithm_hint,
+            applied_algorithm_hint=decision.algorithm_hint,
+            raw_node_bias=dict(parsed.node_bias),
+            applied_node_bias=dict(decision.node_bias),
+            raw_confidence=parsed.confidence,
+            applied_confidence=decision.confidence,
+            allow_algorithm_override=self.allow_algorithm_override,
+            allow_node_bias_override=self.allow_node_bias_override,
+            raw_response=decision.raw[:1000],
+            reason=decision.reason,
+        )
 
         self.context.llm_source = source
         self.context.llm_confidence = decision.confidence

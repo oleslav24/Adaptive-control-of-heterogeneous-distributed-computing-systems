@@ -20,6 +20,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from project.core.models import SystemState
+from project.metrics.decision_trace import (
+    build_decision_trace_dataframe,
+    normalize_decision_trace,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,6 +79,8 @@ def persist_observability(
     history_df = _build_history_dataframe(state)
     tasks_df = pd.DataFrame(state.completed_task_records)
     events_df = pd.DataFrame(state.scenario_events)
+    decision_trace_records = normalize_decision_trace(state.decision_trace)
+    decision_trace_df = build_decision_trace_dataframe(state.decision_trace)
     summary_row = summarize_state(state)
     summary_df = pd.DataFrame([summary_row])
 
@@ -82,14 +88,17 @@ def persist_observability(
         history_path = out / "history.csv"
         tasks_path = out / "completed_tasks.csv"
         events_path = out / "scenario_events.csv"
+        decision_trace_path = out / "decision_trace.csv"
         summary_path = out / "summary.csv"
         history_df.to_csv(history_path, index=False)
         tasks_df.to_csv(tasks_path, index=False)
         events_df.to_csv(events_path, index=False)
+        decision_trace_df.to_csv(decision_trace_path, index=False)
         summary_df.to_csv(summary_path, index=False)
         artifact_paths["history_csv"] = str(history_path)
         artifact_paths["tasks_csv"] = str(tasks_path)
         artifact_paths["events_csv"] = str(events_path)
+        artifact_paths["decision_trace_csv"] = str(decision_trace_path)
         artifact_paths["summary_csv"] = str(summary_path)
         LOGGER.info("CSV metrics saved to %s", out)
 
@@ -98,14 +107,17 @@ def persist_observability(
         history_json = out / "history.json"
         tasks_json = out / "completed_tasks.json"
         events_json = out / "scenario_events.json"
+        decision_trace_json = out / "decision_trace.json"
         _write_json(summary_json, summary_row)
         _write_json(history_json, _dataframe_to_records(history_df))
         _write_json(tasks_json, _dataframe_to_records(tasks_df))
         _write_json(events_json, _dataframe_to_records(events_df))
+        _write_json(decision_trace_json, decision_trace_records)
         artifact_paths["summary_json"] = str(summary_json)
         artifact_paths["history_json"] = str(history_json)
         artifact_paths["tasks_json"] = str(tasks_json)
         artifact_paths["events_json"] = str(events_json)
+        artifact_paths["decision_trace_json"] = str(decision_trace_json)
         if run_manifest is not None:
             manifest_path = out / "run_manifest.json"
             _write_json(manifest_path, run_manifest)

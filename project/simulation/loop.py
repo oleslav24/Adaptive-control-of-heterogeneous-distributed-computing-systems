@@ -334,6 +334,9 @@ class SimulationLoop:
             self.state.mas_assignments = 0
         self.state.completed_task_records = list(self.completed_task_records)
         self.state.scenario_events = list(self.scenario_events)
+        self.state.decision_trace = (
+            list(self.context.decision_trace) if self.context is not None else []
+        )
         self.state.history.append(
             {
                 "time": self.state.current_time,
