@@ -122,6 +122,10 @@ def test_web_http_routes_for_dashboard_files_and_download() -> None:
             html = body.decode("utf-8")
             assert tr("ru", "console_title") in html
 
+            status, _headers, body = _request(host, port, "GET", "/agent-control?lang=en")
+            assert status == 200
+            assert "Agent Control / Quality Gate" in body.decode("utf-8")
+
             status, _headers, body = _request(host, port, "GET", "/files?lang=ru&path=outputs")
             assert status == 200
             assert "sample.txt" in body.decode("utf-8")

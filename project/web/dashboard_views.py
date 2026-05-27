@@ -414,6 +414,7 @@ def build_dashboard_html(
   <section class="card">
     <h2>{escape(tr(lang, "quick_links"))}</h2>
     <ul>
+      <li><a href="{escape(with_lang('/agent-control', lang))}">{escape(tr(lang, "agent_control_link"))}</a></li>
       <li><a href="{escape(with_lang('/files', lang, path='outputs'))}">{escape(tr(lang, "browse_outputs"))}</a></li>
       <li><a href="{escape(with_lang('/files', lang, path='docs'))}">{escape(tr(lang, "browse_docs"))}</a></li>
       <li><a href="{escape(with_lang('/files', lang, path='config.yaml'))}">{escape(tr(lang, "open_config"))}</a></li>

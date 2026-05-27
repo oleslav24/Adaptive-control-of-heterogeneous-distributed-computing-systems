@@ -36,6 +36,7 @@ def test_build_dashboard_html_with_empty_jobs_renders_defaults() -> None:
     assert 'name="config" value="config.yaml"' in html
     assert 'name="job_timeout_seconds" value="3600"' in html
     assert f'data-default-batch-scenario-count="{len(DEFAULT_BATCH_SCENARIOS)}"' in html
+    assert "href=\"/agent-control?lang=en\"" in html
     assert "href=\"/files?lang=en&amp;path=outputs\"" in html
     assert "<code>carbon-study</code>" in html
     assert "<code>chapter10</code>" in html

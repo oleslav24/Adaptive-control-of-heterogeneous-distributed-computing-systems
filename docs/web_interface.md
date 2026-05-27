@@ -46,6 +46,19 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
     - on `queue/completed`: solid = queue, dashed = completed
   - `ResearcherAgent` textual conclusions based on chart trends (localized RU/EN)
   - stop button for running job
+- `/agent-control`
+  - integrated controllability module (`Agent Control / Quality Gate`) with `lang=ru|en`
+  - demo profile mirrors colleague stand logic as maintained Python model (`project.web.agent_control`)
+  - demo controls: `run scenario`, `disable next`, `enable all`, `controlled state`, `reset`
+  - deterministic status transitions: `STABLE -> WARNING -> CRITICAL -> CONTROLLED_STATE`
+  - critical combo scenario: `autonomy + qgate + integrity` disabled => `CRITICAL`
+  - controlled state freezes demo metrics in partial recovery band `[55..75]`
+  - real-job assessment mode:
+    - `demo` (no job),
+    - `assess latest job`,
+    - `assess by job id`
+  - real-job signals are reported as `pass/fail/present/unknown` and are separated from demo percentages
+  - artifact-based checks include: manifests, integrity report, validation gates, decision trace, runtime logs
 - `/files?path=...`
   - workspace-safe file browser
   - previews for text and image artifacts
@@ -63,3 +76,4 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
 - This interface is intentionally lightweight (standard library HTTP server, no external web framework).
 - Multiple jobs can run concurrently; each run is isolated as a subprocess.
 - Use `Ctrl+C` in terminal to stop the web server.
+- Demo profile weights on `/agent-control` are synthetic and intended for conceptual validation only (not empirical GRVS metrics).
