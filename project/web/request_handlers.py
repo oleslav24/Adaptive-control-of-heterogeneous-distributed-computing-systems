@@ -6,6 +6,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Callable
 
+from project.web.agent_control_routes import build_agent_control_response
 from project.web.dashboard_routes import build_dashboard_response
 from project.web.diagnostics_routes import (
     build_job_bundle_response,
@@ -38,6 +39,8 @@ def build_get_response(
             workspace_root=workspace_root,
             default_config=default_config,
         )
+    if action == "agent_control":
+        return build_agent_control_response(parsed, job_manager)
     if action == "job":
         return build_job_page_response(parsed, job_manager)
     if action == "job_data":

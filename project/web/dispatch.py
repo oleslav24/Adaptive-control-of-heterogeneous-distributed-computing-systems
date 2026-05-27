@@ -5,6 +5,7 @@ from __future__ import annotations
 
 GET_ROUTE_ACTIONS: dict[str, str] = {
     "/": "dashboard",
+    "/agent-control": "agent_control",
     "/job": "job",
     "/job-data": "job_data",
     "/job-diagnostics": "job_diagnostics",

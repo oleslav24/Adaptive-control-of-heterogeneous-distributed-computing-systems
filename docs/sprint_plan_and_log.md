@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-27 13:52:06 +07:00
+Last updated: 2026-05-27 15:13:32 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -39,6 +39,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 29 | Monograph P2 decision trace observability | Per-run decision trace artifacts explain MAS/ML/ZNN/LLM policy decisions | Closed |
 | 30 | Monograph P3 alignment and validity packaging | Explicit monograph-to-code traceability and bounded carbon scope in publication reports | Closed |
 | 31 | Publication significance hardening | Hypotheses include deterministic significance/effect metadata with validation and tests | Closed |
+| 32 | Agent control and quality-gate integration | Integrated `/agent-control` model+web+tests+docs, separated demo vs real-job signals | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -85,6 +86,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 29 | Closed | 2026-05-22 16:05:41 +07:00 | merged to `main`, merge commit `be1bae4` (PR #35) |
 | 30 | Closed | 2026-05-22 16:58:18 +07:00 | merged to `main`, merge commit `f97d027` (PR #37) |
 | 31 | Closed | 2026-05-27 13:52:06 +07:00 | merged to `main`, merge commit `c04c03e` (PR #40) |
+| 32 | Open | n/a | in progress on branch `codex/sprint32-agent-control` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -638,3 +640,22 @@ Closed in `main` via PR #37 (merge commit `f97d027`).
 ## Sprint 31 Closure
 
 Closed in `main` via PR #40 (merge commit `c04c03e`).
+
+### Sprint 32 - Agent control and quality-gate integration
+
+| Task | Description | Status |
+|---|---|---|
+| 32.1 | Add pure Python controllability model (`project/web/agent_control.py`) with demo profile and deterministic status/metric recomputation | Done |
+| 32.2 | Add `/agent-control` route + view modules integrated via dispatch/request handlers | Done |
+| 32.3 | Add dashboard quick link and language propagation (`lang` query param) | Done |
+| 32.4 | Add real-job assessment mode with `pass/fail/present/unknown` signals and artifact-based checks | Done |
+| 32.5 | Add tests for model transitions, route rendering, dashboard/web wiring | Done |
+| 32.6 | Update web and monograph alignment docs with demo-vs-real mapping | Done |
+| 32.7 | Run full regression test suite and prepare sprint PR | Done |
+
+## Active Sprint Slice Log (Sprint 32)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-27 15:10:43 | 32.1-32.6 Agent control integration (model + route/view + dashboard + docs) | OK (mapped to integration backlog and monograph alignment mapping) | targeted web/model suites pass (`26 passed`) | pending |
+| 2026-05-27 15:13:32 | 32.7 Full regression gate before PR | OK (all acceptance tests and smoke baseline) | `python -m pytest -q` (`224 passed`), smoke PASS (`baseline match: true`) | pending |

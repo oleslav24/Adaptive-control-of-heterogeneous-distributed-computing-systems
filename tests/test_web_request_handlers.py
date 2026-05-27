@@ -118,6 +118,21 @@ def test_build_get_response_job_diagnostics_route() -> None:
     assert "status" in payload
 
 
+def test_build_get_response_agent_control_route() -> None:
+    """Agent-control route should return HTML payload."""
+    manager = _FakeJobManager()
+    response = build_get_response(
+        urlparse("/agent-control?lang=en"),
+        manager,
+        workspace_root=Path(".").resolve(),
+        default_config="config.yaml",
+        payload_builder=lambda _job, _lang: {},
+    )
+    assert response.status.value == 200
+    assert response.content_type == "text/html; charset=utf-8"
+    assert "Agent Control / Quality Gate" in response.body.decode("utf-8")
+
+
 def test_build_post_response_run_route_redirects_to_new_job() -> None:
     """Run POST route should create job and return redirect payload."""
     manager = _FakeJobManager()

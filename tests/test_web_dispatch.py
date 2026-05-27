@@ -6,6 +6,7 @@ from project.web.dispatch import resolve_get_action, resolve_post_action
 def test_resolve_get_action_for_known_routes() -> None:
     """Known GET routes should map to stable action names."""
     assert resolve_get_action("/") == "dashboard"
+    assert resolve_get_action("/agent-control") == "agent_control"
     assert resolve_get_action("/job") == "job"
     assert resolve_get_action("/job-data") == "job_data"
     assert resolve_get_action("/job-diagnostics") == "job_diagnostics"
