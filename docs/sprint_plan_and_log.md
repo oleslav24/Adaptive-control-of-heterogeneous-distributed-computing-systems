@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-27 13:46:12 +07:00
+Last updated: 2026-05-27 13:47:48 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -632,4 +632,5 @@ Closed in `main` via PR #37 (merge commit `f97d027`).
 | 2026-05-22 17:28:40 | 31.1-31.4 Deterministic significance layer for publication hypotheses + validator contract + tests | OK (mapped to Sprint 31 backlog items 31.1-31.4) | targeted tests pass (`10 passed`), full pytest pass (`214 passed`) | current slice commit |
 | 2026-05-22 17:33:08 | 31.5 Smoke gate and baseline drift triage for publication fingerprint | OK (non-mechanical baseline refresh after payload diff verification) | smoke initial FAIL (publication fingerprint), payload diff verified intentional, smoke PASS after baseline refresh | current slice commit |
 | 2026-05-22 17:36:06 | 31.5 Commit + push checkpoint | OK (Sprint 31 start slice persisted remotely) | n/a | commit `1151883` |
-| 2026-05-27 13:46:12 | 31.6-31.7 Report significance snapshot integration + regression coverage refresh | OK (mapped to Sprint 31 backlog items 31.6-31.7) | targeted tests pass (`8 passed`), full pytest pass (`215 passed`), smoke PASS | pending sprint-close commit |
+| 2026-05-27 13:46:12 | 31.6-31.7 Report significance snapshot integration + regression coverage refresh | OK (mapped to Sprint 31 backlog items 31.6-31.7) | targeted tests pass (`8 passed`), full pytest pass (`215 passed`), smoke PASS | commit `bd71412` |
+| 2026-05-27 13:47:48 | 31.PR Finalize sprint branch and create one PR | Partial (branch is ready; GitHub API PR creation blocked: `must be a collaborator`) | n/a | branch `codex/sprint31-next` |
