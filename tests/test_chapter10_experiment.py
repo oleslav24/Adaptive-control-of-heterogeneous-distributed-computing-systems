@@ -158,6 +158,8 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     report_text = Path(result.output_paths["chapter10_report_md"]).read_text(encoding="utf-8")
     assert "## Carbon Interpretation" in report_text
     assert "### Hypothesis Support Status" in report_text
+    assert "### Statistical Significance Snapshot" in report_text
+    assert "Significance metadata is unavailable for this run." in report_text
     assert "`H1` `supported`" in report_text
     assert "`H2` `not-supported`" in report_text
     assert "## Related Literature Evidence (Local RAG)" in report_text

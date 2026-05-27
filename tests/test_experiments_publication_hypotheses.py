@@ -172,3 +172,13 @@ def test_evaluate_hypotheses_includes_significance_fields() -> None:
                 continue
             numeric = float(value)
             assert 0.0 <= numeric <= 1.0
+
+
+def test_render_hypothesis_significance_uses_enriched_fields() -> None:
+    """Significance renderer should emit status, p-values and metric coverage."""
+    hypotheses = pub._evaluate_hypotheses(_raw_runs_fixture())  # noqa: SLF001
+    lines = pub.render_hypothesis_significance(hypotheses)
+    assert len(lines) == 5
+    assert all("significance" in line for line in lines)
+    assert any("min p-value=" in line for line in lines)
+    assert any("significant metrics=" in line for line in lines)

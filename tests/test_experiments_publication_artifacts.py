@@ -161,6 +161,8 @@ def test_write_publication_report_contains_required_sections() -> None:
     assert "### Evidence-backed Claims" in content
     assert "## 5. Hypotheses" in content
     assert "### Hypothesis Support Status" in content
+    assert "### Statistical Significance Snapshot" in content
+    assert "Significance metadata is unavailable for this run." in content
     assert "`H1` `supported`" in content
     assert "`H2` `not-supported`" in content
     assert "## 6. Threats to Validity" in content
