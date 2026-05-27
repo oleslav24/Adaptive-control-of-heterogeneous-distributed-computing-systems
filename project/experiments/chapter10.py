@@ -18,7 +18,11 @@ from project.experiments.chapter10_tables import (
 )
 from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest, write_manifest
-from project.experiments.publication import render_hypothesis_support, run_publication_pipeline
+from project.experiments.publication import (
+    render_hypothesis_significance,
+    render_hypothesis_support,
+    run_publication_pipeline,
+)
 from project.evidence_claims import (
     build_report_claims,
     render_markdown_claims,
@@ -199,6 +203,9 @@ def _write_chapter10_report(
     else:
         lines.append("### Hypothesis Support Status")
         lines.extend(render_hypothesis_support(hypotheses))
+        lines.append("")
+        lines.append("### Statistical Significance Snapshot")
+        lines.extend(render_hypothesis_significance(hypotheses))
         lines.append("")
         lines.append(_render_markdown_table(hypotheses))
     lines.append("")

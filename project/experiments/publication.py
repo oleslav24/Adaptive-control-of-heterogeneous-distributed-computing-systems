@@ -1043,6 +1043,9 @@ def _write_publication_report(
         lines.append("### Hypothesis Support Status")
         lines.extend(render_hypothesis_support(hypotheses))
         lines.append("")
+        lines.append("### Statistical Significance Snapshot")
+        lines.extend(render_hypothesis_significance(hypotheses))
+        lines.append("")
         lines.append(_render_table(hypotheses))
     lines.append("")
     lines.append("## 6. Threats to Validity")
@@ -1111,6 +1114,49 @@ def render_hypothesis_support(hypotheses: pd.DataFrame) -> list[str]:
             sentence += f" Metrics: {metrics}."
         rows.append(sentence)
     return rows
+
+
+def render_hypothesis_significance(hypotheses: pd.DataFrame) -> list[str]:
+    """Render compact significance summary for each hypothesis row."""
+    if hypotheses.empty:
+        return ["- No significance metadata."]
+
+    records = _records(hypotheses.sort_values("hypothesis").reset_index(drop=True))
+    has_significance = any(
+        any(str(key).startswith("p_value_") for key in row.keys()) for row in records
+    )
+    if not has_significance:
+        return ["- Significance metadata is unavailable for this run."]
+
+    lines: list[str] = []
+    for row in records:
+        hypothesis = str(row.get("hypothesis", "")).strip() or "H?"
+        supported = bool(row.get("significance_supported", False))
+        status = "supported" if supported else "not-supported"
+        p_values: list[float] = []
+        signif_true = 0
+        signif_total = 0
+        for key, value in row.items():
+            text_key = str(key)
+            if text_key.startswith("p_value_"):
+                try:
+                    parsed = float(value)
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(parsed):
+                    p_values.append(parsed)
+            if text_key.startswith("significant_"):
+                if isinstance(value, (bool, np.bool_)):
+                    signif_total += 1
+                    signif_true += int(bool(value))
+        sentence = f"- `{hypothesis}` significance `{status}`"
+        if p_values:
+            sentence += f"; min p-value={min(p_values):.4f}"
+        if signif_total:
+            sentence += f"; significant metrics={signif_true}/{signif_total}"
+        sentence += "."
+        lines.append(sentence)
+    return lines
 
 
 def _format_hypothesis_metrics(record: dict[str, Any]) -> str:
