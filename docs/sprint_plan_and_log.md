@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-27 13:47:48 +07:00
+Last updated: 2026-05-27 13:52:06 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -38,7 +38,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 28 | Monograph P2 Chapter 10 package hardening | Chapter 10 artifacts/report/integrity are publication-ready and traceable | Closed |
 | 29 | Monograph P2 decision trace observability | Per-run decision trace artifacts explain MAS/ML/ZNN/LLM policy decisions | Closed |
 | 30 | Monograph P3 alignment and validity packaging | Explicit monograph-to-code traceability and bounded carbon scope in publication reports | Closed |
-| 31 | Publication significance hardening | Hypotheses include deterministic significance/effect metadata with validation and tests | In progress |
+| 31 | Publication significance hardening | Hypotheses include deterministic significance/effect metadata with validation and tests | Closed |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -84,7 +84,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 28 | Closed | 2026-05-22 14:43:09 +07:00 | merged to `main`, merge commit `762ca2a` (PR #34) |
 | 29 | Closed | 2026-05-22 16:05:41 +07:00 | merged to `main`, merge commit `be1bae4` (PR #35) |
 | 30 | Closed | 2026-05-22 16:58:18 +07:00 | merged to `main`, merge commit `f97d027` (PR #37) |
-| 31 | In progress | n/a | branch `codex/sprint31-next` |
+| 31 | Closed | 2026-05-27 13:52:06 +07:00 | merged to `main`, merge commit `c04c03e` (PR #40) |
 
 ## Detailed Sprint Backlog And Status
 
@@ -634,3 +634,7 @@ Closed in `main` via PR #37 (merge commit `f97d027`).
 | 2026-05-22 17:36:06 | 31.5 Commit + push checkpoint | OK (Sprint 31 start slice persisted remotely) | n/a | commit `1151883` |
 | 2026-05-27 13:46:12 | 31.6-31.7 Report significance snapshot integration + regression coverage refresh | OK (mapped to Sprint 31 backlog items 31.6-31.7) | targeted tests pass (`8 passed`), full pytest pass (`215 passed`), smoke PASS | commit `bd71412` |
 | 2026-05-27 13:47:48 | 31.PR Finalize sprint branch and create one PR | Partial (branch is ready; GitHub API PR creation blocked: `must be a collaborator`) | n/a | branch `codex/sprint31-next` |
+
+## Sprint 31 Closure
+
+Closed in `main` via PR #40 (merge commit `c04c03e`).
