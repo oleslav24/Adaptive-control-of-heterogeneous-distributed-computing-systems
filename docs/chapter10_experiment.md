@@ -49,6 +49,7 @@ Main files:
 - `scenario_overview.csv` / `scenario_overview.json`
 - `hypotheses.csv` / `hypotheses.json`
 - `chapter10_report.md`
+- `chapter10_control_health.json` / `chapter10_control_health.md`
 - `chapter10_manifest.json`
 - `chapter10_artifact_integrity.json`
 
@@ -62,3 +63,4 @@ When plotting is enabled:
 
 - `chapter10` internally reuses `run_publication_pipeline`.
 - Source publication artifacts are referenced in Chapter 10 manifest payload (`publication_*` keys).
+- `chapter10_control_health.*` is an operational quality-gate appendix (policy/context/logging/iteration/qgate/autonomy/integrity signals), not a replacement for algorithmic H1-H5 effectiveness metrics.

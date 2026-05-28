@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-28 11:07:15 +07:00
+Last updated: 2026-05-28 12:26:53 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -40,7 +40,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 30 | Monograph P3 alignment and validity packaging | Explicit monograph-to-code traceability and bounded carbon scope in publication reports | Closed |
 | 31 | Publication significance hardening | Hypotheses include deterministic significance/effect metadata with validation and tests | Closed |
 | 32 | Agent control and quality-gate integration | Integrated `/agent-control` model+web+tests+docs, separated demo vs real-job signals | Closed |
-| 33 | Agent control operational artifacts | Export control assessment artifacts for diagnostics and operational quality-gate traceability | In progress |
+| 33 | Agent control operational artifacts | Export control assessment artifacts for diagnostics and operational quality-gate traceability | Closed |
+| 34 | Chapter10 operational control-health appendix | Add control-health appendix artifacts into chapter10/paper bundle pipeline with tests | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -88,7 +89,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 30 | Closed | 2026-05-22 16:58:18 +07:00 | merged to `main`, merge commit `f97d027` (PR #37) |
 | 31 | Closed | 2026-05-27 13:52:06 +07:00 | merged to `main`, merge commit `c04c03e` (PR #40) |
 | 32 | Closed | 2026-05-28 11:00:00 +07:00 | merged to `main`, merge commit `029117e` (PR #42) |
-| 33 | Open | n/a | in progress on branch `codex/sprint33-control-assessment-artifacts` |
+| 33 | Closed | 2026-05-28 12:20:10 +07:00 | merged to `main`, merge commit `0c297ab` (PR #43) |
+| 34 | Open | n/a | in progress on branch `codex/sprint34-control-health-appendix` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -674,11 +676,34 @@ Closed in `main` via PR #42 (merge commit `029117e`).
 | 33.2 | Include control assessment in diagnostics bundle ZIP | Done |
 | 33.3 | Expose control assessment in `/job-diagnostics` API payload | Done |
 | 33.4 | Add/refresh diagnostics tests for new artifact contract | Done |
-| 33.5 | Update web docs and sprint log, run full regression | In progress |
+| 33.5 | Update web docs and sprint log, run full regression | Done |
 
 ## Active Sprint Slice Log (Sprint 33)
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
-| 2026-05-28 11:07:15 | 33.1-33.4 Diagnostics control-health artifact integration | OK (mapped to P4 operational artifact scope) | targeted suites pass (`12 passed`, `13 passed`) | pending |
-| 2026-05-28 11:07:15 | 33.5 Regression gate after integration | OK (full suite stable) | `python -m pytest -q` (`224 passed`) | pending |
+| 2026-05-28 11:07:15 | 33.1-33.4 Diagnostics control-health artifact integration | OK (mapped to P4 operational artifact scope) | targeted suites pass (`12 passed`, `13 passed`) | commit `5ba5088` |
+| 2026-05-28 11:07:15 | 33.5 Regression gate after integration | OK (full suite stable) | `python -m pytest -q` (`224 passed`) | commit `5ba5088` |
+| 2026-05-28 12:20:10 | 33.PR Merge confirmation and sprint closure sync | OK (status reconciled with GitHub merge state) | n/a | merge `0c297ab` (PR #43) |
+
+## Sprint 33 Closure
+
+Closed in `main` via PR #43 (merge commit `0c297ab`).
+
+### Sprint 34 - Chapter10 operational control-health appendix
+
+| Task | Description | Status |
+|---|---|---|
+| 34.1 | Add reusable control-health builder for chapter10/paper artifacts | Done |
+| 34.2 | Export `chapter10_control_health.json` and `chapter10_control_health.md` from chapter10 pipeline | Done |
+| 34.3 | Update chapter10 report/manifest/integrity flow to include control-health appendix | Done |
+| 34.4 | Add/refresh tests for chapter10 + control-health appendix contracts | Done |
+| 34.5 | Update docs and run targeted/full regression before PR | Done |
+
+## Active Sprint Slice Log (Sprint 34)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-28 12:20:10 | 34.1-34.3 Start control-health appendix integration in chapter10 pipeline | OK (mapped to P4 operational appendix scope, separated from H1-H5 metrics) | pending | pending |
+| 2026-05-28 12:26:53 | 34.1-34.4 Control-health module + chapter10 integration + unit coverage | OK (control-health appendix integrated as operational artifact, not hypothesis metric) | targeted tests pass (`5 passed`), full pytest pass (`226 passed`) | current slice commit |
+| 2026-05-28 12:26:53 | 34.5 Runtime validation + docs sync | OK (`chapter10-quick` run emits control-health appendix with stable package validation/integrity) | `python -m project.experiments.run --config config.yaml --chapter10 --chapter10-quick --chapter10-seeds 42,43 --log-level warning` PASS | current slice commit |
