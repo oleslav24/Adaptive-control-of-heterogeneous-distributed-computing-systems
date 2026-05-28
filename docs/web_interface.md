@@ -60,8 +60,10 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - real-job assessment mode:
     - `demo` (no job),
     - `assess latest job`,
+    - `assess latest completed job`,
     - `assess by job id`
   - real-job signals are reported as `pass/fail/present/unknown` and are separated from demo percentages
+  - real-job panel includes aggregate summary (`overall`, per-state counts, failing components)
   - artifact-based checks include: manifests, integrity report, validation gates, decision trace, runtime logs
 - `/files?path=...`
   - workspace-safe file browser

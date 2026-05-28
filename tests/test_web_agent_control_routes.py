@@ -57,3 +57,23 @@ def test_agent_control_route_latest_assessment_renders_signal_table() -> None:
     assert "Agent Control / Quality Gate" in html
     assert "<th>Component</th>" in html
     assert "<td>policy</td>" in html
+    assert "Overall" in html
+
+
+def test_agent_control_route_latest_terminal_picks_completed_job() -> None:
+    """Latest-terminal assessment should skip running jobs and pick completed one."""
+    manager = _FakeJobManager(
+        [
+            _FakeJob(id="job-running", status="running"),
+            _FakeJob(id="job-done", status="success"),
+        ]
+    )
+    response = build_agent_control_response(
+        urlparse("/agent-control?lang=en&assess=latest-terminal"),
+        manager,
+    )
+    html = response.body.decode("utf-8")
+
+    assert response.status.value == 200
+    assert "<code>job-done</code>" in html
+    assert "<code>job-running</code>" not in html

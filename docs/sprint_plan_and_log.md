@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-28 17:31:08 +07:00
+Last updated: 2026-05-28 17:44:48 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -44,7 +44,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 34 | Chapter10 operational control-health appendix | Add control-health appendix artifacts into chapter10/paper bundle pipeline with tests | Closed |
 | 35 | Web job control-health artifact export | Auto-export `control_assessment.json` into run artifact directories for completed web jobs | Closed |
 | 36 | Job-data control assessment surfacing | Expose control assessment in `/job-data` with artifact-first/fallback-runtime strategy | Closed |
-| 37 | Job page control-assessment UX | Render control assessment signals directly on `/job` page from `/job-data` payload | In progress |
+| 37 | Job page control-assessment UX | Render control assessment signals directly on `/job` page from `/job-data` payload | Closed |
+| 38 | Agent-control real-job summary hardening | Add aggregate assessment summary + latest terminal mode + docs/tests sync | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -96,7 +97,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 34 | Closed | 2026-05-28 13:53:32 +07:00 | merged to `main`, merge commit `d8ca569` (PR #44) |
 | 35 | Closed | 2026-05-28 17:01:13 +07:00 | merged to `main`, merge commit `6fb5a60` (PR #45) |
 | 36 | Closed | 2026-05-28 17:31:08 +07:00 | merged to `main`, merge commit `64f7af7` (PR #46) |
-| 37 | Open | n/a | in progress on branch `codex/sprint36-next` |
+| 37 | Closed | 2026-05-28 17:40:30 +07:00 | merged to `main`, merge commit `d8a21b0` (PR #47) |
+| 38 | Open | n/a | in progress on branch `codex/sprint36-next` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -777,3 +779,23 @@ Closed in `main` via PR #46 (merge commit `64f7af7`).
 | 2026-05-28 17:29:47 | 37.1-37.3 Job page control-assessment UI wiring | OK (extends existing operational control-health observability in web UI without changing experiment metrics) | pending | pending |
 | 2026-05-28 17:31:08 | 37.1-37.4 UI + i18n + tests + docs | OK (control assessment is now visible directly on `/job` and remains artifact-first from `/job-data`) | targeted tests pass (`19 passed`), full pytest pass (`229 passed`) | current slice commit |
 | 2026-05-28 17:31:08 | 37.PR | Skipped by request (`без PR`) | n/a | branch `codex/sprint36-next` |
+
+## Sprint 37 Closure
+
+Closed in `main` via PR #47 (merge commit `d8a21b0`).
+
+### Sprint 38 - Agent-control real-job summary hardening
+
+| Task | Description | Status |
+|---|---|---|
+| 38.1 | Add aggregate control summary (`overall`, state counts, failing components) to real-job assessment payload | Done |
+| 38.2 | Add `latest completed job` assessment mode in `/agent-control` | Done |
+| 38.3 | Update route/model/payload tests for summary and latest-terminal behavior | Done |
+| 38.4 | Update docs and sprint log, run targeted/full regression before sprint closure | Done |
+
+## Active Sprint Slice Log (Sprint 38)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-28 17:36:10 | 38.1-38.2 Implement control summary and latest-terminal mode | OK (extends operational quality-gate observability and does not alter GRVS algorithmic metrics) | pending | pending |
+| 2026-05-28 17:43:19 | 38.1-38.4 Tests + docs + sprint log sync | OK (real-job assessment now provides compact aggregate health view and deterministic latest completed-job selection) | targeted tests pass (`28 passed`), full pytest pass (`230 passed`) | current slice commit |

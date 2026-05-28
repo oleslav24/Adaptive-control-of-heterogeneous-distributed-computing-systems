@@ -24,8 +24,13 @@ def build_agent_control_html(
     """Render `/agent-control` page with demo and real-job assessment modes."""
     text = _page_text(lang)
     switcher = language_switcher(lang, "/agent-control")
-    selected_mode = assessment_mode if assessment_mode in {"demo", "latest", "job", "id"} else "demo"
+    selected_mode = (
+        assessment_mode
+        if assessment_mode in {"demo", "latest", "latest-terminal", "latest_terminal", "job", "id"}
+        else "demo"
+    )
     selected_mode = "job" if selected_mode == "id" else selected_mode
+    selected_mode = "latest-terminal" if selected_mode == "latest_terminal" else selected_mode
 
     job_options = "".join(
         (
@@ -187,6 +192,7 @@ def build_agent_control_html(
           <select name="assess" id="ac-assess-mode">
             <option value="demo" {'selected' if selected_mode == 'demo' else ''}>{escape(text['mode_demo'])}</option>
             <option value="latest" {'selected' if selected_mode == 'latest' else ''}>{escape(text['mode_latest'])}</option>
+            <option value="latest-terminal" {'selected' if selected_mode == 'latest-terminal' else ''}>{escape(text['mode_latest_terminal'])}</option>
             <option value="job" {'selected' if selected_mode == 'job' else ''}>{escape(text['mode_job'])}</option>
           </select>
         </label>
@@ -522,6 +528,7 @@ def _render_assessment_block(
         "<div class='ac-assess-result'>"
         f"<p><strong>{escape(text['assessment_for'])}:</strong> <code>{escape(assessment.job_id)}</code>"
         f" | <strong>{escape(text['status'])}:</strong> <code>{escape(assessment.job_status)}</code></p>"
+        f"{_render_assessment_summary(text, assessment)}"
         "<table>"
         "<thead><tr>"
         f"<th>{escape(text['component'])}</th>"
@@ -532,6 +539,24 @@ def _render_assessment_block(
         f"<tbody>{rows}</tbody>"
         "</table>"
         "</div>"
+    )
+
+
+def _render_assessment_summary(text: dict[str, str], assessment: JobControlAssessment) -> str:
+    """Render compact summary for real-job assessment signals."""
+    summary = assessment.summary
+    counts = summary.counts
+    failed = ", ".join(summary.failing_components) if summary.failing_components else "-"
+    return (
+        "<p>"
+        f"<strong>{escape(text['overall'])}:</strong> "
+        f"<span class='ac-tag ac-tag-{escape(summary.overall_state)}'>{escape(summary.overall_state)}</span> "
+        f"| pass={int(counts.get('pass', 0))} "
+        f"| fail={int(counts.get('fail', 0))} "
+        f"| present={int(counts.get('present', 0))} "
+        f"| unknown={int(counts.get('unknown', 0))} "
+        f"| <strong>{escape(text['failing_components'])}:</strong> <code>{escape(failed)}</code>"
+        "</p>"
     )
 
 
@@ -580,6 +605,7 @@ def _page_text(lang: str) -> dict[str, str]:
         "assessment_mode": "Assessment mode",
         "mode_demo": "Demo only",
         "mode_latest": "Assess latest job",
+        "mode_latest_terminal": "Assess latest completed job",
         "mode_job": "Assess by job id",
         "job_id": "Job id",
         "run_assessment": "Assess",
@@ -590,6 +616,8 @@ def _page_text(lang: str) -> dict[str, str]:
         "signal": "Signal",
         "reason": "Reason",
         "evidence": "Evidence",
+        "overall": "Overall",
+        "failing_components": "Failing components",
         "components_title": "Control Components",
         "metrics_title": "Process Metrics",
         "events_title": "Event Log",
@@ -630,6 +658,7 @@ def _page_text(lang: str) -> dict[str, str]:
         "assessment_mode": "Режим оценки",
         "mode_demo": "Только демо",
         "mode_latest": "Оценить последний job",
+        "mode_latest_terminal": "Оценить последний завершенный job",
         "mode_job": "Оценить по id",
         "job_id": "ID job",
         "run_assessment": "Оценить",
@@ -640,6 +669,8 @@ def _page_text(lang: str) -> dict[str, str]:
         "signal": "Сигнал",
         "reason": "Причина",
         "evidence": "Подтверждение",
+        "overall": "Итог",
+        "failing_components": "Проблемные компоненты",
         "components_title": "Контрольные компоненты",
         "metrics_title": "Метрики процесса",
         "events_title": "Журнал событий",

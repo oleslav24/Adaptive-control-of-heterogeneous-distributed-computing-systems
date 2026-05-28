@@ -38,6 +38,12 @@ def build_agent_control_response(parsed, job_manager: _AgentControlJobManager) -
             assessment = assess_job_control(selected_job)
         else:
             assessment_message = "No jobs available yet."
+    elif assess_mode in {"latest-terminal", "latest_terminal"}:
+        selected_job = _latest_terminal_job(jobs)
+        if selected_job is not None:
+            assessment = assess_job_control(selected_job)
+        else:
+            assessment_message = "No completed jobs available yet."
     elif assess_mode in {"job", "id"}:
         if requested_job_id:
             selected_job = job_manager.get(requested_job_id)
@@ -58,3 +64,12 @@ def build_agent_control_response(parsed, job_manager: _AgentControlJobManager) -
         assessment_message=assessment_message,
     )
     return html_response(HTTPStatus.OK, html)
+
+
+def _latest_terminal_job(jobs: list[object]) -> object | None:
+    """Return first job with terminal status from manager list order."""
+    for job in jobs:
+        status = str(getattr(job, "status", "")).strip().lower()
+        if status in {"success", "failed", "timeout", "stopped"}:
+            return job
+    return None
