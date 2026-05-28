@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-28 17:03:04 +07:00
+Last updated: 2026-05-28 17:04:08 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -753,3 +753,4 @@ Closed in `main` via PR #45 (merge commit `6fb5a60`).
 |---|---|---|---|---|
 | 2026-05-28 17:01:13 | 36.1-36.2 Start `/job-data` control-assessment surfacing | OK (extends web observability path for operational control-health reuse) | pending | pending |
 | 2026-05-28 17:03:04 | 36.1-36.4 `/job-data` control-assessment integration + tests + docs | OK (artifact-first payload with runtime fallback is implemented and regression-safe) | targeted tests pass (`20 passed`), full pytest pass (`229 passed`) | current slice commit |
+| 2026-05-28 17:04:08 | 36.PR Push + PR creation attempt | Partial (branch pushed, GitHub API PR creation blocked: `must be a collaborator`) | n/a | branch `codex/sprint36-next` |
