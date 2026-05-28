@@ -1,5 +1,6 @@
 """Unit tests for web API payload builders."""
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -189,3 +190,59 @@ def test_job_payload_includes_literature_evidence_payload(monkeypatch) -> None:
     assert claims[0]["hypothesis"] == "H1"
     assert claims[0]["evidence"][0]["article_id"] == "doc-1"
     assert claims_gate["ok"] is True
+
+
+def test_job_payload_prefers_exported_control_assessment_artifact(monkeypatch) -> None:
+    """`/job-data` payload should use exported control-assessment artifact when present."""
+    fake_researcher = _FakeResearcher()
+    monkeypatch.setattr(payloads, "RESEARCHER_AGENT", fake_researcher)
+
+    folder = Path("outputs") / "test-suite" / f"web-payload-control-{uuid4().hex[:8]}"
+    folder.mkdir(parents=True, exist_ok=True)
+    control_path = (folder / "control_assessment.json").resolve()
+    control_path.write_text(
+        json.dumps(
+            {
+                "job_id": "artifact-job",
+                "job_status": "success",
+                "mode": "real-job",
+                "signals": [
+                    {"component_id": "policy", "state": "pass", "reason": "artifact", "evidence": []}
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    job = _FakeJob(
+        id="job-1",
+        status="success",
+        log_lines=[
+            f"control_assessment_json: {control_path}",
+        ],
+    )
+    result = payloads.job_payload(job, "en")
+    control = result["control_assessment"]
+    assert isinstance(control, dict)
+    assert control["job_id"] == "artifact-job"
+    assert control["signals"][0]["component_id"] == "policy"
+
+
+def test_job_payload_falls_back_to_runtime_control_assessment(monkeypatch) -> None:
+    """When artifact is absent, payload should include runtime control assessment."""
+    fake_researcher = _FakeResearcher()
+    monkeypatch.setattr(payloads, "RESEARCHER_AGENT", fake_researcher)
+
+    job = _FakeJob(
+        id="fallback-job",
+        status="running",
+        log_lines=[
+            "Simulation initialized: scenario=static algorithm=min-load",
+            "t=0 queue=1 completed=0 latency=1.0 throughput=0.0 avg_load=0.2",
+        ],
+    )
+    result = payloads.job_payload(job, "en")
+    control = result["control_assessment"]
+    assert isinstance(control, dict)
+    assert control["job_id"] == "fallback-job"
+    assert control["mode"] == "real-job"
+    assert isinstance(control.get("signals"), list)

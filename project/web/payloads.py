@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 from datetime import datetime
+import json
 from pathlib import Path
 from threading import Lock
 from typing import Protocol
@@ -16,6 +17,7 @@ from project.literature_evidence import (
     search_literature,
     validate_evidence_items,
 )
+from project.web.agent_control import assess_job_control, job_control_assessment_payload
 from project.web.i18n import (
     ALGORITHM_LABELS,
     SCENARIO_LABELS,
@@ -130,6 +132,7 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
         status_details = _default_status_details(job)
     command_text = job.command_text()
     carbon_outcomes = _carbon_outcomes(lines, command_text)
+    control_assessment = _control_assessment_payload(job, lines)
     return {
         "id": job.id,
         "status": job.status,
@@ -145,6 +148,7 @@ def job_payload(job: _JobPayloadLike, lang: str) -> dict[str, object]:
         "metrics": metrics,
         "insights": insights,
         "carbon_outcomes": carbon_outcomes,
+        "control_assessment": control_assessment,
         "literature_evidence": literature_evidence,
         "literature_evidence_gate": literature_gate,
         "claims": claims_payload["claims"],
@@ -213,6 +217,19 @@ def _carbon_outcomes(lines: list[str], command_text: str) -> dict[str, object] |
     }
 
 
+def _control_assessment_payload(
+    job: _JobPayloadLike,
+    lines: list[str],
+) -> dict[str, object]:
+    """Return control assessment from exported artifact or compute it on demand."""
+    artifact_path = _extract_artifact_path(lines, "control_assessment_json")
+    if artifact_path:
+        payload = _read_json_dict(Path(artifact_path))
+        if payload:
+            return payload
+    return job_control_assessment_payload(assess_job_control(job))
+
+
 def _extract_artifact_path(lines: list[str], key: str) -> str | None:
     """Extract latest '<key>: <path>' line from job log output."""
     prefix = f"{key}:"
@@ -259,4 +276,17 @@ def _as_float(raw: str | None) -> float | None:
         return float(text)
     except ValueError:
         return None
+
+
+def _read_json_dict(path: Path) -> dict[str, object]:
+    """Read JSON object payload with defensive fallback."""
+    if not path.exists() or not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    return payload
 
