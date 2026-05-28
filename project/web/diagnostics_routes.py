@@ -12,6 +12,7 @@ from project.web.diagnostics import (
     export_job_diagnostics_bundle,
     is_failure_like_status,
 )
+from project.web.agent_control import assess_job_control, job_control_assessment_payload
 from project.web.i18n import tr
 from project.web.route_responses import RouteResponse, json_response, text_response
 from project.web.routing import first, lang_from_parsed
@@ -36,6 +37,7 @@ def build_job_diagnostics_response(
         return json_response(HTTPStatus.NOT_FOUND, {"error": tr(lang, "job_not_found")})
 
     diagnostics = build_job_diagnostics(job).to_payload()
+    diagnostics["control_assessment"] = job_control_assessment_payload(assess_job_control(job))
     diagnostics["can_export_bundle"] = is_failure_like_status(job.status)
     diagnostics["lang"] = lang
     return json_response(HTTPStatus.OK, diagnostics)

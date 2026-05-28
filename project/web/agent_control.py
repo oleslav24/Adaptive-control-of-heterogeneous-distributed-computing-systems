@@ -395,6 +395,24 @@ def assess_job_control(job: _JobLike) -> JobControlAssessment:
     )
 
 
+def job_control_assessment_payload(assessment: JobControlAssessment) -> dict[str, object]:
+    """Serialize job control assessment dataclasses into JSON-friendly payload."""
+    return {
+        "job_id": assessment.job_id,
+        "job_status": assessment.job_status,
+        "mode": assessment.mode,
+        "signals": [
+            {
+                "component_id": signal.component_id,
+                "state": signal.state,
+                "reason": signal.reason,
+                "evidence": list(signal.evidence),
+            }
+            for signal in assessment.signals
+        ],
+    }
+
+
 def _snapshot_lines(job: _JobLike) -> list[str]:
     """Read job log lines with lock if available."""
     lock = getattr(job, "_lock", None)

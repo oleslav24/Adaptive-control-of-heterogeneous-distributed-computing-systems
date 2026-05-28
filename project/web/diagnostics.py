@@ -10,6 +10,8 @@ from threading import Lock
 from typing import Protocol
 import zipfile
 
+from project.web.agent_control import assess_job_control, job_control_assessment_payload
+
 
 _BUNDLE_ROOT = Path("outputs") / "_web_diagnostics"
 _MAX_DIAGNOSTIC_LOG_LINES = 500
@@ -98,15 +100,20 @@ def export_job_diagnostics_bundle(
 
     diagnostics_json_path = bundle_dir / "diagnostics.json"
     diagnostics_log_path = bundle_dir / "diagnostics.log"
+    control_assessment_path = bundle_dir / "control_assessment.json"
     zip_path = bundle_dir / f"job-{job.id}-diagnostics.zip"
+    control_assessment_payload = job_control_assessment_payload(assess_job_control(job))
 
     with diagnostics_json_path.open("w", encoding="utf-8") as f:
         json.dump(diagnostics.to_payload(), f, indent=2, sort_keys=True)
     diagnostics_log_path.write_text("\n".join(diagnostics.log_tail), encoding="utf-8")
+    with control_assessment_path.open("w", encoding="utf-8") as f:
+        json.dump(control_assessment_payload, f, indent=2, sort_keys=True)
 
     with zipfile.ZipFile(zip_path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.write(diagnostics_json_path, arcname="diagnostics.json")
         zf.write(diagnostics_log_path, arcname="diagnostics.log")
+        zf.write(control_assessment_path, arcname="control_assessment.json")
 
     return zip_path
 
