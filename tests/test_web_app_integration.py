@@ -191,6 +191,8 @@ def test_web_http_run_route_produces_job_and_metrics_payload(monkeypatch) -> Non
             assert payload["metrics"]["queue"] == [3, 1]
             assert payload["metrics"]["throughput"] == [0.0, 2.0]
             assert isinstance(payload["insights"], list)
+            assert "control_assessment" in payload
+            assert isinstance(payload["control_assessment"].get("signals", []), list)
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
 
@@ -250,6 +252,7 @@ def test_web_http_stop_route_stops_running_job(monkeypatch) -> None:
             payload = json.loads(body.decode("utf-8"))
             assert payload["status"] == "stopped"
             assert "[web-ui] stop requested." in payload["log_text"]
+            assert "control_assessment" in payload
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
 
