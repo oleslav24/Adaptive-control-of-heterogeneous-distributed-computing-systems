@@ -1,8 +1,10 @@
 """Unit tests for web background job models and manager."""
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 import sys
+from uuid import uuid4
 
 from project.web.jobs import (
     DEFAULT_JOB_TIMEOUT_SECONDS,
@@ -113,3 +115,32 @@ def test_run_job_failed_exit_sets_status_details() -> None:
     assert job.status == "failed"
     assert job.return_code == 3
     assert job.status_details == "exit-code:3"
+
+
+def test_run_job_exports_control_assessment_artifact() -> None:
+    """Completed run should persist control assessment near reported manifest artifacts."""
+    manager = JobManager()
+    artifact_dir = (Path("outputs") / "test-suite" / f"job-control-{uuid4().hex[:8]}").resolve()
+    script = (
+        "from pathlib import Path;"
+        f"target=Path({artifact_dir.as_posix()!r});"
+        "target.mkdir(parents=True, exist_ok=True);"
+        "manifest=target/'run_manifest.json';"
+        "manifest.write_text('{}', encoding='utf-8');"
+        "print(f'run_manifest_json: {manifest}', flush=True)"
+    )
+    job = RunJob(
+        id="control-artifact",
+        command=[sys.executable, "-c", script],
+        cwd=Path(".").resolve(),
+        timeout_seconds=30,
+    )
+
+    manager._run_job(job)  # noqa: SLF001
+
+    control_path = artifact_dir / "control_assessment.json"
+    assert job.status == "success"
+    assert control_path.exists()
+    payload = json.loads(control_path.read_text(encoding="utf-8"))
+    assert payload["job_id"] == "control-artifact"
+    assert any("control_assessment_json:" in line for line in job.log_lines)

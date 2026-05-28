@@ -47,6 +47,7 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - `ResearcherAgent` textual conclusions based on chart trends (localized RU/EN)
   - stop button for running job
   - diagnostics payload includes `control_assessment` (operational quality-gate health)
+  - after terminal status (`success/failed/timeout/stopped`) web runner exports `control_assessment.json` near produced run artifacts (when manifest/output paths are available)
 - `/agent-control`
   - integrated controllability module (`Agent Control / Quality Gate`) with `lang=ru|en`
   - demo profile mirrors colleague stand logic as maintained Python model (`project.web.agent_control`)
