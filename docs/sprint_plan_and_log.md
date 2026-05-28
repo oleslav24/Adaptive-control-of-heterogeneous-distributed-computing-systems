@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-28 13:54:59 +07:00
+Last updated: 2026-05-28 13:55:55 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -730,3 +730,4 @@ Closed in `main` via PR #44 (merge commit `d8ca569`).
 |---|---|---|---|---|
 | 2026-05-28 13:53:32 | 35.1-35.2 Start job-level control artifact export implementation | OK (extends operational control-health pipeline without mixing into algorithmic metrics) | pending | pending |
 | 2026-05-28 13:54:59 | 35.1-35.4 Implementation + tests + docs | OK (web jobs now persist operational control assessment beside run artifacts when manifests/output paths exist) | targeted tests pass (`16 passed`), full pytest pass (`227 passed`) | current slice commit |
+| 2026-05-28 13:55:55 | 35.PR Push + PR creation attempt | Partial (branch pushed, GitHub API PR creation blocked: `must be a collaborator`) | n/a | branch `codex/sprint35-web-control-health-job-export` |
