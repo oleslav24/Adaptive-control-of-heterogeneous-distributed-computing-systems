@@ -144,6 +144,8 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
         "hypotheses_csv",
         "hypotheses_json",
         "chapter10_report_md",
+        "chapter10_control_health_json",
+        "chapter10_control_health_md",
         "chapter10_package_validation_json",
         "chapter10_manifest_json",
         "chapter10_artifact_integrity_json",
@@ -168,6 +170,7 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     assert "chapter10_manifest.json" in report_text
     assert "chapter10_artifact_integrity.json" in report_text
     assert "chapter10_package_validation.json" in report_text
+    assert "chapter10_control_health.{json,md}" in report_text
     assert "docs/monograph_alignment.md" in report_text
     assert "## Monograph Alignment" in report_text
     assert "Chapter 10" in report_text
@@ -182,11 +185,19 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     assert validation["ok"] is True
     assert validation["missing_keys"] == []
     assert validation["missing_files"] == []
+    control_health = json.loads(
+        Path(result.output_paths["chapter10_control_health_json"]).read_text(encoding="utf-8")
+    )
+    assert control_health["scope"] == "operational_quality_gate"
+    assert control_health["overall_status"] in {"STABLE", "WARNING", "CRITICAL"}
+    assert len(control_health["signals"]) == 7
 
     manifest_path = Path(result.output_paths["chapter10_manifest_json"])
     with manifest_path.open("r", encoding="utf-8") as f:
         manifest = json.load(f)
     assert manifest["mode"] == "chapter10-study"
+    output_files = manifest.get("extra", {}).get("output_files", {})
+    assert "chapter10_control_health_json" in output_files
 
 
 def _workspace_dir(suffix: str) -> Path:

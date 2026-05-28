@@ -16,6 +16,10 @@ from project.experiments.chapter10_tables import (
     build_chapter10_tables,
     persist_chapter10_tables,
 )
+from project.experiments.control_health import (
+    build_control_health_assessment,
+    write_control_health_artifacts,
+)
 from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest, write_manifest
 from project.experiments.publication import (
@@ -42,7 +46,10 @@ REQUIRED_CHAPTER10_ARTIFACT_KEYS = (
     "chapter10_report_md",
     "chapter10_literature_evidence_gate_json",
     "chapter10_claims_report_json",
+    "chapter10_control_health_json",
+    "chapter10_control_health_md",
     "chapter10_manifest_json",
+    "chapter10_artifact_integrity_json",
     "publication_publication_manifest_json",
     "publication_artifact_integrity_json",
 )
@@ -125,34 +132,79 @@ def run_chapter10_experiment(
         output_paths[f"publication_{key}"] = str(path)
 
     manifest_path = chapter10_dir / "chapter10_manifest.json"
-    write_manifest(
-        manifest_path,
-        build_run_manifest(
-            config=base_config,
-            mode="chapter10-study",
-            cli_args=cli_args,
-            extra={
-                "seeds": effective_seeds,
-                "seed_count": len(effective_seeds),
-                "quick": effective_quick,
-                "save_plots": effective_plots,
-                "publication_output_dir": str(publication_result.output_dir),
-                "chapter10_output_dir": str(chapter10_dir),
-                "output_files": output_paths,
-            },
-        ),
-    )
     output_paths["chapter10_manifest_json"] = str(manifest_path)
-    package_validation = validate_chapter10_package(output_paths)
     validation_path = chapter10_dir / "chapter10_package_validation.json"
-    validation_path.write_text(
-        json.dumps(package_validation, ensure_ascii=False, indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
     output_paths["chapter10_package_validation_json"] = str(validation_path)
+    _write_chapter10_manifest(
+        manifest_path=manifest_path,
+        config=base_config,
+        cli_args=cli_args,
+        seeds=effective_seeds,
+        quick=effective_quick,
+        save_plots=effective_plots,
+        publication_output_dir=publication_result.output_dir,
+        chapter10_dir=chapter10_dir,
+        output_paths=output_paths,
+    )
+    package_validation = validate_chapter10_package(output_paths)
+    _write_chapter10_package_validation(
+        validation_path=validation_path,
+        validation_payload=package_validation,
+    )
     output_paths["chapter10_artifact_integrity_json"] = write_artifact_integrity_file(
         chapter10_dir / "chapter10_artifact_integrity.json",
-        output_paths,
+        _integrity_inputs(output_paths),
+    )
+    control_health_paths = write_control_health_artifacts(
+        chapter10_dir,
+        build_control_health_assessment(output_paths, mode="chapter10-study"),
+    )
+    output_paths.update(control_health_paths)
+    package_validation = validate_chapter10_package(output_paths)
+    _write_chapter10_package_validation(
+        validation_path=validation_path,
+        validation_payload=package_validation,
+    )
+    _write_chapter10_manifest(
+        manifest_path=manifest_path,
+        config=base_config,
+        cli_args=cli_args,
+        seeds=effective_seeds,
+        quick=effective_quick,
+        save_plots=effective_plots,
+        publication_output_dir=publication_result.output_dir,
+        chapter10_dir=chapter10_dir,
+        output_paths=output_paths,
+    )
+    output_paths["chapter10_artifact_integrity_json"] = write_artifact_integrity_file(
+        chapter10_dir / "chapter10_artifact_integrity.json",
+        _integrity_inputs(output_paths),
+    )
+    output_paths.update(
+        write_control_health_artifacts(
+            chapter10_dir,
+            build_control_health_assessment(output_paths, mode="chapter10-study"),
+        )
+    )
+    package_validation = validate_chapter10_package(output_paths)
+    _write_chapter10_package_validation(
+        validation_path=validation_path,
+        validation_payload=package_validation,
+    )
+    _write_chapter10_manifest(
+        manifest_path=manifest_path,
+        config=base_config,
+        cli_args=cli_args,
+        seeds=effective_seeds,
+        quick=effective_quick,
+        save_plots=effective_plots,
+        publication_output_dir=publication_result.output_dir,
+        chapter10_dir=chapter10_dir,
+        output_paths=output_paths,
+    )
+    output_paths["chapter10_artifact_integrity_json"] = write_artifact_integrity_file(
+        chapter10_dir / "chapter10_artifact_integrity.json",
+        _integrity_inputs(output_paths),
     )
 
     return Chapter10Result(
@@ -267,6 +319,7 @@ def _write_chapter10_report(
     lines.append("- Run manifest: `chapter10_manifest.json`.")
     lines.append("- Artifact integrity: `chapter10_artifact_integrity.json`.")
     lines.append("- Package validation: `chapter10_package_validation.json`.")
+    lines.append("- Operational control-health appendix: `chapter10_control_health.{json,md}`.")
     lines.append(
         "- Source publication package: "
         f"`{_display_path(publication_output_dir)}`."
@@ -356,6 +409,59 @@ def validate_chapter10_package(output_paths: dict[str, str]) -> dict[str, Any]:
 def _display_path(path: Path) -> str:
     """Render a stable local path string for markdown reports."""
     return str(path).replace("\\", "/")
+
+
+def _write_chapter10_manifest(
+    *,
+    manifest_path: Path,
+    config: ExperimentConfig,
+    cli_args: list[str],
+    seeds: list[int],
+    quick: bool,
+    save_plots: bool,
+    publication_output_dir: Path,
+    chapter10_dir: Path,
+    output_paths: dict[str, str],
+) -> None:
+    """Write chapter10 run manifest for the current output path set."""
+    write_manifest(
+        manifest_path,
+        build_run_manifest(
+            config=config,
+            mode="chapter10-study",
+            cli_args=cli_args,
+            extra={
+                "seeds": list(seeds),
+                "seed_count": len(seeds),
+                "quick": bool(quick),
+                "save_plots": bool(save_plots),
+                "publication_output_dir": str(publication_output_dir),
+                "chapter10_output_dir": str(chapter10_dir),
+                "output_files": dict(output_paths),
+            },
+        ),
+    )
+
+
+def _write_chapter10_package_validation(
+    *,
+    validation_path: Path,
+    validation_payload: dict[str, Any],
+) -> None:
+    """Persist chapter10 package validation JSON payload."""
+    validation_path.write_text(
+        json.dumps(validation_payload, ensure_ascii=False, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+
+def _integrity_inputs(output_paths: dict[str, str]) -> dict[str, str]:
+    """Drop integrity artifact key to prevent self-hash recursion."""
+    return {
+        key: path
+        for key, path in output_paths.items()
+        if key != "chapter10_artifact_integrity_json"
+    }
 
 
 def _render_markdown_table(df: pd.DataFrame) -> str:
