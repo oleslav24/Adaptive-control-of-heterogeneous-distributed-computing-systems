@@ -65,6 +65,8 @@ def test_build_job_diagnostics_response_returns_payload() -> None:
     assert '"id": "job-1"' in body
     assert '"status": "timeout"' in body
     assert '"can_export_bundle": true' in body
+    assert '"control_assessment"' in body
+    assert '"component_id": "policy"' in body
 
 
 def test_build_job_bundle_response_rejects_success_status() -> None:
@@ -93,4 +95,6 @@ def test_build_job_bundle_response_exports_zip_for_failed_job() -> None:
 
     with zipfile.ZipFile(BytesIO(response.body), mode="r") as zf:
         names = sorted(zf.namelist())
-    assert names == ["diagnostics.json", "diagnostics.log"]
+        control_payload = zf.read("control_assessment.json").decode("utf-8")
+    assert names == ["control_assessment.json", "diagnostics.json", "diagnostics.log"]
+    assert '"component_id": "policy"' in control_payload

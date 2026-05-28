@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-27 15:13:32 +07:00
+Last updated: 2026-05-28 11:07:15 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -39,7 +39,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 29 | Monograph P2 decision trace observability | Per-run decision trace artifacts explain MAS/ML/ZNN/LLM policy decisions | Closed |
 | 30 | Monograph P3 alignment and validity packaging | Explicit monograph-to-code traceability and bounded carbon scope in publication reports | Closed |
 | 31 | Publication significance hardening | Hypotheses include deterministic significance/effect metadata with validation and tests | Closed |
-| 32 | Agent control and quality-gate integration | Integrated `/agent-control` model+web+tests+docs, separated demo vs real-job signals | In progress |
+| 32 | Agent control and quality-gate integration | Integrated `/agent-control` model+web+tests+docs, separated demo vs real-job signals | Closed |
+| 33 | Agent control operational artifacts | Export control assessment artifacts for diagnostics and operational quality-gate traceability | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -86,7 +87,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 29 | Closed | 2026-05-22 16:05:41 +07:00 | merged to `main`, merge commit `be1bae4` (PR #35) |
 | 30 | Closed | 2026-05-22 16:58:18 +07:00 | merged to `main`, merge commit `f97d027` (PR #37) |
 | 31 | Closed | 2026-05-27 13:52:06 +07:00 | merged to `main`, merge commit `c04c03e` (PR #40) |
-| 32 | Open | n/a | in progress on branch `codex/sprint32-agent-control` |
+| 32 | Closed | 2026-05-28 11:00:00 +07:00 | merged to `main`, merge commit `029117e` (PR #42) |
+| 33 | Open | n/a | in progress on branch `codex/sprint33-control-assessment-artifacts` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -659,3 +661,24 @@ Closed in `main` via PR #40 (merge commit `c04c03e`).
 |---|---|---|---|---|
 | 2026-05-27 15:10:43 | 32.1-32.6 Agent control integration (model + route/view + dashboard + docs) | OK (mapped to integration backlog and monograph alignment mapping) | targeted web/model suites pass (`26 passed`) | pending |
 | 2026-05-27 15:13:32 | 32.7 Full regression gate before PR | OK (all acceptance tests and smoke baseline) | `python -m pytest -q` (`224 passed`), smoke PASS (`baseline match: true`) | pending |
+
+## Sprint 32 Closure
+
+Closed in `main` via PR #42 (merge commit `029117e`).
+
+### Sprint 33 - Agent control operational artifacts
+
+| Task | Description | Status |
+|---|---|---|
+| 33.1 | Export `control_assessment.json` for job diagnostics | Done |
+| 33.2 | Include control assessment in diagnostics bundle ZIP | Done |
+| 33.3 | Expose control assessment in `/job-diagnostics` API payload | Done |
+| 33.4 | Add/refresh diagnostics tests for new artifact contract | Done |
+| 33.5 | Update web docs and sprint log, run full regression | In progress |
+
+## Active Sprint Slice Log (Sprint 33)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-28 11:07:15 | 33.1-33.4 Diagnostics control-health artifact integration | OK (mapped to P4 operational artifact scope) | targeted suites pass (`12 passed`, `13 passed`) | pending |
+| 2026-05-28 11:07:15 | 33.5 Regression gate after integration | OK (full suite stable) | `python -m pytest -q` (`224 passed`) | pending |

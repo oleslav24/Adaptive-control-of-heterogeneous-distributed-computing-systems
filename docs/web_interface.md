@@ -46,6 +46,7 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
     - on `queue/completed`: solid = queue, dashed = completed
   - `ResearcherAgent` textual conclusions based on chart trends (localized RU/EN)
   - stop button for running job
+  - diagnostics payload includes `control_assessment` (operational quality-gate health)
 - `/agent-control`
   - integrated controllability module (`Agent Control / Quality Gate`) with `lang=ru|en`
   - demo profile mirrors colleague stand logic as maintained Python model (`project.web.agent_control`)
@@ -64,6 +65,15 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - previews for text and image artifacts
 - `/download?path=...`
   - raw file download/inline delivery
+
+## Diagnostics bundle extension
+
+- Failed/timeout/stopped job bundle (`/job-bundle`) now includes:
+  - `diagnostics.json`
+  - `diagnostics.log`
+  - `control_assessment.json`
+- `control_assessment.json` is an operational health artifact (policy/context/logging/iteration/qgate/autonomy/integrity signals as `pass/fail/present/unknown`).
+- This artifact is not part of algorithmic efficiency metrics and should not be interpreted as GRVS performance evidence.
 
 ## Safety
 
