@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-28 12:28:51 +07:00
+Last updated: 2026-05-28 13:55:55 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -41,7 +41,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 31 | Publication significance hardening | Hypotheses include deterministic significance/effect metadata with validation and tests | Closed |
 | 32 | Agent control and quality-gate integration | Integrated `/agent-control` model+web+tests+docs, separated demo vs real-job signals | Closed |
 | 33 | Agent control operational artifacts | Export control assessment artifacts for diagnostics and operational quality-gate traceability | Closed |
-| 34 | Chapter10 operational control-health appendix | Add control-health appendix artifacts into chapter10/paper bundle pipeline with tests | In progress |
+| 34 | Chapter10 operational control-health appendix | Add control-health appendix artifacts into chapter10/paper bundle pipeline with tests | Closed |
+| 35 | Web job control-health artifact export | Auto-export `control_assessment.json` into run artifact directories for completed web jobs | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -90,7 +91,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 31 | Closed | 2026-05-27 13:52:06 +07:00 | merged to `main`, merge commit `c04c03e` (PR #40) |
 | 32 | Closed | 2026-05-28 11:00:00 +07:00 | merged to `main`, merge commit `029117e` (PR #42) |
 | 33 | Closed | 2026-05-28 12:20:10 +07:00 | merged to `main`, merge commit `0c297ab` (PR #43) |
-| 34 | Open | n/a | in progress on branch `codex/sprint34-control-health-appendix` |
+| 34 | Closed | 2026-05-28 13:53:32 +07:00 | merged to `main`, merge commit `d8ca569` (PR #44) |
+| 35 | Open | n/a | in progress on branch `codex/sprint35-web-control-health-job-export` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -708,3 +710,24 @@ Closed in `main` via PR #43 (merge commit `0c297ab`).
 | 2026-05-28 12:26:53 | 34.1-34.4 Control-health module + chapter10 integration + unit coverage | OK (control-health appendix integrated as operational artifact, not hypothesis metric) | targeted tests pass (`5 passed`), full pytest pass (`226 passed`) | current slice commit |
 | 2026-05-28 12:26:53 | 34.5 Runtime validation + docs sync | OK (`chapter10-quick` run emits control-health appendix with stable package validation/integrity) | `python -m project.experiments.run --config config.yaml --chapter10 --chapter10-quick --chapter10-seeds 42,43 --log-level warning` PASS | current slice commit |
 | 2026-05-28 12:28:51 | 34.PR Push + PR creation attempt | Partial (branch pushed, GitHub API PR creation blocked: `must be a collaborator`) | n/a | branch `codex/sprint34-control-health-appendix` |
+
+## Sprint 34 Closure
+
+Closed in `main` via PR #44 (merge commit `d8ca569`).
+
+### Sprint 35 - Web job control-health artifact export
+
+| Task | Description | Status |
+|---|---|---|
+| 35.1 | Export `control_assessment.json` into completed job artifact directories when output paths are available | Done |
+| 35.2 | Append exported control artifact path to job log (`control_assessment_json: ...`) for web/UI discovery | Done |
+| 35.3 | Add/refresh tests for job-level control artifact export behavior | Done |
+| 35.4 | Update docs and sprint log, run targeted/full regression before PR | Done |
+
+## Active Sprint Slice Log (Sprint 35)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-28 13:53:32 | 35.1-35.2 Start job-level control artifact export implementation | OK (extends operational control-health pipeline without mixing into algorithmic metrics) | pending | pending |
+| 2026-05-28 13:54:59 | 35.1-35.4 Implementation + tests + docs | OK (web jobs now persist operational control assessment beside run artifacts when manifests/output paths exist) | targeted tests pass (`16 passed`), full pytest pass (`227 passed`) | current slice commit |
+| 2026-05-28 13:55:55 | 35.PR Push + PR creation attempt | Partial (branch pushed, GitHub API PR creation blocked: `must be a collaborator`) | n/a | branch `codex/sprint35-web-control-health-job-export` |

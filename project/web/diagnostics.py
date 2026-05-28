@@ -10,7 +10,11 @@ from threading import Lock
 from typing import Protocol
 import zipfile
 
-from project.web.agent_control import assess_job_control, job_control_assessment_payload
+from project.web.agent_control import (
+    assess_job_control,
+    job_control_assessment_payload,
+    parse_job_signals,
+)
 
 
 _BUNDLE_ROOT = Path("outputs") / "_web_diagnostics"
@@ -116,6 +120,85 @@ def export_job_diagnostics_bundle(
         zf.write(control_assessment_path, arcname="control_assessment.json")
 
     return zip_path
+
+
+def export_job_control_assessment_artifact(
+    *,
+    job: _DiagnosticJobLike,
+    workspace_root: Path,
+) -> Path | None:
+    """Persist `control_assessment.json` near produced run artifacts when possible."""
+    parsed = parse_job_signals(job)
+    target_dir = _resolve_control_assessment_dir(
+        artifact_paths=parsed.existing_artifacts,
+        workspace_root=workspace_root,
+    )
+    if target_dir is None:
+        target_dir = _resolve_control_assessment_dir(
+            artifact_paths=parsed.artifacts,
+            workspace_root=workspace_root,
+        )
+    if target_dir is None:
+        return None
+
+    target_path = target_dir / "control_assessment.json"
+    payload = job_control_assessment_payload(assess_job_control(job))
+    with target_path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, sort_keys=True)
+    return target_path
+
+
+def _resolve_control_assessment_dir(
+    *,
+    artifact_paths: dict[str, str],
+    workspace_root: Path,
+) -> Path | None:
+    """Resolve writable artifact directory from parsed output paths."""
+    candidates = _ordered_artifact_candidates(artifact_paths)
+    root = workspace_root.resolve()
+    for raw_path in candidates:
+        text = str(raw_path).strip()
+        if not text:
+            continue
+        path = Path(text)
+        parent = path.parent.resolve()
+        if not _is_within(parent, root):
+            continue
+        parent.mkdir(parents=True, exist_ok=True)
+        return parent
+    return None
+
+
+def _ordered_artifact_candidates(artifact_paths: dict[str, str]) -> list[str]:
+    """Prioritize manifest-centric paths, then fall back to all parsed artifacts."""
+    priority_keys = (
+        "chapter10_manifest_json",
+        "publication_publication_manifest_json",
+        "publication_manifest_json",
+        "run_manifest_json",
+        "history_csv",
+        "history_json",
+        "summary_json",
+    )
+    ordered: list[str] = []
+    for key in priority_keys:
+        value = artifact_paths.get(key, "").strip()
+        if value and value not in ordered:
+            ordered.append(value)
+    for _key, raw in sorted(artifact_paths.items()):
+        value = str(raw).strip()
+        if value and value not in ordered:
+            ordered.append(value)
+    return ordered
+
+
+def _is_within(target: Path, root: Path) -> bool:
+    """Return True when target path is inside workspace root."""
+    try:
+        target.relative_to(root)
+        return True
+    except ValueError:
+        return False
 
 
 def _fmt_iso(value: datetime | None) -> str | None:

@@ -12,6 +12,8 @@ from threading import Lock, Thread
 import time
 from uuid import uuid4
 
+from project.web.diagnostics import export_job_control_assessment_artifact
+
 
 MAX_LOG_LINES = 4000
 DEFAULT_JOB_TIMEOUT_SECONDS = 3600
@@ -163,6 +165,7 @@ class JobManager:
             with job._lock:
                 job.process = None
             job.finished_at = datetime.now(timezone.utc)
+            self._persist_control_assessment(job)
 
     def _supervise_process(self, job: RunJob, process: subprocess.Popen[str]) -> None:
         """Poll running process and enforce timeout/stop semantics."""
@@ -228,4 +231,19 @@ class JobManager:
         if parsed > MAX_JOB_TIMEOUT_SECONDS:
             return MAX_JOB_TIMEOUT_SECONDS
         return parsed
+
+    def _persist_control_assessment(self, job: RunJob) -> None:
+        """Persist control-assessment artifact for completed jobs when output paths exist."""
+        if job.status not in {"success", "failed", "timeout", "stopped"}:
+            return
+        try:
+            artifact_path = export_job_control_assessment_artifact(
+                job=job,
+                workspace_root=job.cwd,
+            )
+        except Exception as exc:  # noqa: BLE001
+            job.append_log(f"[web-ui] control assessment export failed: {exc!r}")
+            return
+        if artifact_path is not None:
+            job.append_log(f"control_assessment_json: {artifact_path}")
 
