@@ -89,6 +89,10 @@ def test_assess_job_control_marks_missing_manifest_and_integrity_as_fail() -> No
     assert signals["context"].state == "fail"
     assert signals["integrity"].state == "fail"
     assert signals["qgate"].state == "fail"
+    assessment = assess_job_control(job)
+    assert assessment.summary.overall_state == "fail"
+    assert "context" in assessment.summary.failing_components
+    assert assessment.summary.counts["fail"] >= 1
 
 
 def test_assess_job_control_uses_artifacts_for_pass_and_unknown_states() -> None:
@@ -136,6 +140,9 @@ def test_assess_job_control_uses_artifacts_for_pass_and_unknown_states() -> None
         assert signals["qgate"].state == "pass"
         assert signals["policy"].state == "pass"
         assert signals["autonomy"].state == "pass"
+        assessment = assess_job_control(job)
+        assert assessment.summary.overall_state == "pass"
+        assert assessment.summary.counts["pass"] >= 5
 
         running_job = _FakeJob(
             id="job-running",
@@ -146,5 +153,7 @@ def test_assess_job_control_uses_artifacts_for_pass_and_unknown_states() -> None
         running_signals = _signal_map(running_job)
         assert running_signals["qgate"].state == "unknown"
         assert running_signals["context"].state == "unknown"
+        running_assessment = assess_job_control(running_job)
+        assert running_assessment.summary.overall_state in {"unknown", "present"}
     finally:
         shutil.rmtree(workspace, ignore_errors=True)

@@ -206,6 +206,11 @@ def test_job_payload_prefers_exported_control_assessment_artifact(monkeypatch) -
                 "job_id": "artifact-job",
                 "job_status": "success",
                 "mode": "real-job",
+                "summary": {
+                    "overall_state": "pass",
+                    "counts": {"pass": 7, "fail": 0, "present": 0, "unknown": 0},
+                    "failing_components": [],
+                },
                 "signals": [
                     {"component_id": "policy", "state": "pass", "reason": "artifact", "evidence": []}
                 ],
@@ -224,6 +229,7 @@ def test_job_payload_prefers_exported_control_assessment_artifact(monkeypatch) -
     control = result["control_assessment"]
     assert isinstance(control, dict)
     assert control["job_id"] == "artifact-job"
+    assert control["summary"]["overall_state"] == "pass"
     assert control["signals"][0]["component_id"] == "policy"
 
 
@@ -245,4 +251,6 @@ def test_job_payload_falls_back_to_runtime_control_assessment(monkeypatch) -> No
     assert isinstance(control, dict)
     assert control["job_id"] == "fallback-job"
     assert control["mode"] == "real-job"
+    assert isinstance(control.get("summary"), dict)
+    assert set(control["summary"].get("counts", {}).keys()) == {"pass", "fail", "present", "unknown"}
     assert isinstance(control.get("signals"), list)

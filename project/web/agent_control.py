@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
-from typing import Literal, Mapping, Protocol
+from typing import Literal, Mapping, Protocol, Sequence
 
 from project.experiments.integrity import verify_artifact_integrity_file
 
@@ -71,6 +71,15 @@ class ControlSignal:
 
 
 @dataclass(frozen=True, slots=True)
+class ControlAssessmentSummary:
+    """Aggregated signal summary for quick quality-gate interpretation."""
+
+    overall_state: ControlSignalState
+    counts: dict[str, int]
+    failing_components: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class JobControlAssessment:
     """Control assessment for a real web job."""
 
@@ -78,6 +87,7 @@ class JobControlAssessment:
     job_status: str
     mode: str
     signals: tuple[ControlSignal, ...]
+    summary: ControlAssessmentSummary
 
 
 @dataclass(frozen=True, slots=True)
@@ -379,19 +389,21 @@ def assess_job_control(job: _JobLike) -> JobControlAssessment:
     autonomy_signal = _assess_autonomy_signal(parsed)
     policy_signal = _assess_policy_signal(parsed, autonomy_signal)
 
+    signals = (
+        policy_signal,
+        context_signal,
+        logging_signal,
+        iteration_signal,
+        qgate_signal,
+        autonomy_signal,
+        integrity_signal,
+    )
     return JobControlAssessment(
         job_id=str(getattr(job, "id", "")),
         job_status=status,
         mode="real-job",
-        signals=(
-            policy_signal,
-            context_signal,
-            logging_signal,
-            iteration_signal,
-            qgate_signal,
-            autonomy_signal,
-            integrity_signal,
-        ),
+        signals=signals,
+        summary=summarize_control_signals(signals),
     )
 
 
@@ -401,6 +413,11 @@ def job_control_assessment_payload(assessment: JobControlAssessment) -> dict[str
         "job_id": assessment.job_id,
         "job_status": assessment.job_status,
         "mode": assessment.mode,
+        "summary": {
+            "overall_state": assessment.summary.overall_state,
+            "counts": dict(assessment.summary.counts),
+            "failing_components": list(assessment.summary.failing_components),
+        },
         "signals": [
             {
                 "component_id": signal.component_id,
@@ -411,6 +428,35 @@ def job_control_assessment_payload(assessment: JobControlAssessment) -> dict[str
             for signal in assessment.signals
         ],
     }
+
+
+def summarize_control_signals(signals: Sequence[ControlSignal]) -> ControlAssessmentSummary:
+    """Aggregate component-level control signals into one compact summary."""
+    counts: dict[str, int] = {"pass": 0, "fail": 0, "present": 0, "unknown": 0}
+    failing_components: list[str] = []
+    for signal in signals:
+        state = str(signal.state).strip().lower()
+        if state in counts:
+            counts[state] += 1
+        else:
+            counts["unknown"] += 1
+        if state == "fail":
+            failing_components.append(signal.component_id)
+
+    if counts["fail"] > 0:
+        overall: ControlSignalState = "fail"
+    elif counts["unknown"] > 0:
+        overall = "unknown"
+    elif counts["present"] > 0:
+        overall = "present"
+    else:
+        overall = "pass"
+
+    return ControlAssessmentSummary(
+        overall_state=overall,
+        counts=counts,
+        failing_components=tuple(failing_components),
+    )
 
 
 def _snapshot_lines(job: _JobLike) -> list[str]:
