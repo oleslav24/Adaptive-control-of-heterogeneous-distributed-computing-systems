@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-28 17:04:08 +07:00
+Last updated: 2026-05-28 17:31:08 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -43,7 +43,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 33 | Agent control operational artifacts | Export control assessment artifacts for diagnostics and operational quality-gate traceability | Closed |
 | 34 | Chapter10 operational control-health appendix | Add control-health appendix artifacts into chapter10/paper bundle pipeline with tests | Closed |
 | 35 | Web job control-health artifact export | Auto-export `control_assessment.json` into run artifact directories for completed web jobs | Closed |
-| 36 | Job-data control assessment surfacing | Expose control assessment in `/job-data` with artifact-first/fallback-runtime strategy | In progress |
+| 36 | Job-data control assessment surfacing | Expose control assessment in `/job-data` with artifact-first/fallback-runtime strategy | Closed |
+| 37 | Job page control-assessment UX | Render control assessment signals directly on `/job` page from `/job-data` payload | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -94,7 +95,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 33 | Closed | 2026-05-28 12:20:10 +07:00 | merged to `main`, merge commit `0c297ab` (PR #43) |
 | 34 | Closed | 2026-05-28 13:53:32 +07:00 | merged to `main`, merge commit `d8ca569` (PR #44) |
 | 35 | Closed | 2026-05-28 17:01:13 +07:00 | merged to `main`, merge commit `6fb5a60` (PR #45) |
-| 36 | Open | n/a | in progress on branch `codex/sprint36-next` |
+| 36 | Closed | 2026-05-28 17:31:08 +07:00 | merged to `main`, merge commit `64f7af7` (PR #46) |
+| 37 | Open | n/a | in progress on branch `codex/sprint36-next` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -754,3 +756,24 @@ Closed in `main` via PR #45 (merge commit `6fb5a60`).
 | 2026-05-28 17:01:13 | 36.1-36.2 Start `/job-data` control-assessment surfacing | OK (extends web observability path for operational control-health reuse) | pending | pending |
 | 2026-05-28 17:03:04 | 36.1-36.4 `/job-data` control-assessment integration + tests + docs | OK (artifact-first payload with runtime fallback is implemented and regression-safe) | targeted tests pass (`20 passed`), full pytest pass (`229 passed`) | current slice commit |
 | 2026-05-28 17:04:08 | 36.PR Push + PR creation attempt | Partial (branch pushed, GitHub API PR creation blocked: `must be a collaborator`) | n/a | branch `codex/sprint36-next` |
+
+## Sprint 36 Closure
+
+Closed in `main` via PR #46 (merge commit `64f7af7`).
+
+### Sprint 37 - Job page control-assessment UX
+
+| Task | Description | Status |
+|---|---|---|
+| 37.1 | Add control-assessment card to `/job` page layout | Done |
+| 37.2 | Render per-component `pass/fail/present/unknown` signals and reasons from `/job-data` payload | Done |
+| 37.3 | Add i18n labels and update tests for job page/payload integration | Done |
+| 37.4 | Update docs and sprint log, run targeted/full regression (no PR per request) | Done |
+
+## Active Sprint Slice Log (Sprint 37)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-28 17:29:47 | 37.1-37.3 Job page control-assessment UI wiring | OK (extends existing operational control-health observability in web UI without changing experiment metrics) | pending | pending |
+| 2026-05-28 17:31:08 | 37.1-37.4 UI + i18n + tests + docs | OK (control assessment is now visible directly on `/job` and remains artifact-first from `/job-data`) | targeted tests pass (`19 passed`), full pytest pass (`229 passed`) | current slice commit |
+| 2026-05-28 17:31:08 | 37.PR | Skipped by request (`без PR`) | n/a | branch `codex/sprint36-next` |

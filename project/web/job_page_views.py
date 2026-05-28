@@ -119,6 +119,12 @@ def build_job_page_html(job: _JobLike, lang: str) -> str:
     <li>{escape(tr(lang, "claims_pending"))}</li>
   </ul>
 </div>
+<div class="card" id="control-assessment-card">
+  <h2>{escape(tr(lang, "control_assessment_title"))}</h2>
+  <ul id="job-control-assessment" class="insights-list">
+    <li>{escape(tr(lang, "control_assessment_pending"))}</li>
+  </ul>
+</div>
 <div class="card" id="carbon-outcomes-card" style="display:none;">
   <h2>{escape(tr(lang, "carbon_outcomes_title"))}</h2>
   <ul id="job-carbon-outcomes" class="insights-list">
@@ -162,7 +168,11 @@ const i18n = {{
   claimsNoMatches: {json.dumps(tr(lang, "claims_no_matches"))},
   claimsStatus: {json.dumps(tr(lang, "claims_status"))},
   claimsConfidence: {json.dumps(tr(lang, "claims_confidence"))},
-  claimsEvidence: {json.dumps(tr(lang, "claims_evidence"))}
+  claimsEvidence: {json.dumps(tr(lang, "claims_evidence"))},
+  controlAssessmentPending: {json.dumps(tr(lang, "control_assessment_pending"))},
+  controlComponent: {json.dumps(tr(lang, "control_component"))},
+  controlState: {json.dumps(tr(lang, "control_state"))},
+  controlReason: {json.dumps(tr(lang, "control_reason"))}
 }};
 
 let latestClaims = [];
@@ -650,6 +660,7 @@ function updateJobView(data) {{
   latestClaims = Array.isArray(data.claims) ? data.claims : [];
   latestClaimsGate = data.claims_gate || null;
   renderClaims(latestClaims, latestClaimsGate);
+  renderControlAssessment(data.control_assessment || null);
   renderCarbonOutcomes(data.carbon_outcomes || null);
 }}
 
@@ -742,6 +753,30 @@ function renderClaims(claims, gate) {{
     const li = document.createElement("li");
     const confidenceText = Number.isFinite(confidence) ? confidence.toFixed(2) : "0.00";
     li.textContent = `${{hypothesisText}} | ${{i18n.claimsStatus}}: ${{status}} | ${{i18n.claimsConfidence}}: ${{confidenceText}} | ${{statement}}${{citations ? " | " + i18n.claimsEvidence + ": " + citations : ""}}`;
+    list.appendChild(li);
+  }}
+}}
+
+function renderControlAssessment(payload) {{
+  const list = document.getElementById("job-control-assessment");
+  if (!list) return;
+  while (list.firstChild) {{
+    list.removeChild(list.firstChild);
+  }}
+  const item = (payload && typeof payload === "object") ? payload : null;
+  const signals = Array.isArray(item?.signals) ? item.signals : [];
+  if (!signals.length) {{
+    const li = document.createElement("li");
+    li.textContent = i18n.controlAssessmentPending;
+    list.appendChild(li);
+    return;
+  }}
+  for (const signal of signals) {{
+    const component = String(signal.component_id || i18n.unknown);
+    const state = String(signal.state || i18n.unknown);
+    const reason = String(signal.reason || i18n.unknown);
+    const li = document.createElement("li");
+    li.textContent = `${{i18n.controlComponent}}: ${{component}} | ${{i18n.controlState}}: ${{state}} | ${{i18n.controlReason}}: ${{reason}}`;
     list.appendChild(li);
   }}
 }}

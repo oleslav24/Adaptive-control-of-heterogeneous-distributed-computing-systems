@@ -211,6 +211,11 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "claims_status": "Status",
         "claims_confidence": "Confidence",
         "claims_evidence": "Evidence",
+        "control_assessment_title": "Control Assessment",
+        "control_assessment_pending": "Control assessment is not available yet.",
+        "control_component": "Component",
+        "control_state": "State",
+        "control_reason": "Reason",
     },
     "ru": {
         "console_title": "Р’РµР±-РєРѕРЅСЃРѕР»СЊ СЌРєСЃРїРµСЂРёРјРµРЅС‚Р°Р»СЊРЅРѕРіРѕ СЃС‚РµРЅРґР°",
@@ -318,6 +323,11 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "claims_status": "Статус",
         "claims_confidence": "Уверенность",
         "claims_evidence": "Источники",
+        "control_assessment_title": "Оценка управляемости",
+        "control_assessment_pending": "Оценка управляемости пока недоступна.",
+        "control_component": "Компонент",
+        "control_state": "Состояние",
+        "control_reason": "Причина",
     },
 }
 
