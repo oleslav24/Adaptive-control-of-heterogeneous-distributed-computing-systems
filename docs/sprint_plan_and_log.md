@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 12:56:27 +07:00
+Last updated: 2026-05-29 12:59:17 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -820,4 +820,5 @@ Closed in `main` via PR #48 (merge commit `941d03a`).
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-29 12:31:25 | 39.1-39.3 Job page control assessment UX hardening | OK (keeps operational control-health separate from algorithmic performance metrics) | pending | pending |
-| 2026-05-29 12:55:10 | 39.1-39.4 Tests + docs + regression gate | OK (`/job` now exposes summary + evidence + deep-link with backward-compatible summary fallback) | targeted tests pass (`21 passed`), full pytest pass (`230 passed`) | current slice commit |
+| 2026-05-29 12:55:10 | 39.1-39.4 Tests + docs + regression gate | OK (`/job` now exposes summary + evidence + deep-link with backward-compatible summary fallback) | targeted tests pass (`21 passed`), full pytest pass (`230 passed`) | commit `bf6a0bd` |
+| 2026-05-29 12:59:17 | 39.post-commit Validation rerun | OK (post-commit verification kept suite green) | targeted tests pass (`8 passed`), full pytest pass (`230 passed`) | commit `bf6a0bd` |
