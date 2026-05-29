@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 15:12:48 +07:00
+Last updated: 2026-05-29 15:14:35 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -890,5 +890,6 @@ Implementation can still be sliced into small commits, but sprint goals and DoD 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-29 14:02:10 | 41.1-41.2 Introduce control-assessment schema v2 + consistency contract module | OK (adds schema/versioning and source-aware consistency without changing MAS performance semantics) | pending | pending |
-| 2026-05-29 14:38:45 | 41.2-41.3 Integrate normalization/validation into `/job-data` and diagnostics endpoints + tests | OK (legacy artifact compatibility preserved, runtime/artifact consistency reported explicitly) | targeted tests pass (`28 passed`) | current slice commit |
-| 2026-05-29 15:05:22 | 41.4 Full regression + docs sync | OK (schema v2 documented, diagnostics contract exposed, suite stable) | full pytest pass (`237 passed`) | current slice commit |
+| 2026-05-29 14:38:45 | 41.2-41.3 Integrate normalization/validation into `/job-data` and diagnostics endpoints + tests | OK (legacy artifact compatibility preserved, runtime/artifact consistency reported explicitly) | targeted tests pass (`28 passed`) | commit `61a313e` |
+| 2026-05-29 15:05:22 | 41.4 Full regression + docs sync | OK (schema v2 documented, diagnostics contract exposed, suite stable) | full pytest pass (`237 passed`) | commit `61a313e` |
+| 2026-05-29 15:14:35 | 41.post-commit Validation rerun | OK (post-commit full regression stayed green) | full pytest pass (`237 passed`) | commit `61a313e` |
