@@ -180,7 +180,10 @@ def test_web_http_run_route_produces_job_and_metrics_payload(monkeypatch) -> Non
 
             status, _headers, body = _request(host, port, "GET", location)
             assert status == 200
-            assert f"job {job_id}".lower() in body.decode("utf-8").lower()
+            job_html = body.decode("utf-8")
+            assert f"job {job_id}".lower() in job_html.lower()
+            assert 'id="job-control-assessment-summary"' in job_html
+            assert f"/agent-control?lang=en&amp;assess=job&amp;id={job_id}" in job_html
 
             status, _headers, body = _request(host, port, "GET", f"/job-data?id={job_id}&lang=en")
             assert status == 200
@@ -192,6 +195,7 @@ def test_web_http_run_route_produces_job_and_metrics_payload(monkeypatch) -> Non
             assert payload["metrics"]["throughput"] == [0.0, 2.0]
             assert isinstance(payload["insights"], list)
             assert "control_assessment" in payload
+            assert isinstance(payload["control_assessment"].get("summary", {}), dict)
             assert isinstance(payload["control_assessment"].get("signals", []), list)
     finally:
         shutil.rmtree(workspace, ignore_errors=True)

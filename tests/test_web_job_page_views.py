@@ -37,11 +37,16 @@ def test_build_job_page_html_includes_stop_for_running_job() -> None:
     assert 'id="claims-card"' in html
     assert 'id="job-claims"' in html
     assert 'id="control-assessment-card"' in html
+    assert 'id="job-control-assessment-summary"' in html
+    assert 'id="job-control-assessment-link"' in html
     assert 'id="job-control-assessment"' in html
     assert "renderClaims(" in html
     assert "renderControlAssessment(" in html
     assert "renderLiteratureEvidence(" in html
     assert "renderCarbonOutcomes(" in html
+    assert "controlEvidence" in html
+    assert "controlOverall" in html
+    assert "controlFailingComponents" in html
 
 
 def test_build_job_page_html_hides_stop_for_non_running_job() -> None:

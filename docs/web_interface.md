@@ -45,7 +45,9 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
     - color = sub-run
     - on `queue/completed`: solid = queue, dashed = completed
   - `ResearcherAgent` textual conclusions based on chart trends (localized RU/EN)
-  - control assessment card with per-component `pass/fail/present/unknown` reasons (artifact-first, runtime fallback)
+  - control assessment card with per-component `pass/fail/present/unknown` reasons and evidence (artifact-first, runtime fallback)
+  - compact control summary (`overall`, per-state counts, failing components)
+  - deep-link to `/agent-control?assess=job&id=<job_id>` for detailed assessment
   - stop button for running job
   - diagnostics payload includes `control_assessment` (operational quality-gate health)
   - after terminal status (`success/failed/timeout/stopped`) web runner exports `control_assessment.json` near produced run artifacts (when manifest/output paths are available)
