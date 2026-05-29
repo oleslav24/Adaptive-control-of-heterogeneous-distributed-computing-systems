@@ -121,6 +121,12 @@ def build_job_page_html(job: _JobLike, lang: str) -> str:
 </div>
 <div class="card" id="control-assessment-card">
   <h2>{escape(tr(lang, "control_assessment_title"))}</h2>
+  <p id="job-control-assessment-summary" class="chart-note">{escape(tr(lang, "control_assessment_pending"))}</p>
+  <p class="chart-note">
+    <a id="job-control-assessment-link" href="{escape(with_lang('/agent-control', lang, assess='job', id=job.id))}">
+      {escape(tr(lang, "control_open_agent_page"))}
+    </a>
+  </p>
   <ul id="job-control-assessment" class="insights-list">
     <li>{escape(tr(lang, "control_assessment_pending"))}</li>
   </ul>
@@ -172,7 +178,10 @@ const i18n = {{
   controlAssessmentPending: {json.dumps(tr(lang, "control_assessment_pending"))},
   controlComponent: {json.dumps(tr(lang, "control_component"))},
   controlState: {json.dumps(tr(lang, "control_state"))},
-  controlReason: {json.dumps(tr(lang, "control_reason"))}
+  controlReason: {json.dumps(tr(lang, "control_reason"))},
+  controlEvidence: {json.dumps(tr(lang, "control_evidence"))},
+  controlOverall: {json.dumps(tr(lang, "control_overall"))},
+  controlFailingComponents: {json.dumps(tr(lang, "control_failing_components"))}
 }};
 
 let latestClaims = [];
@@ -759,24 +768,83 @@ function renderClaims(claims, gate) {{
 
 function renderControlAssessment(payload) {{
   const list = document.getElementById("job-control-assessment");
+  const summaryEl = document.getElementById("job-control-assessment-summary");
   if (!list) return;
   while (list.firstChild) {{
     list.removeChild(list.firstChild);
   }}
   const item = (payload && typeof payload === "object") ? payload : null;
   const signals = Array.isArray(item?.signals) ? item.signals : [];
+
+  function normalizeSignalState(value) {{
+    const state = String(value || "").trim().toLowerCase();
+    if (state === "pass" || state === "fail" || state === "present" || state === "unknown") {{
+      return state;
+    }}
+    return "unknown";
+  }}
+
+  function fallbackSummary(values) {{
+    const counts = {{ pass: 0, fail: 0, present: 0, unknown: 0 }};
+    const failing = [];
+    for (const signal of values) {{
+      const state = normalizeSignalState(signal?.state);
+      counts[state] = Number(counts[state] || 0) + 1;
+      if (state === "fail") {{
+        failing.push(String(signal?.component_id || i18n.unknown));
+      }}
+    }}
+    let overall = "pass";
+    if (counts.fail > 0) overall = "fail";
+    else if (counts.unknown > 0) overall = "unknown";
+    else if (counts.present > 0) overall = "present";
+    return {{
+      overall_state: overall,
+      counts,
+      failing_components: failing
+    }};
+  }}
+
   if (!signals.length) {{
+    if (summaryEl) {{
+      summaryEl.textContent = i18n.controlAssessmentPending;
+    }}
     const li = document.createElement("li");
     li.textContent = i18n.controlAssessmentPending;
     list.appendChild(li);
     return;
   }}
+
+  const summary = (item && typeof item.summary === "object" && item.summary) ? item.summary : fallbackSummary(signals);
+  const counts = (summary && typeof summary.counts === "object" && summary.counts) ? summary.counts : {{}};
+  const passCount = Number(counts.pass ?? 0);
+  const failCount = Number(counts.fail ?? 0);
+  const presentCount = Number(counts.present ?? 0);
+  const unknownCount = Number(counts.unknown ?? 0);
+  const overall = normalizeSignalState(summary?.overall_state);
+  const failingComponents = Array.isArray(summary?.failing_components)
+    ? summary.failing_components.map((item) => String(item)).filter((item) => item.trim().length > 0)
+    : [];
+  if (summaryEl) {{
+    summaryEl.textContent =
+      `${{i18n.controlOverall}}: ${{overall}} | pass=${{passCount}} | fail=${{failCount}} | present=${{presentCount}} | unknown=${{unknownCount}} | ` +
+      `${{i18n.controlFailingComponents}}: ${{failingComponents.length ? failingComponents.join(", ") : "-"}}`;
+  }}
+
   for (const signal of signals) {{
     const component = String(signal.component_id || i18n.unknown);
     const state = String(signal.state || i18n.unknown);
     const reason = String(signal.reason || i18n.unknown);
+    const evidenceItems = Array.isArray(signal.evidence)
+      ? signal.evidence.map((item) => String(item)).filter((item) => item.trim().length > 0).slice(0, 4)
+      : [];
+    const evidenceText = evidenceItems.length ? evidenceItems.join(", ") : "-";
     const li = document.createElement("li");
-    li.textContent = `${{i18n.controlComponent}}: ${{component}} | ${{i18n.controlState}}: ${{state}} | ${{i18n.controlReason}}: ${{reason}}`;
+    li.textContent =
+      `${{i18n.controlComponent}}: ${{component}} | ` +
+      `${{i18n.controlState}}: ${{state}} | ` +
+      `${{i18n.controlReason}}: ${{reason}} | ` +
+      `${{i18n.controlEvidence}}: ${{evidenceText}}`;
     list.appendChild(li);
   }}
 }}

@@ -216,6 +216,10 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "control_component": "Component",
         "control_state": "State",
         "control_reason": "Reason",
+        "control_evidence": "Evidence",
+        "control_overall": "Overall",
+        "control_failing_components": "Failing components",
+        "control_open_agent_page": "Open detailed assessment in Agent Control",
     },
     "ru": {
         "console_title": "Р’РµР±-РєРѕРЅСЃРѕР»СЊ СЌРєСЃРїРµСЂРёРјРµРЅС‚Р°Р»СЊРЅРѕРіРѕ СЃС‚РµРЅРґР°",
@@ -328,6 +332,10 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "control_component": "Компонент",
         "control_state": "Состояние",
         "control_reason": "Причина",
+        "control_evidence": "Подтверждение",
+        "control_overall": "Итог",
+        "control_failing_components": "Проблемные компоненты",
+        "control_open_agent_page": "Открыть детальную оценку в Agent Control",
     },
 }
 
