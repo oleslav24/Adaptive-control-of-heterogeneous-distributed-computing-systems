@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 12:59:17 +07:00
+Last updated: 2026-05-29 13:21:22 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -46,7 +46,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 36 | Job-data control assessment surfacing | Expose control assessment in `/job-data` with artifact-first/fallback-runtime strategy | Closed |
 | 37 | Job page control-assessment UX | Render control assessment signals directly on `/job` page from `/job-data` payload | Closed |
 | 38 | Agent-control real-job summary hardening | Add aggregate assessment summary + latest terminal mode + docs/tests sync | Closed |
-| 39 | Job page control-health UX hardening | Add compact control summary + evidence + deep-link from `/job` to `/agent-control` | In progress |
+| 39 | Job page control-health UX hardening | Add compact control summary + evidence + deep-link from `/job` to `/agent-control` | Closed |
+| 40 | Agent-control navigation and diagnostics UX | Add quick navigation from control assessment to job/diagnostics/bundle with coverage | In progress |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -100,7 +101,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 36 | Closed | 2026-05-28 17:31:08 +07:00 | merged to `main`, merge commit `64f7af7` (PR #46) |
 | 37 | Closed | 2026-05-28 17:40:30 +07:00 | merged to `main`, merge commit `d8a21b0` (PR #47) |
 | 38 | Closed | 2026-05-29 09:15:00 +07:00 | merged to `main`, merge commit `941d03a` (PR #48) |
-| 39 | Open | n/a | in progress on branch `codex/sprint36-next` |
+| 39 | Closed | 2026-05-29 13:02:00 +07:00 | merged to `main`, merge commit `3a7b734` (PR #49) |
+| 40 | Open | n/a | in progress on branch `codex/sprint36-next` |
 
 ## Detailed Sprint Backlog And Status
 
@@ -822,3 +824,24 @@ Closed in `main` via PR #48 (merge commit `941d03a`).
 | 2026-05-29 12:31:25 | 39.1-39.3 Job page control assessment UX hardening | OK (keeps operational control-health separate from algorithmic performance metrics) | pending | pending |
 | 2026-05-29 12:55:10 | 39.1-39.4 Tests + docs + regression gate | OK (`/job` now exposes summary + evidence + deep-link with backward-compatible summary fallback) | targeted tests pass (`21 passed`), full pytest pass (`230 passed`) | commit `bf6a0bd` |
 | 2026-05-29 12:59:17 | 39.post-commit Validation rerun | OK (post-commit verification kept suite green) | targeted tests pass (`8 passed`), full pytest pass (`230 passed`) | commit `bf6a0bd` |
+
+## Sprint 39 Closure
+
+Closed in `main` via PR #49 (merge commit `3a7b734`).
+
+### Sprint 40 - Agent-control navigation and diagnostics UX
+
+| Task | Description | Status |
+|---|---|---|
+| 40.1 | Add quick links from assessed job to `/job` and `/job-diagnostics` on `/agent-control` | Done |
+| 40.2 | Show diagnostics bundle link on `/agent-control` only for terminal failure-like statuses | Done |
+| 40.3 | Add/refresh route tests for new links and status-dependent bundle exposure | Done |
+| 40.4 | Run targeted and full regression; update sprint docs | Done |
+
+## Active Sprint Slice Log (Sprint 40)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-29 13:03:10 | 40.1-40.2 Agent-control assessment navigation links | OK (improves operational workflow without touching experimental metric semantics) | pending | pending |
+| 2026-05-29 13:06:20 | 40.1-40.4 Tests + regression + docs sync | OK (assessment panel now directly navigates to job/diagnostics/bundle and remains status-safe) | targeted tests pass (`15 passed`), full pytest pass (`231 passed`) | commit `860841f` |
+| 2026-05-29 13:21:22 | 40.post-commit Validation rerun | OK (post-commit validation kept route + full suite green) | targeted tests pass (`15 passed`), full pytest pass (`231 passed`) | commit `860841f` |

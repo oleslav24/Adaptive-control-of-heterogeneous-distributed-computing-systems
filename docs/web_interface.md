@@ -67,6 +67,10 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - real-job signals are reported as `pass/fail/present/unknown` and are separated from demo percentages
   - real-job panel includes aggregate summary (`overall`, per-state counts, failing components)
   - artifact-based checks include: manifests, integrity report, validation gates, decision trace, runtime logs
+  - quick links from assessed job:
+    - `/job?id=<job_id>`
+    - `/job-diagnostics?id=<job_id>`
+    - `/job-bundle?id=<job_id>` (only for `failed/timeout/stopped`)
 - `/files?path=...`
   - workspace-safe file browser
   - previews for text and image artifacts

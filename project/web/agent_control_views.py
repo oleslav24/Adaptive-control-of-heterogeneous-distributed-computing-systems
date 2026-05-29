@@ -529,6 +529,7 @@ def _render_assessment_block(
         f"<p><strong>{escape(text['assessment_for'])}:</strong> <code>{escape(assessment.job_id)}</code>"
         f" | <strong>{escape(text['status'])}:</strong> <code>{escape(assessment.job_status)}</code></p>"
         f"{_render_assessment_summary(text, assessment)}"
+        f"{_render_assessment_links(lang, text, assessment)}"
         "<table>"
         "<thead><tr>"
         f"<th>{escape(text['component'])}</th>"
@@ -540,6 +541,25 @@ def _render_assessment_block(
         "</table>"
         "</div>"
     )
+
+
+def _render_assessment_links(
+    lang: str,
+    text: dict[str, str],
+    assessment: JobControlAssessment,
+) -> str:
+    """Render practical navigation links for selected assessed job."""
+    job_id = str(assessment.job_id)
+    job_link = with_lang("/job", lang, id=job_id)
+    diagnostics_link = with_lang("/job-diagnostics", lang, id=job_id)
+    links = [
+        f"<a href='{escape(job_link)}'>{escape(text['open_job'])}</a>",
+        f"<a href='{escape(diagnostics_link)}'>{escape(text['open_diagnostics'])}</a>",
+    ]
+    if str(assessment.job_status).strip().lower() in {"failed", "timeout", "stopped"}:
+        bundle_link = with_lang("/job-bundle", lang, id=job_id)
+        links.append(f"<a href='{escape(bundle_link)}'>{escape(text['download_bundle'])}</a>")
+    return "<p>" + " | ".join(links) + "</p>"
 
 
 def _render_assessment_summary(text: dict[str, str], assessment: JobControlAssessment) -> str:
@@ -618,6 +638,9 @@ def _page_text(lang: str) -> dict[str, str]:
         "evidence": "Evidence",
         "overall": "Overall",
         "failing_components": "Failing components",
+        "open_job": "Open job page",
+        "open_diagnostics": "Open diagnostics",
+        "download_bundle": "Download diagnostics bundle",
         "components_title": "Control Components",
         "metrics_title": "Process Metrics",
         "events_title": "Event Log",
@@ -671,6 +694,9 @@ def _page_text(lang: str) -> dict[str, str]:
         "evidence": "Подтверждение",
         "overall": "Итог",
         "failing_components": "Проблемные компоненты",
+        "open_job": "Открыть страницу job",
+        "open_diagnostics": "Открыть diagnostics",
+        "download_bundle": "Скачать diagnostics bundle",
         "components_title": "Контрольные компоненты",
         "metrics_title": "Метрики процесса",
         "events_title": "Журнал событий",
