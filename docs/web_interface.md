@@ -50,6 +50,7 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - deep-link to `/agent-control?assess=job&id=<job_id>` for detailed assessment
   - stop button for running job
   - diagnostics payload includes `control_assessment` (operational quality-gate health)
+  - for publication-like modes, required run-quality checks are fail-fast and produce `quality_gate.json`
   - `control_assessment` follows schema v2:
     - `control_assessment_schema = adaptive-testbed.web.control-assessment`
     - `control_assessment_schema_version = 2`
@@ -71,6 +72,7 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - real-job signals are reported as `pass/fail/present/unknown` and are separated from demo percentages
   - real-job panel includes aggregate summary (`overall`, per-state counts, failing components)
   - artifact-based checks include: manifests, integrity report, validation gates, decision trace, runtime logs
+  - publication/chapter10 runs also expose unified run-quality artifact `quality_gate.json`
   - quick links from assessed job:
     - `/job?id=<job_id>`
     - `/job-diagnostics?id=<job_id>`

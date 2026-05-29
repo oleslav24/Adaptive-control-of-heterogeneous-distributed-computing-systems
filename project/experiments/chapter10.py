@@ -22,6 +22,17 @@ from project.experiments.control_health import (
 )
 from project.experiments.integrity import write_artifact_integrity_file
 from project.experiments.manifest import build_run_manifest, write_manifest
+from project.experiments.quality_gate import (
+    QualityGateAssessment,
+    build_quality_gate_assessment,
+    check_claims_gate_artifact,
+    check_file_exists,
+    check_integrity_artifact,
+    check_json_ok_artifact,
+    check_manifest_artifact,
+    render_quality_gate_failure,
+    write_quality_gate_file,
+)
 from project.experiments.publication import (
     render_hypothesis_significance,
     render_hypothesis_support,
@@ -135,57 +146,16 @@ def run_chapter10_experiment(
     output_paths["chapter10_manifest_json"] = str(manifest_path)
     validation_path = chapter10_dir / "chapter10_package_validation.json"
     output_paths["chapter10_package_validation_json"] = str(validation_path)
-    _write_chapter10_manifest(
-        manifest_path=manifest_path,
-        config=base_config,
-        cli_args=cli_args,
-        seeds=effective_seeds,
-        quick=effective_quick,
-        save_plots=effective_plots,
-        publication_output_dir=publication_result.output_dir,
-        chapter10_dir=chapter10_dir,
-        output_paths=output_paths,
-    )
-    package_validation = validate_chapter10_package(output_paths)
-    _write_chapter10_package_validation(
-        validation_path=validation_path,
-        validation_payload=package_validation,
-    )
-    output_paths["chapter10_artifact_integrity_json"] = write_artifact_integrity_file(
-        chapter10_dir / "chapter10_artifact_integrity.json",
-        _integrity_inputs(output_paths),
-    )
-    control_health_paths = write_control_health_artifacts(
-        chapter10_dir,
-        build_control_health_assessment(output_paths, mode="chapter10-study"),
-    )
-    output_paths.update(control_health_paths)
-    package_validation = validate_chapter10_package(output_paths)
-    _write_chapter10_package_validation(
-        validation_path=validation_path,
-        validation_payload=package_validation,
-    )
-    _write_chapter10_manifest(
-        manifest_path=manifest_path,
-        config=base_config,
-        cli_args=cli_args,
-        seeds=effective_seeds,
-        quick=effective_quick,
-        save_plots=effective_plots,
-        publication_output_dir=publication_result.output_dir,
-        chapter10_dir=chapter10_dir,
-        output_paths=output_paths,
-    )
-    output_paths["chapter10_artifact_integrity_json"] = write_artifact_integrity_file(
-        chapter10_dir / "chapter10_artifact_integrity.json",
-        _integrity_inputs(output_paths),
-    )
+
+    # Persist control-health appendix first so validation/integrity include these artifacts.
     output_paths.update(
         write_control_health_artifacts(
             chapter10_dir,
             build_control_health_assessment(output_paths, mode="chapter10-study"),
         )
     )
+    integrity_path = chapter10_dir / "chapter10_artifact_integrity.json"
+    output_paths["chapter10_artifact_integrity_json"] = str(integrity_path)
     package_validation = validate_chapter10_package(output_paths)
     _write_chapter10_package_validation(
         validation_path=validation_path,
@@ -203,9 +173,39 @@ def run_chapter10_experiment(
         output_paths=output_paths,
     )
     output_paths["chapter10_artifact_integrity_json"] = write_artifact_integrity_file(
-        chapter10_dir / "chapter10_artifact_integrity.json",
+        integrity_path,
         _integrity_inputs(output_paths),
     )
+    package_validation = validate_chapter10_package(output_paths)
+    _write_chapter10_package_validation(
+        validation_path=validation_path,
+        validation_payload=package_validation,
+    )
+    quality_gate_path = chapter10_dir / "quality_gate.json"
+    output_paths["chapter10_quality_gate_json"] = str(quality_gate_path)
+    _write_chapter10_manifest(
+        manifest_path=manifest_path,
+        config=base_config,
+        cli_args=cli_args,
+        seeds=effective_seeds,
+        quick=effective_quick,
+        save_plots=effective_plots,
+        publication_output_dir=publication_result.output_dir,
+        chapter10_dir=chapter10_dir,
+        output_paths=output_paths,
+    )
+    output_paths["chapter10_artifact_integrity_json"] = write_artifact_integrity_file(
+        integrity_path,
+        _integrity_inputs(output_paths),
+    )
+    quality_gate = _build_chapter10_quality_gate(output_paths=output_paths)
+    output_paths["chapter10_quality_gate_json"] = write_quality_gate_file(
+        quality_gate_path,
+        quality_gate,
+    )
+    if not quality_gate.ok:
+        failure = render_quality_gate_failure(quality_gate)
+        raise ValueError(f"Chapter10 quality gate failed: {failure}")
 
     return Chapter10Result(
         output_dir=chapter10_dir,
@@ -319,6 +319,7 @@ def _write_chapter10_report(
     lines.append("- Run manifest: `chapter10_manifest.json`.")
     lines.append("- Artifact integrity: `chapter10_artifact_integrity.json`.")
     lines.append("- Package validation: `chapter10_package_validation.json`.")
+    lines.append("- Unified quality gate: `quality_gate.json`.")
     lines.append("- Operational control-health appendix: `chapter10_control_health.{json,md}`.")
     lines.append(
         "- Source publication package: "
@@ -460,7 +461,7 @@ def _integrity_inputs(output_paths: dict[str, str]) -> dict[str, str]:
     return {
         key: path
         for key, path in output_paths.items()
-        if key != "chapter10_artifact_integrity_json"
+        if key not in {"chapter10_artifact_integrity_json", "chapter10_quality_gate_json"}
     }
 
 
@@ -481,3 +482,70 @@ def _resolve_seeds(requested: list[int] | None, fallback: list[int]) -> list[int
         if value not in normalized:
             normalized.append(value)
     return normalized or [42]
+
+
+def _build_chapter10_quality_gate(
+    *,
+    output_paths: dict[str, str],
+) -> QualityGateAssessment:
+    """Build unified Chapter10 quality-gate assessment from output artifacts."""
+    checks = [
+        check_json_ok_artifact(
+            gate_id="chapter10-package-validation",
+            title="Chapter10 package validation",
+            path=output_paths.get("chapter10_package_validation_json", ""),
+            required=True,
+        ),
+        check_manifest_artifact(
+            gate_id="chapter10-manifest",
+            title="Chapter10 manifest schema",
+            path=output_paths.get("chapter10_manifest_json", ""),
+            required=True,
+        ),
+        check_integrity_artifact(
+            gate_id="chapter10-integrity",
+            title="Chapter10 artifact integrity",
+            path=output_paths.get("chapter10_artifact_integrity_json", ""),
+            required=True,
+        ),
+        check_json_ok_artifact(
+            gate_id="publication-quality-gate",
+            title="Publication quality-gate contract",
+            path=output_paths.get("publication_quality_gate_json", ""),
+            required=True,
+        ),
+        check_file_exists(
+            gate_id="control-health-json",
+            title="Operational control-health appendix (JSON)",
+            path=output_paths.get("chapter10_control_health_json", ""),
+            required=True,
+        ),
+        check_file_exists(
+            gate_id="control-health-markdown",
+            title="Operational control-health appendix (Markdown)",
+            path=output_paths.get("chapter10_control_health_md", ""),
+            required=True,
+        ),
+        check_json_ok_artifact(
+            gate_id="literature-evidence-gate",
+            title="Literature evidence gate",
+            path=output_paths.get("chapter10_literature_evidence_gate_json", ""),
+            required=False,
+            allow_skipped=True,
+        ),
+        check_claims_gate_artifact(
+            gate_id="claims-gate",
+            title="Evidence-backed claims gate",
+            path=output_paths.get("chapter10_claims_report_json", ""),
+            required=False,
+        ),
+    ]
+    return build_quality_gate_assessment(
+        mode="chapter10-study",
+        scope="chapter10_bundle",
+        checks=checks,
+        notes=[
+            "Required checks are fail-fast for publication-ready bundles.",
+            "Quality-gate status is operational and should be interpreted with hypothesis metrics.",
+        ],
+    )
