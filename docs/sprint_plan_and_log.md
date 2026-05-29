@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 15:46:40 +07:00
+Last updated: 2026-05-29 15:49:52 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -912,6 +912,6 @@ Closed in `main` via PR #51 (merge commit `af59f87`).
 
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
-| 2026-05-29 15:24:40 | 42.1 Add `project.experiments.quality_gate` (schema, checks, payload writer, fail-fast renderer) | OK (unifies previously scattered validation semantics into one artifact contract) | pending | pending |
-| 2026-05-29 15:33:10 | 42.2-42.3 Wire quality-gate into publication/chapter10/smoke; remove duplicated chapter10 artifact loops | OK (required checks now fail-fast via CLI/Web run paths; smoke includes explicit gate status) | targeted tests pass (`8 passed`, `5 passed`) | pending |
-| 2026-05-29 15:46:40 | 42.4-42.5 Runtime verification (`smoke`) + full regression suite | OK (smoke baseline PASS with quality gate, full suite stable) | smoke PASS, full pytest pass (`240 passed`) | pending |
+| 2026-05-29 15:24:40 | 42.1 Add `project.experiments.quality_gate` (schema, checks, payload writer, fail-fast renderer) | OK (unifies previously scattered validation semantics into one artifact contract) | pending | commit `7173b2c` |
+| 2026-05-29 15:33:10 | 42.2-42.3 Wire quality-gate into publication/chapter10/smoke; remove duplicated chapter10 artifact loops | OK (required checks now fail-fast via CLI/Web run paths; smoke includes explicit gate status) | targeted tests pass (`8 passed`, `5 passed`) | commit `7173b2c` |
+| 2026-05-29 15:46:40 | 42.4-42.5 Runtime verification (`smoke`) + full regression suite | OK (smoke baseline PASS with quality gate, full suite stable) | smoke PASS, full pytest pass (`240 passed`) | commit `7173b2c` |
