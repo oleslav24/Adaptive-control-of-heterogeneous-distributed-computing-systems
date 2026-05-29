@@ -9,6 +9,9 @@ import re
 from typing import Literal, Mapping, Protocol, Sequence
 
 from project.experiments.integrity import verify_artifact_integrity_file
+from project.web.control_assessment_contract import (
+    build_control_assessment_payload,
+)
 
 
 ControlStatus = Literal["STABLE", "WARNING", "CRITICAL", "CONTROLLED_STATE"]
@@ -407,18 +410,22 @@ def assess_job_control(job: _JobLike) -> JobControlAssessment:
     )
 
 
-def job_control_assessment_payload(assessment: JobControlAssessment) -> dict[str, object]:
+def job_control_assessment_payload(
+    assessment: JobControlAssessment,
+    *,
+    source: str = "runtime-assessment",
+) -> dict[str, object]:
     """Serialize job control assessment dataclasses into JSON-friendly payload."""
-    return {
-        "job_id": assessment.job_id,
-        "job_status": assessment.job_status,
-        "mode": assessment.mode,
-        "summary": {
+    return build_control_assessment_payload(
+        job_id=assessment.job_id,
+        job_status=assessment.job_status,
+        mode=assessment.mode,
+        summary={
             "overall_state": assessment.summary.overall_state,
             "counts": dict(assessment.summary.counts),
             "failing_components": list(assessment.summary.failing_components),
         },
-        "signals": [
+        signals=[
             {
                 "component_id": signal.component_id,
                 "state": signal.state,
@@ -427,7 +434,8 @@ def job_control_assessment_payload(assessment: JobControlAssessment) -> dict[str
             }
             for signal in assessment.signals
         ],
-    }
+        source=source,
+    )
 
 
 def summarize_control_signals(signals: Sequence[ControlSignal]) -> ControlAssessmentSummary:

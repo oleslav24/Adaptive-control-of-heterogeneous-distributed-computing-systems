@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 13:45:20 +07:00
+Last updated: 2026-05-29 15:12:48 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -48,7 +48,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 38 | Agent-control real-job summary hardening | Add aggregate assessment summary + latest terminal mode + docs/tests sync | Closed |
 | 39 | Job page control-health UX hardening | Add compact control summary + evidence + deep-link from `/job` to `/agent-control` | Closed |
 | 40 | Agent-control navigation and diagnostics UX | Add quick navigation from control assessment to job/diagnostics/bundle with coverage | Closed |
-| 41 | Control-health evidence contracts (2-week) | Stable control-assessment schema v2 + cross-artifact consistency gates | Planned |
+| 41 | Control-health evidence contracts (2-week) | Stable control-assessment schema v2 + cross-artifact consistency gates | In progress |
 | 42 | Publication/chapter10 quality-gate unification (2-week) | Unified run-quality contract and fail-fast validation for publication bundles | Planned |
 | 43 | Scenario calibration for H2-H5 (2-week) | Recalibrated stress scenarios with reproducible support/not-support outcomes | Planned |
 | 44 | Method catalog completion (2-week) | Replace placeholders in ready comparisons (`max-min` + one metaheuristic-lite) or mark as future work in pipeline | Planned |
@@ -109,7 +109,7 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 38 | Closed | 2026-05-29 09:15:00 +07:00 | merged to `main`, merge commit `941d03a` (PR #48) |
 | 39 | Closed | 2026-05-29 13:02:00 +07:00 | merged to `main`, merge commit `3a7b734` (PR #49) |
 | 40 | Closed | 2026-05-29 13:38:10 +07:00 | merged to `main`, merge commit `d02f94d` (PR #50) |
-| 41 | Planned | n/a | not started |
+| 41 | Open | n/a | in progress on branch `codex/sprint36-next` |
 | 42 | Planned | n/a | not started |
 | 43 | Planned | n/a | not started |
 | 44 | Planned | n/a | not started |
@@ -880,7 +880,15 @@ Implementation can still be sliced into small commits, but sprint goals and DoD 
 
 | Task | Description | Status |
 |---|---|---|
-| 41.1 | Define `control_assessment` schema v2 (fields, states, versioning, compatibility policy) | Planned |
-| 41.2 | Add consistency validator (`artifact` vs `/job-data` vs diagnostics) | Planned |
-| 41.3 | Add regression tests for partial/missing/legacy payloads | Planned |
-| 41.4 | Update docs (`web_interface`, schema note, sprint log) and run full regression | Planned |
+| 41.1 | Define `control_assessment` schema v2 (fields, states, versioning, compatibility policy) | Done |
+| 41.2 | Add consistency validator (`artifact` vs `/job-data` vs diagnostics) | Done |
+| 41.3 | Add regression tests for partial/missing/legacy payloads | Done |
+| 41.4 | Update docs (`web_interface`, schema note, sprint log) and run full regression | Done |
+
+## Active Sprint Slice Log (Sprint 41)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-29 14:02:10 | 41.1-41.2 Introduce control-assessment schema v2 + consistency contract module | OK (adds schema/versioning and source-aware consistency without changing MAS performance semantics) | pending | pending |
+| 2026-05-29 14:38:45 | 41.2-41.3 Integrate normalization/validation into `/job-data` and diagnostics endpoints + tests | OK (legacy artifact compatibility preserved, runtime/artifact consistency reported explicitly) | targeted tests pass (`28 passed`) | current slice commit |
+| 2026-05-29 15:05:22 | 41.4 Full regression + docs sync | OK (schema v2 documented, diagnostics contract exposed, suite stable) | full pytest pass (`237 passed`) | current slice commit |
