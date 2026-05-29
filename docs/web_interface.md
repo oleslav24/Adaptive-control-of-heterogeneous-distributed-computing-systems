@@ -50,6 +50,10 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - deep-link to `/agent-control?assess=job&id=<job_id>` for detailed assessment
   - stop button for running job
   - diagnostics payload includes `control_assessment` (operational quality-gate health)
+  - `control_assessment` follows schema v2:
+    - `control_assessment_schema = adaptive-testbed.web.control-assessment`
+    - `control_assessment_schema_version = 2`
+    - metadata: `generated_at_utc`, `source`
   - after terminal status (`success/failed/timeout/stopped`) web runner exports `control_assessment.json` near produced run artifacts (when manifest/output paths are available)
   - `/job-data` payload includes `control_assessment`; if exported artifact path is present in logs (`control_assessment_json: ...`), payload uses that file, otherwise it falls back to runtime assessment
 - `/agent-control`
@@ -71,6 +75,11 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
     - `/job?id=<job_id>`
     - `/job-diagnostics?id=<job_id>`
     - `/job-bundle?id=<job_id>` (only for `failed/timeout/stopped`)
+- `/job-diagnostics?id=<job_id>`
+  - includes:
+    - `control_assessment` (runtime snapshot, schema v2)
+    - `control_assessment_consistency` (runtime vs artifact comparison, when artifact exists)
+    - `control_assessment_validation` (schema validation errors per source)
 - `/files?path=...`
   - workspace-safe file browser
   - previews for text and image artifacts

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from http import HTTPStatus
+import json
 from pathlib import Path
 from typing import Protocol
 from urllib.parse import parse_qs
@@ -12,7 +13,16 @@ from project.web.diagnostics import (
     export_job_diagnostics_bundle,
     is_failure_like_status,
 )
-from project.web.agent_control import assess_job_control, job_control_assessment_payload
+from project.web.agent_control import (
+    assess_job_control,
+    job_control_assessment_payload,
+    parse_job_signals,
+)
+from project.web.control_assessment_contract import (
+    build_control_assessment_consistency_report,
+    normalize_control_assessment_payload,
+    validate_control_assessment_payload,
+)
 from project.web.i18n import tr
 from project.web.route_responses import RouteResponse, json_response, text_response
 from project.web.routing import first, lang_from_parsed
@@ -37,7 +47,27 @@ def build_job_diagnostics_response(
         return json_response(HTTPStatus.NOT_FOUND, {"error": tr(lang, "job_not_found")})
 
     diagnostics = build_job_diagnostics(job).to_payload()
-    diagnostics["control_assessment"] = job_control_assessment_payload(assess_job_control(job))
+    runtime_payload = job_control_assessment_payload(
+        assess_job_control(job),
+        source="diagnostics-route-runtime",
+    )
+    source_payloads: dict[str, dict[str, object]] = {"runtime": runtime_payload}
+    artifact_payload = _load_job_control_assessment_artifact(job)
+    if artifact_payload:
+        source_payloads["job-artifact"] = normalize_control_assessment_payload(
+            artifact_payload,
+            fallback_job_id=str(getattr(job, "id", "")),
+            fallback_job_status=str(getattr(job, "status", "")),
+            source_override="job-artifact",
+        )
+    diagnostics["control_assessment"] = runtime_payload
+    diagnostics["control_assessment_consistency"] = build_control_assessment_consistency_report(
+        source_payloads
+    )
+    diagnostics["control_assessment_validation"] = {
+        source: validate_control_assessment_payload(payload)
+        for source, payload in source_payloads.items()
+    }
     diagnostics["can_export_bundle"] = is_failure_like_status(job.status)
     diagnostics["lang"] = lang
     return json_response(HTTPStatus.OK, diagnostics)
@@ -74,3 +104,18 @@ def build_job_bundle_response(
             "Cache-Control": "no-store",
         },
     )
+
+
+def _load_job_control_assessment_artifact(job) -> dict[str, object]:
+    """Load exported `control_assessment_json` artifact for diagnostics consistency check."""
+    parsed = parse_job_signals(job)
+    path = parsed.existing_artifacts.get("control_assessment_json", "").strip()
+    if not path:
+        return {}
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    return payload

@@ -29,6 +29,7 @@ It is used as a traceability contract between the manuscript text and the implem
 - `/agent-control` demo percentages are operational quality-gate indicators and are explicitly separated from experimental efficiency metrics.
 - `chapter10_control_health.*` is an operational quality-gate appendix and must not be reported as algorithmic performance evidence.
 - Real-job control assessment is summarized as operational states (`pass/fail/present/unknown`) and component evidence, not as GRVS performance metrics.
+- Web control-health uses explicit schema contract `adaptive-testbed.web.control-assessment` v2 with source-aware consistency checks (runtime vs exported artifact).
 
 ## Agent Control Mapping
 

@@ -106,7 +106,10 @@ def export_job_diagnostics_bundle(
     diagnostics_log_path = bundle_dir / "diagnostics.log"
     control_assessment_path = bundle_dir / "control_assessment.json"
     zip_path = bundle_dir / f"job-{job.id}-diagnostics.zip"
-    control_assessment_payload = job_control_assessment_payload(assess_job_control(job))
+    control_assessment_payload = job_control_assessment_payload(
+        assess_job_control(job),
+        source="diagnostics-bundle",
+    )
 
     with diagnostics_json_path.open("w", encoding="utf-8") as f:
         json.dump(diagnostics.to_payload(), f, indent=2, sort_keys=True)
@@ -142,7 +145,10 @@ def export_job_control_assessment_artifact(
         return None
 
     target_path = target_dir / "control_assessment.json"
-    payload = job_control_assessment_payload(assess_job_control(job))
+    payload = job_control_assessment_payload(
+        assess_job_control(job),
+        source="job-artifact-export",
+    )
     with target_path.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True)
     return target_path

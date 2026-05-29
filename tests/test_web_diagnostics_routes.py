@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from io import BytesIO
+import json
 from pathlib import Path
 from threading import Lock
 from urllib.parse import urlparse
@@ -66,7 +67,52 @@ def test_build_job_diagnostics_response_returns_payload() -> None:
     assert '"status": "timeout"' in body
     assert '"can_export_bundle": true' in body
     assert '"control_assessment"' in body
+    assert '"control_assessment_consistency"' in body
+    assert '"control_assessment_validation"' in body
     assert '"component_id": "policy"' in body
+
+
+def test_build_job_diagnostics_response_reports_consistency_mismatch() -> None:
+    """Diagnostics payload should report mismatch when artifact assessment diverges from runtime."""
+    workspace = _workspace_dir("diag-consistency-mismatch")
+    control_path = (workspace / "control_assessment.json").resolve()
+    control_path.write_text(
+        json.dumps(
+            {
+                "job_id": "job-1",
+                "job_status": "failed",
+                "mode": "real-job",
+                "signals": [
+                    {
+                        "component_id": "policy",
+                        "state": "fail",
+                        "reason": "forced-mismatch",
+                        "evidence": [],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    manager = _FakeJobManager(
+        {
+            "job-1": _FakeJob(
+                id="job-1",
+                status="failed",
+                log_lines=[
+                    f"control_assessment_json: {control_path}",
+                    "LLM enabled: False",
+                ],
+            )
+        }
+    )
+    response = build_job_diagnostics_response(urlparse("/job-diagnostics?id=job-1&lang=en"), manager)
+    assert response.status.value == 200
+    payload = json.loads(response.body.decode("utf-8"))
+    consistency = payload["control_assessment_consistency"]
+    assert consistency["ok"] is False
+    assert consistency["source_count"] == 2
+    assert consistency["sources"] == ["job-artifact", "runtime"]
 
 
 def test_build_job_bundle_response_rejects_success_status() -> None:

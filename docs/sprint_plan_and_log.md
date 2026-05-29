@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 13:21:22 +07:00
+Last updated: 2026-05-29 15:14:35 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -47,7 +47,13 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 37 | Job page control-assessment UX | Render control assessment signals directly on `/job` page from `/job-data` payload | Closed |
 | 38 | Agent-control real-job summary hardening | Add aggregate assessment summary + latest terminal mode + docs/tests sync | Closed |
 | 39 | Job page control-health UX hardening | Add compact control summary + evidence + deep-link from `/job` to `/agent-control` | Closed |
-| 40 | Agent-control navigation and diagnostics UX | Add quick navigation from control assessment to job/diagnostics/bundle with coverage | In progress |
+| 40 | Agent-control navigation and diagnostics UX | Add quick navigation from control assessment to job/diagnostics/bundle with coverage | Closed |
+| 41 | Control-health evidence contracts (2-week) | Stable control-assessment schema v2 + cross-artifact consistency gates | In progress |
+| 42 | Publication/chapter10 quality-gate unification (2-week) | Unified run-quality contract and fail-fast validation for publication bundles | Planned |
+| 43 | Scenario calibration for H2-H5 (2-week) | Recalibrated stress scenarios with reproducible support/not-support outcomes | Planned |
+| 44 | Method catalog completion (2-week) | Replace placeholders in ready comparisons (`max-min` + one metaheuristic-lite) or mark as future work in pipeline | Planned |
+| 45 | Decision-trace explainability UX (2-week) | Drill-down timeline in web + per-decision evidence links | Planned |
+| 46 | Reproducible release automation (2-week) | One-command paper/monograph package with integrity + manifest verification | Planned |
 
 ## Execution Guardrails (mandatory each slice)
 
@@ -102,7 +108,13 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 37 | Closed | 2026-05-28 17:40:30 +07:00 | merged to `main`, merge commit `d8a21b0` (PR #47) |
 | 38 | Closed | 2026-05-29 09:15:00 +07:00 | merged to `main`, merge commit `941d03a` (PR #48) |
 | 39 | Closed | 2026-05-29 13:02:00 +07:00 | merged to `main`, merge commit `3a7b734` (PR #49) |
-| 40 | Open | n/a | in progress on branch `codex/sprint36-next` |
+| 40 | Closed | 2026-05-29 13:38:10 +07:00 | merged to `main`, merge commit `d02f94d` (PR #50) |
+| 41 | Open | n/a | in progress on branch `codex/sprint36-next` |
+| 42 | Planned | n/a | not started |
+| 43 | Planned | n/a | not started |
+| 44 | Planned | n/a | not started |
+| 45 | Planned | n/a | not started |
+| 46 | Planned | n/a | not started |
 
 ## Detailed Sprint Backlog And Status
 
@@ -845,3 +857,39 @@ Closed in `main` via PR #49 (merge commit `3a7b734`).
 | 2026-05-29 13:03:10 | 40.1-40.2 Agent-control assessment navigation links | OK (improves operational workflow without touching experimental metric semantics) | pending | pending |
 | 2026-05-29 13:06:20 | 40.1-40.4 Tests + regression + docs sync | OK (assessment panel now directly navigates to job/diagnostics/bundle and remains status-safe) | targeted tests pass (`15 passed`), full pytest pass (`231 passed`) | commit `860841f` |
 | 2026-05-29 13:21:22 | 40.post-commit Validation rerun | OK (post-commit validation kept route + full suite green) | targeted tests pass (`15 passed`), full pytest pass (`231 passed`) | commit `860841f` |
+
+## Sprint 40 Closure
+
+Closed in `main` via PR #50 (merge commit `d02f94d`).
+
+## Forward Planning Horizon (Sprints 41-46)
+
+Planning note: starting from Sprint 41, sprints are intentionally expanded back to 1-2 week thematic increments.  
+Implementation can still be sliced into small commits, but sprint goals and DoD are now grouped into larger outcomes.
+
+| Sprint | Target Duration | Theme | Deliverables / DoD |
+|---|---|---|---|
+| 41 | 2 weeks | Control-health evidence contracts | Schema `control_assessment.v2`; cross-check between `/job-data`, diagnostics bundle, and exported artifact; compatibility tests; migration note in docs |
+| 42 | 2 weeks | Publication/chapter10 quality-gate unification | Single run-quality contract (`quality_gate.json`); unified validators for smoke/publication/chapter10; fail-fast gate in CLI/web; updated evidence report |
+| 43 | 2 weeks | Scenario calibration for H2-H5 | Recalibrated dynamic/peak/failure scenarios; reproducible seeds and CI95; explicit support/not-support outcomes without overclaiming |
+| 44 | 2 weeks | Method catalog completion | Implement `max-min` + one metaheuristic-lite *or* mark methods as future work in ready pipelines; scheduler tests; catalog/docs synchronization |
+| 45 | 2 weeks | Decision-trace explainability UX | Web timeline for algorithm switch/prediction hint/LLM guard events; links to evidence artifacts; tests for degraded/partial traces |
+| 46 | 2 weeks | Reproducible release automation | One-command package for monograph/paper artifacts; manifest+integrity verification bundle; release checklist and rollback instructions |
+
+### Sprint 41 Draft Backlog
+
+| Task | Description | Status |
+|---|---|---|
+| 41.1 | Define `control_assessment` schema v2 (fields, states, versioning, compatibility policy) | Done |
+| 41.2 | Add consistency validator (`artifact` vs `/job-data` vs diagnostics) | Done |
+| 41.3 | Add regression tests for partial/missing/legacy payloads | Done |
+| 41.4 | Update docs (`web_interface`, schema note, sprint log) and run full regression | Done |
+
+## Active Sprint Slice Log (Sprint 41)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-29 14:02:10 | 41.1-41.2 Introduce control-assessment schema v2 + consistency contract module | OK (adds schema/versioning and source-aware consistency without changing MAS performance semantics) | pending | pending |
+| 2026-05-29 14:38:45 | 41.2-41.3 Integrate normalization/validation into `/job-data` and diagnostics endpoints + tests | OK (legacy artifact compatibility preserved, runtime/artifact consistency reported explicitly) | targeted tests pass (`28 passed`) | commit `61a313e` |
+| 2026-05-29 15:05:22 | 41.4 Full regression + docs sync | OK (schema v2 documented, diagnostics contract exposed, suite stable) | full pytest pass (`237 passed`) | commit `61a313e` |
+| 2026-05-29 15:14:35 | 41.post-commit Validation rerun | OK (post-commit full regression stayed green) | full pytest pass (`237 passed`) | commit `61a313e` |

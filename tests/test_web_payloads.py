@@ -206,6 +206,10 @@ def test_job_payload_prefers_exported_control_assessment_artifact(monkeypatch) -
                 "job_id": "artifact-job",
                 "job_status": "success",
                 "mode": "real-job",
+                "control_assessment_schema": "adaptive-testbed.web.control-assessment",
+                "control_assessment_schema_version": "2",
+                "generated_at_utc": "2026-05-29T00:00:00+00:00",
+                "source": "job-artifact-export",
                 "summary": {
                     "overall_state": "pass",
                     "counts": {"pass": 7, "fail": 0, "present": 0, "unknown": 0},
@@ -229,6 +233,9 @@ def test_job_payload_prefers_exported_control_assessment_artifact(monkeypatch) -
     control = result["control_assessment"]
     assert isinstance(control, dict)
     assert control["job_id"] == "artifact-job"
+    assert control["control_assessment_schema"] == "adaptive-testbed.web.control-assessment"
+    assert control["control_assessment_schema_version"] == "2"
+    assert control["source"] == "job-artifact"
     assert control["summary"]["overall_state"] == "pass"
     assert control["signals"][0]["component_id"] == "policy"
 
@@ -251,6 +258,51 @@ def test_job_payload_falls_back_to_runtime_control_assessment(monkeypatch) -> No
     assert isinstance(control, dict)
     assert control["job_id"] == "fallback-job"
     assert control["mode"] == "real-job"
+    assert control["control_assessment_schema"] == "adaptive-testbed.web.control-assessment"
+    assert control["control_assessment_schema_version"] == "2"
+    assert control["source"] == "job-data-runtime"
     assert isinstance(control.get("summary"), dict)
     assert set(control["summary"].get("counts", {}).keys()) == {"pass", "fail", "present", "unknown"}
     assert isinstance(control.get("signals"), list)
+
+
+def test_job_payload_normalizes_legacy_control_assessment_artifact(monkeypatch) -> None:
+    """Legacy artifact payloads without schema/summary should be normalized to v2 contract."""
+    fake_researcher = _FakeResearcher()
+    monkeypatch.setattr(payloads, "RESEARCHER_AGENT", fake_researcher)
+
+    folder = Path("outputs") / "test-suite" / f"web-payload-control-legacy-{uuid4().hex[:8]}"
+    folder.mkdir(parents=True, exist_ok=True)
+    legacy_path = (folder / "control_assessment.json").resolve()
+    legacy_path.write_text(
+        json.dumps(
+            {
+                "job_id": "legacy-job",
+                "job_status": "success",
+                "mode": "real-job",
+                "signals": [
+                    {
+                        "component_id": "policy",
+                        "state": "PASS",
+                        "reason": "legacy-state",
+                        "evidence": "not-a-list",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    job = _FakeJob(
+        id="job-legacy",
+        status="success",
+        log_lines=[f"control_assessment_json: {legacy_path}"],
+    )
+    result = payloads.job_payload(job, "en")
+    control = result["control_assessment"]
+    assert control["control_assessment_schema"] == "adaptive-testbed.web.control-assessment"
+    assert control["control_assessment_schema_version"] == "2"
+    assert control["source"] == "job-artifact"
+    assert control["summary"]["overall_state"] == "pass"
+    assert control["summary"]["counts"]["pass"] == 1
+    assert control["signals"][0]["state"] == "pass"
+    assert control["signals"][0]["evidence"] == []

@@ -18,6 +18,7 @@ from project.literature_evidence import (
     validate_evidence_items,
 )
 from project.web.agent_control import assess_job_control, job_control_assessment_payload
+from project.web.control_assessment_contract import normalize_control_assessment_payload
 from project.web.i18n import (
     ALGORITHM_LABELS,
     SCENARIO_LABELS,
@@ -226,8 +227,16 @@ def _control_assessment_payload(
     if artifact_path:
         payload = _read_json_dict(Path(artifact_path))
         if payload:
-            return payload
-    return job_control_assessment_payload(assess_job_control(job))
+            return normalize_control_assessment_payload(
+                payload,
+                fallback_job_id=job.id,
+                fallback_job_status=job.status,
+                source_override="job-artifact",
+            )
+    return job_control_assessment_payload(
+        assess_job_control(job),
+        source="job-data-runtime",
+    )
 
 
 def _extract_artifact_path(lines: list[str], key: str) -> str | None:
