@@ -58,6 +58,9 @@ def test_agent_control_route_latest_assessment_renders_signal_table() -> None:
     assert "<th>Component</th>" in html
     assert "<td>policy</td>" in html
     assert "Overall" in html
+    assert "/job?lang=en&amp;id=job-abc123" in html
+    assert "/job-diagnostics?lang=en&amp;id=job-abc123" in html
+    assert "Download diagnostics bundle" not in html
 
 
 def test_agent_control_route_latest_terminal_picks_completed_job() -> None:
@@ -77,3 +80,15 @@ def test_agent_control_route_latest_terminal_picks_completed_job() -> None:
     assert response.status.value == 200
     assert "<code>job-done</code>" in html
     assert "<code>job-running</code>" not in html
+
+
+def test_agent_control_route_terminal_status_renders_bundle_link() -> None:
+    """Failed/timeout/stopped assessed jobs should expose diagnostics bundle link."""
+    manager = _FakeJobManager([_FakeJob(id="job-timeout", status="timeout")])
+    response = build_agent_control_response(
+        urlparse("/agent-control?lang=en&assess=latest"),
+        manager,
+    )
+    html = response.body.decode("utf-8")
+    assert response.status.value == 200
+    assert "/job-bundle?lang=en&amp;id=job-timeout" in html
