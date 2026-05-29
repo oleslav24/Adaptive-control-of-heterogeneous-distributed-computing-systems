@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 15:14:35 +07:00
+Last updated: 2026-05-29 15:46:40 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -48,8 +48,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 38 | Agent-control real-job summary hardening | Add aggregate assessment summary + latest terminal mode + docs/tests sync | Closed |
 | 39 | Job page control-health UX hardening | Add compact control summary + evidence + deep-link from `/job` to `/agent-control` | Closed |
 | 40 | Agent-control navigation and diagnostics UX | Add quick navigation from control assessment to job/diagnostics/bundle with coverage | Closed |
-| 41 | Control-health evidence contracts (2-week) | Stable control-assessment schema v2 + cross-artifact consistency gates | In progress |
-| 42 | Publication/chapter10 quality-gate unification (2-week) | Unified run-quality contract and fail-fast validation for publication bundles | Planned |
+| 41 | Control-health evidence contracts (2-week) | Stable control-assessment schema v2 + cross-artifact consistency gates | Closed |
+| 42 | Publication/chapter10 quality-gate unification (2-week) | Unified run-quality contract and fail-fast validation for publication bundles | In progress |
 | 43 | Scenario calibration for H2-H5 (2-week) | Recalibrated stress scenarios with reproducible support/not-support outcomes | Planned |
 | 44 | Method catalog completion (2-week) | Replace placeholders in ready comparisons (`max-min` + one metaheuristic-lite) or mark as future work in pipeline | Planned |
 | 45 | Decision-trace explainability UX (2-week) | Drill-down timeline in web + per-decision evidence links | Planned |
@@ -109,8 +109,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 38 | Closed | 2026-05-29 09:15:00 +07:00 | merged to `main`, merge commit `941d03a` (PR #48) |
 | 39 | Closed | 2026-05-29 13:02:00 +07:00 | merged to `main`, merge commit `3a7b734` (PR #49) |
 | 40 | Closed | 2026-05-29 13:38:10 +07:00 | merged to `main`, merge commit `d02f94d` (PR #50) |
-| 41 | Open | n/a | in progress on branch `codex/sprint36-next` |
-| 42 | Planned | n/a | not started |
+| 41 | Closed | 2026-05-29 15:18:06 +07:00 | merged to `main`, merge commit `af59f87` (PR #51) |
+| 42 | Open | n/a | in progress on branch `codex/sprint36-next` |
 | 43 | Planned | n/a | not started |
 | 44 | Planned | n/a | not started |
 | 45 | Planned | n/a | not started |
@@ -893,3 +893,25 @@ Implementation can still be sliced into small commits, but sprint goals and DoD 
 | 2026-05-29 14:38:45 | 41.2-41.3 Integrate normalization/validation into `/job-data` and diagnostics endpoints + tests | OK (legacy artifact compatibility preserved, runtime/artifact consistency reported explicitly) | targeted tests pass (`28 passed`) | commit `61a313e` |
 | 2026-05-29 15:05:22 | 41.4 Full regression + docs sync | OK (schema v2 documented, diagnostics contract exposed, suite stable) | full pytest pass (`237 passed`) | commit `61a313e` |
 | 2026-05-29 15:14:35 | 41.post-commit Validation rerun | OK (post-commit full regression stayed green) | full pytest pass (`237 passed`) | commit `61a313e` |
+
+## Sprint 41 Closure
+
+Closed in `main` via PR #51 (merge commit `af59f87`).
+
+### Sprint 42 Draft Backlog
+
+| Task | Description | Status |
+|---|---|---|
+| 42.1 | Introduce unified `quality_gate` contract module for run bundles (`quality_gate.json`) | Done |
+| 42.2 | Integrate quality-gate checks into `publication` and `chapter10` pipelines with fail-fast on required checks | Done |
+| 42.3 | Extend smoke baseline with per-case quality-gate checks and overall gate status | Done |
+| 42.4 | Add/refresh regression tests for quality-gate helpers and chapter10 integration | Done |
+| 42.5 | Run smoke + targeted tests + full pytest and sync sprint log | Done |
+
+## Active Sprint Slice Log (Sprint 42)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-29 15:24:40 | 42.1 Add `project.experiments.quality_gate` (schema, checks, payload writer, fail-fast renderer) | OK (unifies previously scattered validation semantics into one artifact contract) | pending | pending |
+| 2026-05-29 15:33:10 | 42.2-42.3 Wire quality-gate into publication/chapter10/smoke; remove duplicated chapter10 artifact loops | OK (required checks now fail-fast via CLI/Web run paths; smoke includes explicit gate status) | targeted tests pass (`8 passed`, `5 passed`) | pending |
+| 2026-05-29 15:46:40 | 42.4-42.5 Runtime verification (`smoke`) + full regression suite | OK (smoke baseline PASS with quality gate, full suite stable) | smoke PASS, full pytest pass (`240 passed`) | pending |

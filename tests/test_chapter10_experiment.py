@@ -50,6 +50,8 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     publication_manifest.write_text("{}", encoding="utf-8")
     publication_integrity = publication_out / "artifact_integrity.json"
     publication_integrity.write_text("{}", encoding="utf-8")
+    publication_quality_gate = publication_out / "quality_gate.json"
+    publication_quality_gate.write_text('{"ok": true}', encoding="utf-8")
 
     def _fake_publication_pipeline(*, base_config, seeds, quick, save_plots, cli_args):
         _ = base_config
@@ -113,6 +115,7 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
                 "publication_stub_txt": str(publication_stub),
                 "publication_manifest_json": str(publication_manifest),
                 "artifact_integrity_json": str(publication_integrity),
+                "quality_gate_json": str(publication_quality_gate),
             },
         )
 
@@ -149,9 +152,11 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
         "chapter10_package_validation_json",
         "chapter10_manifest_json",
         "chapter10_artifact_integrity_json",
+        "chapter10_quality_gate_json",
         "publication_publication_stub_txt",
         "publication_publication_manifest_json",
         "publication_artifact_integrity_json",
+        "publication_quality_gate_json",
     }
     assert required_keys.issubset(set(result.output_paths.keys()))
     for key in required_keys:
@@ -191,6 +196,10 @@ def test_run_chapter10_experiment_persists_outputs(monkeypatch) -> None:
     assert control_health["scope"] == "operational_quality_gate"
     assert control_health["overall_status"] in {"STABLE", "WARNING", "CRITICAL"}
     assert len(control_health["signals"]) == 7
+    quality_gate = json.loads(
+        Path(result.output_paths["chapter10_quality_gate_json"]).read_text(encoding="utf-8")
+    )
+    assert quality_gate["ok"] is True
 
     manifest_path = Path(result.output_paths["chapter10_manifest_json"])
     with manifest_path.open("r", encoding="utf-8") as f:

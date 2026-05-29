@@ -21,6 +21,11 @@ from project.experiments.manifest import (
     validate_run_manifest_file,
 )
 from project.experiments.publication import run_publication_pipeline
+from project.experiments.quality_gate import (
+    build_quality_gate_assessment,
+    check_manifest_artifact,
+    quality_gate_payload,
+)
 from project.experiments.runner import BatchRunSpec, ExperimentRunner
 from project.metrics import persist_observability, summarize_state
 
@@ -105,25 +110,31 @@ def main() -> None:
     if args.update_golden:
         _write_json(golden_path, baseline)
         print(f"Golden baseline updated: {golden_path}")
-        print("Smoke baseline status: PASS")
+        print(f"Smoke baseline status: {'PASS' if baseline['overall_ok'] else 'FAIL'}")
         return
 
+    baseline_ok = bool(baseline.get("overall_ok", False))
     if golden_path.exists():
         with golden_path.open("r", encoding="utf-8") as f:
             golden = json.load(f)
         comparison = compare_baseline_with_golden(baseline, golden)
+        gate = baseline.get("quality_gate", {})
         print(f"Golden file: {golden_path}")
         print(f"Baseline match: {comparison['ok']}")
+        print(f"Quality gate: {gate.get('ok', False)}")
         if comparison["mismatches"]:
             print("Mismatches:")
             for item in comparison["mismatches"]:
                 print(f"- {item}")
-        print(f"Smoke baseline status: {'PASS' if comparison['ok'] else 'FAIL'}")
+        if not baseline_ok:
+            print(f"Quality-gate failed cases: {gate.get('failed_cases', [])}")
+        final_ok = bool(comparison["ok"]) and baseline_ok
+        print(f"Smoke baseline status: {'PASS' if final_ok else 'FAIL'}")
         return
 
     print(f"Golden file not found: {golden_path}")
     print("Use --update-golden to create it from current baseline.")
-    print("Smoke baseline status: PASS (no golden comparison)")
+    print(f"Smoke baseline status: {'PASS' if baseline_ok else 'FAIL'} (no golden comparison)")
 
 
 def run_smoke_baseline(
@@ -165,10 +176,17 @@ def run_smoke_baseline(
     baseline["fingerprints"] = {
         item["case"]: str(item["fingerprint"]) for item in baseline["cases"]
     }
-    baseline["overall_ok"] = all(
-        bool(item.get("manifest_validation", {}).get("ok", True))
-        for item in baseline["cases"]
-    )
+    baseline["overall_ok"] = all(bool(item.get("quality_gate_ok", False)) for item in baseline["cases"])
+    baseline["quality_gate"] = {
+        "ok": baseline["overall_ok"],
+        "required_case_count": len(baseline["cases"]),
+        "passed_case_count": sum(1 for item in baseline["cases"] if bool(item.get("quality_gate_ok", False))),
+        "failed_cases": [
+            str(item.get("case", "unknown"))
+            for item in baseline["cases"]
+            if not bool(item.get("quality_gate_ok", False))
+        ],
+    }
     return baseline
 
 
@@ -251,11 +269,18 @@ def _run_single_case(config: ExperimentConfig) -> dict[str, Any]:
             "summary": _summary_payload(state),
         }
     )
+    manifest_validation = _manifest_validation(artifacts)
+    gate_payload = _quality_gate_for_case(
+        case="single",
+        manifest_paths=[manifest_validation.get("path", "")],
+    )
     return {
         "case": "single",
         "fingerprint": _fingerprint(payload),
         "payload": payload,
-        "manifest_validation": _manifest_validation(artifacts),
+        "manifest_validation": manifest_validation,
+        "quality_gate": gate_payload,
+        "quality_gate_ok": bool(gate_payload.get("ok", False)),
     }
 
 
@@ -282,11 +307,15 @@ def _run_compare_case(config: ExperimentConfig) -> dict[str, Any]:
         rows.append(_summary_payload(state))
     rows = sorted(rows, key=lambda item: str(item["algorithm"]))
     payload = _normalize_for_fingerprint(rows)
+    manifest_paths = [str(item.get("path", "")) for item in manifests]
+    gate_payload = _quality_gate_for_case(case="compare", manifest_paths=manifest_paths)
     return {
         "case": "compare",
         "fingerprint": _fingerprint(payload),
         "payload": payload,
         "manifest_validation": _merge_manifest_results(manifests),
+        "quality_gate": gate_payload,
+        "quality_gate_ok": bool(gate_payload.get("ok", False)),
     }
 
 
@@ -325,11 +354,14 @@ def _run_batch_case(
     table = table[available].sort_values(["scenario", "algorithm"]).reset_index(drop=True)
     payload = _normalize_for_fingerprint(_records(table))
     manifest_path = result.output_paths.get("batch_manifest_json", "")
+    gate_payload = _quality_gate_for_case(case="batch", manifest_paths=[manifest_path])
     return {
         "case": "batch",
         "fingerprint": _fingerprint(payload),
         "payload": payload,
         "manifest_validation": _manifest_validation({"run_manifest_json": manifest_path}),
+        "quality_gate": gate_payload,
+        "quality_gate_ok": bool(gate_payload.get("ok", False)),
     }
 
 
@@ -369,11 +401,14 @@ def _run_publication_case(
         }
     )
     manifest_path = result.output_paths.get("publication_manifest_json", "")
+    gate_payload = _quality_gate_for_case(case="publication", manifest_paths=[manifest_path])
     return {
         "case": "publication",
         "fingerprint": _fingerprint(payload),
         "payload": payload,
         "manifest_validation": _manifest_validation({"run_manifest_json": manifest_path}),
+        "quality_gate": gate_payload,
+        "quality_gate_ok": bool(gate_payload.get("ok", False)),
     }
 
 
@@ -434,6 +469,35 @@ def _merge_manifest_results(items: list[dict[str, Any]]) -> dict[str, Any]:
         if path:
             paths.append(path)
     return {"ok": ok, "paths": paths, "errors": errors}
+
+
+def _quality_gate_for_case(*, case: str, manifest_paths: list[str]) -> dict[str, Any]:
+    """Build per-case quality-gate payload from manifest checks."""
+    checks = [
+        check_manifest_artifact(
+            gate_id=f"{case}-manifest-{idx + 1}",
+            title=f"{case} manifest validation #{idx + 1}",
+            path=path,
+            required=True,
+        )
+        for idx, path in enumerate(manifest_paths)
+    ]
+    if not checks:
+        checks = [
+            check_manifest_artifact(
+                gate_id=f"{case}-manifest",
+                title=f"{case} manifest validation",
+                path="",
+                required=True,
+            )
+        ]
+    assessment = build_quality_gate_assessment(
+        mode="smoke-baseline",
+        scope=f"smoke_case:{case}",
+        checks=checks,
+        notes=["Smoke quality-gate checks validate manifests for every case."],
+    )
+    return quality_gate_payload(assessment)
 
 
 def _summary_payload(state: SystemState) -> dict[str, Any]:

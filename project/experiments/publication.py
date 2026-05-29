@@ -37,6 +37,16 @@ from project.experiments.publication_validation import (
     validate_hypotheses_table,
     validate_summary_statistics,
 )
+from project.experiments.quality_gate import (
+    QualityGateAssessment,
+    build_quality_gate_assessment,
+    check_claims_gate_artifact,
+    check_integrity_artifact,
+    check_json_ok_artifact,
+    check_manifest_artifact,
+    render_quality_gate_failure,
+    write_quality_gate_file,
+)
 from project.evidence_claims import (
     build_report_claims,
     render_markdown_claims,
@@ -154,19 +164,10 @@ def run_publication_pipeline(
     decision_trace = pd.DataFrame(decision_trace_rows)
     summary = _summarize_runs(raw_runs)
     validation = validate_summary_statistics(summary)
-    if not validation.ok:
-        message = "; ".join(validation.errors[:8])
-        raise ValueError(f"Publication summary validation failed: {message}")
     hypothesis_df = _evaluate_hypotheses(raw_runs)
     hypothesis_validation = validate_hypotheses_table(hypothesis_df)
-    if not hypothesis_validation.ok:
-        message = "; ".join(hypothesis_validation.errors[:8])
-        raise ValueError(f"Publication hypotheses validation failed: {message}")
     carbon_summary = _build_carbon_summary(summary)
     carbon_validation = validate_carbon_summary_table(carbon_summary)
-    if not carbon_validation.ok:
-        message = "; ".join(carbon_validation.errors[:8])
-        raise ValueError(f"Publication carbon summary validation failed: {message}")
 
     output_paths = _persist_publication_outputs(
         output_dir=output_dir,
@@ -249,6 +250,17 @@ def run_publication_pipeline(
         output_dir / "artifact_integrity.json",
         output_paths,
     )
+    quality_gate = _build_publication_quality_gate(
+        mode=mode,
+        output_paths=output_paths,
+    )
+    output_paths["quality_gate_json"] = write_quality_gate_file(
+        output_dir / "quality_gate.json",
+        quality_gate,
+    )
+    if not quality_gate.ok:
+        failure = render_quality_gate_failure(quality_gate)
+        raise ValueError(f"Publication quality gate failed: {failure}")
 
     return StudyResult(
         output_dir=output_dir,
@@ -1048,6 +1060,10 @@ def _write_publication_report(
         lines.append("")
         lines.append(_render_table(hypotheses))
     lines.append("")
+    lines.append("## Quality-Gate Contract")
+    lines.append("- Unified run-quality artifact: `quality_gate.json`.")
+    lines.append("- Required checks are fail-fast in CLI/Web publication-like runs.")
+    lines.append("")
     lines.append("## 6. Threats to Validity")
     lines.append("- External validity: synthetic workload generator may differ from production traces.")
     lines.append("- Internal validity: some method families are placeholders and not yet implemented.")
@@ -1197,6 +1213,68 @@ def _map_significance(prefix: str, payload: dict[str, float]) -> dict[str, float
         f"p_value_{prefix}": float(payload["p_value_permutation"]),
         f"significant_{prefix}": bool(payload["statistically_significant"]),
     }
+
+
+def _build_publication_quality_gate(
+    *,
+    mode: str,
+    output_paths: dict[str, str],
+) -> QualityGateAssessment:
+    """Build unified publication quality-gate assessment from exported artifacts."""
+    checks = [
+        check_json_ok_artifact(
+            gate_id="summary-validation",
+            title="Summary statistics validation",
+            path=output_paths.get("summary_validation_json", ""),
+            required=True,
+        ),
+        check_json_ok_artifact(
+            gate_id="hypotheses-validation",
+            title="Hypotheses table validation",
+            path=output_paths.get("hypotheses_validation_json", ""),
+            required=True,
+        ),
+        check_json_ok_artifact(
+            gate_id="carbon-validation",
+            title="Carbon summary validation",
+            path=output_paths.get("carbon_summary_validation_json", ""),
+            required=True,
+        ),
+        check_manifest_artifact(
+            gate_id="manifest",
+            title="Publication manifest schema",
+            path=output_paths.get("publication_manifest_json", ""),
+            required=True,
+        ),
+        check_integrity_artifact(
+            gate_id="integrity",
+            title="Artifact integrity verification",
+            path=output_paths.get("artifact_integrity_json", ""),
+            required=True,
+        ),
+        check_json_ok_artifact(
+            gate_id="literature-evidence-gate",
+            title="Literature evidence gate",
+            path=output_paths.get("literature_evidence_gate_json", ""),
+            required=False,
+            allow_skipped=True,
+        ),
+        check_claims_gate_artifact(
+            gate_id="claims-gate",
+            title="Evidence-backed claims gate",
+            path=output_paths.get("claims_report_json", ""),
+            required=False,
+        ),
+    ]
+    return build_quality_gate_assessment(
+        mode=mode,
+        scope="publication_bundle",
+        checks=checks,
+        notes=[
+            "Required checks are fail-fast; optional checks are reported as advisory warnings.",
+            "Quality-gate contract is operational and does not replace algorithmic metric interpretation.",
+        ],
+    )
 
 
 def _write_json(path: Path, payload: Any) -> None:

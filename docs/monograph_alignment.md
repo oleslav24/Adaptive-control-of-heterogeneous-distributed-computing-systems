@@ -19,7 +19,7 @@ It is used as a traceability contract between the manuscript text and the implem
 | Chapter 7 | ML and ZNN intelligence layer | `project/intelligence/ml.py`, `project/intelligence/znn.py`, `project/agents/prediction.py` | `hypotheses.csv/json` (H3), `decision_trace.csv/json` |
 | Chapter 8 | LLM-assisted control with safety policy | `project/llm/prompt.py`, `project/llm/client.py`, `project/llm/policy.py`, `project/agents/llm.py`, `project/web/agent_control_routes.py`, `project/web/agent_control_views.py` | `hypotheses.csv/json` (H5), `claims_report.json`, `decision_trace.csv/json`, `/agent-control` policy-guard UI |
 | Chapter 9 | Integrated architecture and orchestration | `project/simulation/loop.py`, `project/experiments/run.py`, `project/experiments/dispatch.py` | run and batch manifests, integrity JSON |
-| Chapter 10 | Experimental evaluation and publication package | `project/experiments/publication.py`, `project/experiments/chapter10.py`, `project/experiments/chapter10_tables.py`, `project/experiments/chapter10_plots.py`, `project/experiments/control_health.py` | `chapter10_report.md`, `chapter10_control_health.json/md`, `chapter10_manifest.json`, `chapter10_artifact_integrity.json`, publication package |
+| Chapter 10 | Experimental evaluation and publication package | `project/experiments/publication.py`, `project/experiments/chapter10.py`, `project/experiments/chapter10_tables.py`, `project/experiments/chapter10_plots.py`, `project/experiments/control_health.py`, `project/experiments/quality_gate.py` | `chapter10_report.md`, `chapter10_control_health.json/md`, `chapter10_manifest.json`, `chapter10_artifact_integrity.json`, `quality_gate.json`, publication package |
 
 ## Scope Boundaries
 
@@ -37,7 +37,7 @@ It is used as a traceability contract between the manuscript text and the implem
 - `context` -> run manifests (`run_manifest_json`, `publication_manifest_json`, `chapter10_manifest_json`) and reproducibility snapshots.
 - `logging` -> runtime job log + observability artifacts (`history.csv/json`, `scenario_events.csv/json`, `decision_trace.csv/json`).
 - `iteration` -> gate-oriented modes (`--smoke`, `--repro-check`, publication/chapter10 bundle workflow).
-- `qgate` -> publication/chapter10 validation artifacts (`*_validation.json`, claims/evidence gate outputs).
+- `qgate` -> publication/chapter10 validation artifacts (`*_validation.json`, claims/evidence gate outputs) and unified contract `quality_gate.json`.
 - `autonomy` -> LLM enable/disable flags, provider constraints, guarded action application.
 - `integrity` -> `artifact_integrity.json` and CLI verification via `project.experiments.verify_integrity`.
 
