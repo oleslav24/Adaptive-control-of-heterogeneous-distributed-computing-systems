@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 13:07:42 +07:00
+Last updated: 2026-05-29 13:21:22 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -843,4 +843,5 @@ Closed in `main` via PR #49 (merge commit `3a7b734`).
 | Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
 |---|---|---|---|---|
 | 2026-05-29 13:03:10 | 40.1-40.2 Agent-control assessment navigation links | OK (improves operational workflow without touching experimental metric semantics) | pending | pending |
-| 2026-05-29 13:06:20 | 40.1-40.4 Tests + regression + docs sync | OK (assessment panel now directly navigates to job/diagnostics/bundle and remains status-safe) | targeted tests pass (`15 passed`), full pytest pass (`231 passed`) | current slice commit |
+| 2026-05-29 13:06:20 | 40.1-40.4 Tests + regression + docs sync | OK (assessment panel now directly navigates to job/diagnostics/bundle and remains status-safe) | targeted tests pass (`15 passed`), full pytest pass (`231 passed`) | commit `860841f` |
+| 2026-05-29 13:21:22 | 40.post-commit Validation rerun | OK (post-commit validation kept route + full suite green) | targeted tests pass (`15 passed`), full pytest pass (`231 passed`) | commit `860841f` |
