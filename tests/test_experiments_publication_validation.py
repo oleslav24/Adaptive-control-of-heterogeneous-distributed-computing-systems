@@ -7,6 +7,7 @@ import pandas as pd
 from project.experiments.publication_validation import (
     validate_carbon_summary_table,
     validate_hypotheses_table,
+    validate_scenario_calibration_table,
     validate_summary_statistics,
 )
 
@@ -175,6 +176,113 @@ def test_validate_hypotheses_table_reports_contract_errors() -> None:
     assert any("'confirmed' must be boolean" in err for err in result.errors)
     assert any("optional metric 'p_value_core' must be in [0, 1]" in err for err in result.errors)
     assert any("optional metric 'significant_core' must be boolean" in err for err in result.errors)
+
+
+def _valid_scenario_calibration_df() -> pd.DataFrame:
+    """Build valid scenario-calibration table rows for H2-H5."""
+    return pd.DataFrame(
+        [
+            {
+                "hypothesis": "H2",
+                "study_id": "E3_robustness",
+                "required_scenarios": "node-failures",
+                "observed_scenarios": "node-failures",
+                "missing_scenarios": "",
+                "run_count": 12,
+                "seed_count": 3,
+                "method_count": 4,
+                "generated_tasks_mean": 20.0,
+                "node_failure_events_mean": 1.5,
+                "failure_requeued_tasks_mean": 3.0,
+                "llm_guarded_decisions_mean": 0.0,
+                "calibration_supported": True,
+                "calibration_status": "calibrated",
+                "calibration_reason": "calibrated stress coverage confirmed",
+            },
+            {
+                "hypothesis": "H3",
+                "study_id": "E2_adaptivity",
+                "required_scenarios": "dynamic-load,peak-load",
+                "observed_scenarios": "dynamic-load,peak-load",
+                "missing_scenarios": "",
+                "run_count": 18,
+                "seed_count": 3,
+                "method_count": 6,
+                "generated_tasks_mean": 32.0,
+                "node_failure_events_mean": 0.0,
+                "failure_requeued_tasks_mean": 0.0,
+                "llm_guarded_decisions_mean": 0.0,
+                "calibration_supported": True,
+                "calibration_status": "calibrated",
+                "calibration_reason": "calibrated stress coverage confirmed",
+            },
+            {
+                "hypothesis": "H4",
+                "study_id": "E4_hybrid_vs_classical",
+                "required_scenarios": "dynamic-load",
+                "observed_scenarios": "dynamic-load",
+                "missing_scenarios": "",
+                "run_count": 15,
+                "seed_count": 3,
+                "method_count": 5,
+                "generated_tasks_mean": 25.0,
+                "node_failure_events_mean": 0.0,
+                "failure_requeued_tasks_mean": 0.0,
+                "llm_guarded_decisions_mean": 0.0,
+                "calibration_supported": True,
+                "calibration_status": "calibrated",
+                "calibration_reason": "calibrated stress coverage confirmed",
+            },
+            {
+                "hypothesis": "H5",
+                "study_id": "E5_llm_vs_algorithmic",
+                "required_scenarios": "dynamic-load,peak-load",
+                "observed_scenarios": "dynamic-load,peak-load",
+                "missing_scenarios": "",
+                "run_count": 9,
+                "seed_count": 3,
+                "method_count": 3,
+                "generated_tasks_mean": 24.0,
+                "node_failure_events_mean": 0.0,
+                "failure_requeued_tasks_mean": 0.0,
+                "llm_guarded_decisions_mean": 2.0,
+                "calibration_supported": True,
+                "calibration_status": "calibrated",
+                "calibration_reason": "calibrated stress coverage confirmed",
+            },
+        ]
+    )
+
+
+def test_validate_scenario_calibration_table_ok() -> None:
+    """Scenario calibration validator should pass on complete calibrated rows."""
+    result = validate_scenario_calibration_table(_valid_scenario_calibration_df())
+    assert result.ok is True
+    assert result.errors == []
+    assert result.row_count == 4
+
+
+def test_validate_scenario_calibration_table_reports_errors() -> None:
+    """Scenario calibration validator should fail on schema/type/value issues."""
+    bad_schema = _valid_scenario_calibration_df().drop(columns=["missing_scenarios"])
+    schema_result = validate_scenario_calibration_table(bad_schema)
+    assert schema_result.ok is False
+    assert any("Missing required column 'missing_scenarios'" in err for err in schema_result.errors)
+
+    bad_values = _valid_scenario_calibration_df().copy()
+    bad_values.loc[0, "hypothesis"] = "HX"
+    bad_values["calibration_supported"] = bad_values["calibration_supported"].astype(object)
+    bad_values.loc[1, "calibration_supported"] = "yes"
+    bad_values.loc[2, "calibration_status"] = "unknown"
+    bad_values.loc[3, "calibration_reason"] = ""
+    bad_values.loc[3, "generated_tasks_mean"] = -1.0
+    value_result = validate_scenario_calibration_table(bad_values)
+    assert value_result.ok is False
+    assert any("Missing calibration hypotheses rows" in err for err in value_result.errors)
+    assert any("Unexpected calibration hypotheses rows" in err for err in value_result.errors)
+    assert any("'calibration_supported' must be boolean" in err for err in value_result.errors)
+    assert any("calibration_status must be calibrated/under-calibrated" in err for err in value_result.errors)
+    assert any("calibration_reason must be non-empty" in err for err in value_result.errors)
 
 
 def test_validate_carbon_summary_table_ok() -> None:

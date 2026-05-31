@@ -182,3 +182,35 @@ def test_render_hypothesis_significance_uses_enriched_fields() -> None:
     assert all("significance" in line for line in lines)
     assert any("min p-value=" in line for line in lines)
     assert any("significant metrics=" in line for line in lines)
+
+
+def test_hypothesis_confirmation_respects_calibration_support() -> None:
+    """H2-H5 should be marked not-supported when scenario calibration is under-calibrated."""
+    raw_runs = _raw_runs_fixture()
+    calibration = pd.DataFrame(
+        [
+            {
+                "hypothesis": "H2",
+                "study_id": "E3_robustness",
+                "required_scenarios": "node-failures",
+                "observed_scenarios": "",
+                "missing_scenarios": "node-failures",
+                "run_count": 0,
+                "seed_count": 0,
+                "method_count": 0,
+                "generated_tasks_mean": 0.0,
+                "node_failure_events_mean": 0.0,
+                "failure_requeued_tasks_mean": 0.0,
+                "llm_guarded_decisions_mean": 0.0,
+                "calibration_supported": False,
+                "calibration_status": "under-calibrated",
+                "calibration_reason": "missing scenarios: node-failures",
+            }
+        ]
+    )
+    hypotheses = pub._evaluate_hypotheses(raw_runs, calibration)  # noqa: SLF001
+    h2 = hypotheses[hypotheses["hypothesis"] == "H2"].iloc[0]
+    assert bool(h2["algorithmic_confirmed"]) is True
+    assert bool(h2["calibration_supported"]) is False
+    assert bool(h2["confirmed"]) is False
+    assert str(h2["support_status"]) == "not-supported"

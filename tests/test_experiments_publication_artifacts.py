@@ -24,6 +24,7 @@ def _sample_tables() -> tuple[
     pd.DataFrame,
     pd.DataFrame,
     pd.DataFrame,
+    pd.DataFrame,
 ]:
     """Build minimal publication tables for artifact persistence tests."""
     raw_runs = pd.DataFrame(
@@ -80,6 +81,44 @@ def _sample_tables() -> tuple[
             {"hypothesis": "H5", "title": "LLM", "criterion": "c", "confirmed": True},
         ]
     )
+    scenario_calibration = pd.DataFrame(
+        [
+            {
+                "hypothesis": "H2",
+                "study_id": "E3_robustness",
+                "required_scenarios": "node-failures",
+                "observed_scenarios": "node-failures",
+                "missing_scenarios": "",
+                "run_count": 4,
+                "seed_count": 2,
+                "method_count": 3,
+                "generated_tasks_mean": 20.0,
+                "node_failure_events_mean": 1.5,
+                "failure_requeued_tasks_mean": 4.0,
+                "llm_guarded_decisions_mean": 0.0,
+                "calibration_supported": True,
+                "calibration_status": "calibrated",
+                "calibration_reason": "calibrated stress coverage confirmed",
+            },
+            {
+                "hypothesis": "H3",
+                "study_id": "E2_adaptivity",
+                "required_scenarios": "dynamic-load,peak-load",
+                "observed_scenarios": "dynamic-load,peak-load",
+                "missing_scenarios": "",
+                "run_count": 6,
+                "seed_count": 2,
+                "method_count": 4,
+                "generated_tasks_mean": 22.0,
+                "node_failure_events_mean": 0.0,
+                "failure_requeued_tasks_mean": 0.0,
+                "llm_guarded_decisions_mean": 0.0,
+                "calibration_supported": True,
+                "calibration_status": "calibrated",
+                "calibration_reason": "calibrated stress coverage confirmed",
+            },
+        ]
+    )
     methods = pd.DataFrame(
         [
             {"key": "min-load", "label": "Min-Load", "family": "baseline", "ready": True},
@@ -101,19 +140,36 @@ def _sample_tables() -> tuple[
             }
         ]
     )
-    return raw_runs, summary, hypotheses, methods, unsupported, decision_trace
+    return (
+        raw_runs,
+        summary,
+        hypotheses,
+        scenario_calibration,
+        methods,
+        unsupported,
+        decision_trace,
+    )
 
 
 def test_persist_publication_outputs_writes_expected_files() -> None:
     """Exporter should persist all base CSV/JSON publication artifacts."""
     output_dir = _workspace_test_output_dir("publication-artifacts")
-    raw_runs, summary, hypotheses, methods, unsupported, decision_trace = _sample_tables()
+    (
+        raw_runs,
+        summary,
+        hypotheses,
+        scenario_calibration,
+        methods,
+        unsupported,
+        decision_trace,
+    ) = _sample_tables()
 
     output_paths = pub._persist_publication_outputs(  # noqa: SLF001
         output_dir=output_dir,
         raw_runs=raw_runs,
         summary=summary,
         hypotheses=hypotheses,
+        scenario_calibration=scenario_calibration,
         methods_df=methods,
         unsupported_df=unsupported,
         decision_trace=decision_trace,
@@ -124,12 +180,14 @@ def test_persist_publication_outputs_writes_expected_files() -> None:
         "raw_runs_csv",
         "summary_csv",
         "hypotheses_csv",
+        "scenario_calibration_csv",
         "methods_catalog_csv",
         "unsupported_methods_csv",
         "decision_trace_csv",
         "raw_runs_json",
         "summary_json",
         "hypotheses_json",
+        "scenario_calibration_json",
         "methods_catalog_json",
         "decision_trace_json",
     }
@@ -141,11 +199,20 @@ def test_persist_publication_outputs_writes_expected_files() -> None:
 def test_write_publication_report_contains_required_sections() -> None:
     """Markdown publication report should include expected section headings."""
     output_dir = _workspace_test_output_dir("publication-report")
-    raw_runs, summary, hypotheses, methods, _unsupported, _decision_trace = _sample_tables()
+    (
+        raw_runs,
+        summary,
+        hypotheses,
+        scenario_calibration,
+        methods,
+        _unsupported,
+        _decision_trace,
+    ) = _sample_tables()
     report_path = pub._write_publication_report(  # noqa: SLF001
         output_dir=output_dir,
         summary=summary,
         hypotheses=hypotheses,
+        scenario_calibration=scenario_calibration,
         methods_df=methods,
         seed_count=3,
         quick_mode=True,
@@ -160,6 +227,7 @@ def test_write_publication_report_contains_required_sections() -> None:
     assert "### Related Literature Evidence (Local RAG)" in content
     assert "### Evidence-backed Claims" in content
     assert "## 5. Hypotheses" in content
+    assert "### Scenario Calibration (H2-H5)" in content
     assert "### Hypothesis Support Status" in content
     assert "### Statistical Significance Snapshot" in content
     assert "Significance metadata is unavailable for this run." in content
@@ -183,7 +251,15 @@ def test_write_publication_report_contains_required_sections() -> None:
 def test_persist_publication_outputs_writes_carbon_summary_when_available() -> None:
     """Exporter should persist carbon summary artifacts when carbon metrics are present."""
     output_dir = _workspace_test_output_dir("publication-carbon-summary")
-    raw_runs, summary, hypotheses, methods, unsupported, decision_trace = _sample_tables()
+    (
+        raw_runs,
+        summary,
+        hypotheses,
+        scenario_calibration,
+        methods,
+        unsupported,
+        decision_trace,
+    ) = _sample_tables()
     summary = pd.DataFrame(
         [
             {
@@ -222,6 +298,7 @@ def test_persist_publication_outputs_writes_carbon_summary_when_available() -> N
         raw_runs=raw_runs,
         summary=summary,
         hypotheses=hypotheses,
+        scenario_calibration=scenario_calibration,
         methods_df=methods,
         unsupported_df=unsupported,
         decision_trace=decision_trace,

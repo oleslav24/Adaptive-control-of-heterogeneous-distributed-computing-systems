@@ -1,6 +1,6 @@
 # Sprint Plan And Execution Log
 
-Last updated: 2026-05-29 15:49:52 +07:00
+Last updated: 2026-05-31 15:26:49 +07:00
 Timezone: Asia/Krasnoyarsk (UTC+07:00)
 
 ## Source Sprint Roadmap
@@ -49,8 +49,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 39 | Job page control-health UX hardening | Add compact control summary + evidence + deep-link from `/job` to `/agent-control` | Closed |
 | 40 | Agent-control navigation and diagnostics UX | Add quick navigation from control assessment to job/diagnostics/bundle with coverage | Closed |
 | 41 | Control-health evidence contracts (2-week) | Stable control-assessment schema v2 + cross-artifact consistency gates | Closed |
-| 42 | Publication/chapter10 quality-gate unification (2-week) | Unified run-quality contract and fail-fast validation for publication bundles | In progress |
-| 43 | Scenario calibration for H2-H5 (2-week) | Recalibrated stress scenarios with reproducible support/not-support outcomes | Planned |
+| 42 | Publication/chapter10 quality-gate unification (2-week) | Unified run-quality contract and fail-fast validation for publication bundles | Closed |
+| 43 | Scenario calibration for H2-H5 (2-week) | Recalibrated stress scenarios with reproducible support/not-support outcomes | In progress |
 | 44 | Method catalog completion (2-week) | Replace placeholders in ready comparisons (`max-min` + one metaheuristic-lite) or mark as future work in pipeline | Planned |
 | 45 | Decision-trace explainability UX (2-week) | Drill-down timeline in web + per-decision evidence links | Planned |
 | 46 | Reproducible release automation (2-week) | One-command paper/monograph package with integrity + manifest verification | Planned |
@@ -110,8 +110,8 @@ Timezone: Asia/Krasnoyarsk (UTC+07:00)
 | 39 | Closed | 2026-05-29 13:02:00 +07:00 | merged to `main`, merge commit `3a7b734` (PR #49) |
 | 40 | Closed | 2026-05-29 13:38:10 +07:00 | merged to `main`, merge commit `d02f94d` (PR #50) |
 | 41 | Closed | 2026-05-29 15:18:06 +07:00 | merged to `main`, merge commit `af59f87` (PR #51) |
-| 42 | Open | n/a | in progress on branch `codex/sprint36-next` |
-| 43 | Planned | n/a | not started |
+| 42 | Closed | 2026-05-29 15:46:40 +07:00 | quality-gate unification completed (`7173b2c`) and merged to `main` |
+| 43 | Open | n/a | in progress on branch `codex/sprint43-scenario-calibration` |
 | 44 | Planned | n/a | not started |
 | 45 | Planned | n/a | not started |
 | 46 | Planned | n/a | not started |
@@ -915,3 +915,27 @@ Closed in `main` via PR #51 (merge commit `af59f87`).
 | 2026-05-29 15:24:40 | 42.1 Add `project.experiments.quality_gate` (schema, checks, payload writer, fail-fast renderer) | OK (unifies previously scattered validation semantics into one artifact contract) | pending | commit `7173b2c` |
 | 2026-05-29 15:33:10 | 42.2-42.3 Wire quality-gate into publication/chapter10/smoke; remove duplicated chapter10 artifact loops | OK (required checks now fail-fast via CLI/Web run paths; smoke includes explicit gate status) | targeted tests pass (`8 passed`, `5 passed`) | commit `7173b2c` |
 | 2026-05-29 15:46:40 | 42.4-42.5 Runtime verification (`smoke`) + full regression suite | OK (smoke baseline PASS with quality gate, full suite stable) | smoke PASS, full pytest pass (`240 passed`) | commit `7173b2c` |
+
+## Sprint 42 Closure
+
+Closed in `main` (quality-gate unification accepted and merged).
+
+### Sprint 43 Draft Backlog
+
+| Task | Description | Status |
+|---|---|---|
+| 43.1 | Recalibrate publication scenario coverage for H2-H5 (`dynamic/peak/failure`) in study spec generation | Done |
+| 43.2 | Add study-aware scenario stress calibration profiles in scenario config builder | Done |
+| 43.3 | Export scenario-calibration artifacts (`scenario_calibration.csv/json`) and validation artifact | Done |
+| 43.4 | Tie hypothesis support to calibrated stress evidence to avoid overclaiming (`support_status`, `support_reason`) | Done |
+| 43.5 | Extend publication quality gate with required scenario-calibration validation | Done |
+| 43.6 | Refresh tests + smoke golden after intentional diff verification; run publication/chapter10 quick checks | Done |
+
+## Active Sprint Slice Log (Sprint 43)
+
+| Timestamp (UTC+07) | Slice | Plan check | Tests | Commit |
+|---|---|---|---|---|
+| 2026-05-31 14:40:00 | 43.1-43.2 Calibrated study specs and scenario profiles for E2/E3/E5 stress coverage | OK (adds deterministic dynamic/peak/failure pressure while preserving reproducibility by seed) | pending | pending |
+| 2026-05-31 14:56:00 | 43.3-43.5 Added scenario calibration artifacts/validation and hypothesis support gating fields | OK (support/not-support now bounded by calibration evidence; quality gate enforces calibration artifact validity) | targeted publication tests pass (`22 passed`) | pending |
+| 2026-05-31 15:10:00 | 43.6 Full regression and smoke drift analysis | OK (intentional drift: publication payload expanded by calibration/support fields and E2/E5 dual-scenario rows) | full pytest pass (`244 passed`), smoke initial FAIL (fingerprint mismatch only), smoke PASS after verified golden refresh | pending |
+| 2026-05-31 15:26:49 | 43.6 Publication/chapter10 quick runtime verification | OK (publication/chapter10 pipelines emit calibration artifacts and keep quality gates green) | publication quick PASS, chapter10 quick PASS | pending |

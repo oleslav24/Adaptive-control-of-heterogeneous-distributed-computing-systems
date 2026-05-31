@@ -24,7 +24,46 @@
           "scenario": "static",
           "throughput": 1.25
         }
-      }
+      },
+      "quality_gate": {
+        "checks": [
+          {
+            "detail": "manifest validation passed",
+            "errors": [],
+            "evidence": [
+              "outputs\\sprint9-publication-ready-s10-smoke\\smoke\\smoke-single\\static\\min-load\\run_manifest.json"
+            ],
+            "gate_id": "single-manifest-1",
+            "required": true,
+            "state": "pass",
+            "title": "single manifest validation #1"
+          }
+        ],
+        "counts": {
+          "fail": 0,
+          "pass": 1,
+          "unknown": 0
+        },
+        "generated_at_utc": "2026-05-31T08:16:13.855923+00:00",
+        "mode": "smoke-baseline",
+        "notes": [
+          "Smoke quality-gate checks validate manifests for every case."
+        ],
+        "ok": true,
+        "optional": {
+          "failed": 0,
+          "total": 0
+        },
+        "required": {
+          "failed": 0,
+          "passed": 1,
+          "total": 1
+        },
+        "schema": "adaptive-testbed.quality-gate",
+        "schema_version": "1",
+        "scope": "smoke_case:single"
+      },
+      "quality_gate_ok": true
     },
     {
       "case": "compare",
@@ -78,7 +117,68 @@
           "scenario": "static",
           "throughput": 1.25
         }
-      ]
+      ],
+      "quality_gate": {
+        "checks": [
+          {
+            "detail": "manifest validation passed",
+            "errors": [],
+            "evidence": [
+              "outputs\\sprint9-publication-ready-s10-smoke\\smoke\\smoke-compare\\static\\round-robin\\run_manifest.json"
+            ],
+            "gate_id": "compare-manifest-1",
+            "required": true,
+            "state": "pass",
+            "title": "compare manifest validation #1"
+          },
+          {
+            "detail": "manifest validation passed",
+            "errors": [],
+            "evidence": [
+              "outputs\\sprint9-publication-ready-s10-smoke\\smoke\\smoke-compare\\static\\min-load\\run_manifest.json"
+            ],
+            "gate_id": "compare-manifest-2",
+            "required": true,
+            "state": "pass",
+            "title": "compare manifest validation #2"
+          },
+          {
+            "detail": "manifest validation passed",
+            "errors": [],
+            "evidence": [
+              "outputs\\sprint9-publication-ready-s10-smoke\\smoke\\smoke-compare\\static\\greedy\\run_manifest.json"
+            ],
+            "gate_id": "compare-manifest-3",
+            "required": true,
+            "state": "pass",
+            "title": "compare manifest validation #3"
+          }
+        ],
+        "counts": {
+          "fail": 0,
+          "pass": 3,
+          "unknown": 0
+        },
+        "generated_at_utc": "2026-05-31T08:16:15.059326+00:00",
+        "mode": "smoke-baseline",
+        "notes": [
+          "Smoke quality-gate checks validate manifests for every case."
+        ],
+        "ok": true,
+        "optional": {
+          "failed": 0,
+          "total": 0
+        },
+        "required": {
+          "failed": 0,
+          "passed": 3,
+          "total": 3
+        },
+        "schema": "adaptive-testbed.quality-gate",
+        "schema_version": "1",
+        "scope": "smoke_case:compare"
+      },
+      "quality_gate_ok": true
     },
     {
       "case": "batch",
@@ -167,11 +267,50 @@
           "throughput_mean": 1.25,
           "throughput_std": 0.0
         }
-      ]
+      ],
+      "quality_gate": {
+        "checks": [
+          {
+            "detail": "manifest validation passed",
+            "errors": [],
+            "evidence": [
+              "outputs\\sprint9-publication-ready-s10-smoke\\batch\\batch_manifest.json"
+            ],
+            "gate_id": "batch-manifest-1",
+            "required": true,
+            "state": "pass",
+            "title": "batch manifest validation #1"
+          }
+        ],
+        "counts": {
+          "fail": 0,
+          "pass": 1,
+          "unknown": 0
+        },
+        "generated_at_utc": "2026-05-31T08:16:17.455444+00:00",
+        "mode": "smoke-baseline",
+        "notes": [
+          "Smoke quality-gate checks validate manifests for every case."
+        ],
+        "ok": true,
+        "optional": {
+          "failed": 0,
+          "total": 0
+        },
+        "required": {
+          "failed": 0,
+          "passed": 1,
+          "total": 1
+        },
+        "schema": "adaptive-testbed.quality-gate",
+        "schema_version": "1",
+        "scope": "smoke_case:batch"
+      },
+      "quality_gate_ok": true
     },
     {
       "case": "publication",
-      "fingerprint": "ffb1c8383714667736e5a54149e33ec1a80147e6b1bac96e0167580ea858d1c8",
+      "fingerprint": "fa89323e0dbec167972e59e57a13d56a0296d22664329eb1ba5e36ecf2fae257",
       "manifest_validation": {
         "errors": [],
         "ok": true,
@@ -180,31 +319,33 @@
       "payload": {
         "hypotheses": [
           {
+            "algorithmic_confirmed": true,
+            "calibration_supported": true,
             "confirmed": true,
             "criterion": "Adaptive methods reduce latency and load imbalance.",
             "delta_adaptivity_llm_vs_algorithmic": null,
-            "delta_latency": 7.2162706949,
+            "delta_latency": 7.2395672001,
             "delta_latency_dynamic": null,
             "delta_latency_hybrid_vs_best_baseline": null,
             "delta_latency_llm_vs_algorithmic": null,
-            "delta_load_imbalance": 0.2818095425,
+            "delta_load_imbalance": 0.2533632886,
             "delta_stability_failures": null,
             "delta_throughput_failures": null,
             "effect_size_adaptivity_llm_vs_algorithmic_cliffs_delta": null,
-            "effect_size_latency_cliffs_delta": 0.5359848485,
+            "effect_size_latency_cliffs_delta": 0.4615384615,
             "effect_size_latency_dynamic_cliffs_delta": null,
             "effect_size_latency_hybrid_vs_best_baseline_cliffs_delta": null,
             "effect_size_latency_llm_vs_algorithmic_cliffs_delta": null,
-            "effect_size_load_imbalance_cliffs_delta": 0.2689393939,
+            "effect_size_load_imbalance_cliffs_delta": 0.2521367521,
             "effect_size_stability_failures_cliffs_delta": null,
             "effect_size_throughput_failures_cliffs_delta": null,
             "hypothesis": "H1",
             "p_value_adaptivity_llm_vs_algorithmic": null,
-            "p_value_latency": 0.0019990005,
+            "p_value_latency": 0.0009995002,
             "p_value_latency_dynamic": null,
             "p_value_latency_hybrid_vs_best_baseline": null,
             "p_value_latency_llm_vs_algorithmic": null,
-            "p_value_load_imbalance": 0.0099950025,
+            "p_value_load_imbalance": 0.0064967516,
             "p_value_stability_failures": null,
             "p_value_throughput_failures": null,
             "sample_size_adaptivity_llm_vs_algorithmic_left": null,
@@ -213,12 +354,12 @@
             "sample_size_latency_dynamic_right": null,
             "sample_size_latency_hybrid_vs_best_baseline_left": null,
             "sample_size_latency_hybrid_vs_best_baseline_right": null,
-            "sample_size_latency_left": 22.0,
+            "sample_size_latency_left": 26.0,
             "sample_size_latency_llm_vs_algorithmic_left": null,
             "sample_size_latency_llm_vs_algorithmic_right": null,
-            "sample_size_latency_right": 24.0,
-            "sample_size_load_imbalance_left": 22.0,
-            "sample_size_load_imbalance_right": 24.0,
+            "sample_size_latency_right": 36.0,
+            "sample_size_load_imbalance_left": 26.0,
+            "sample_size_load_imbalance_right": 36.0,
             "sample_size_stability_failures_left": null,
             "sample_size_stability_failures_right": null,
             "sample_size_throughput_failures_left": null,
@@ -232,9 +373,13 @@
             "significant_load_imbalance": true,
             "significant_stability_failures": null,
             "significant_throughput_failures": null,
+            "support_reason": "latency/load deltas satisfy criterion",
+            "support_status": "supported",
             "title": "Adaptivity"
           },
           {
+            "algorithmic_confirmed": false,
+            "calibration_supported": true,
             "confirmed": false,
             "criterion": "MAS improves robustness and stability under failures.",
             "delta_adaptivity_llm_vs_algorithmic": null,
@@ -243,7 +388,7 @@
             "delta_latency_hybrid_vs_best_baseline": null,
             "delta_latency_llm_vs_algorithmic": null,
             "delta_load_imbalance": null,
-            "delta_stability_failures": 0.0,
+            "delta_stability_failures": -0.0,
             "delta_throughput_failures": 0.0,
             "effect_size_adaptivity_llm_vs_algorithmic_cliffs_delta": null,
             "effect_size_latency_cliffs_delta": null,
@@ -261,7 +406,7 @@
             "p_value_latency_llm_vs_algorithmic": null,
             "p_value_load_imbalance": null,
             "p_value_stability_failures": 0.6176911544,
-            "p_value_throughput_failures": 0.6176911544,
+            "p_value_throughput_failures": 0.6686656672,
             "sample_size_adaptivity_llm_vs_algorithmic_left": null,
             "sample_size_adaptivity_llm_vs_algorithmic_right": null,
             "sample_size_latency_dynamic_left": null,
@@ -287,9 +432,13 @@
             "significant_load_imbalance": null,
             "significant_stability_failures": false,
             "significant_throughput_failures": false,
+            "support_reason": "metric deltas do not satisfy criterion",
+            "support_status": "not-supported",
             "title": "Multi-agent Architecture"
           },
           {
+            "algorithmic_confirmed": false,
+            "calibration_supported": true,
             "confirmed": false,
             "criterion": "ML/ZNN improve decisions under dynamic load.",
             "delta_adaptivity_llm_vs_algorithmic": null,
@@ -311,7 +460,7 @@
             "hypothesis": "H3",
             "p_value_adaptivity_llm_vs_algorithmic": null,
             "p_value_latency": null,
-            "p_value_latency_dynamic": 0.7956021989,
+            "p_value_latency_dynamic": 0.6291854073,
             "p_value_latency_hybrid_vs_best_baseline": null,
             "p_value_latency_llm_vs_algorithmic": null,
             "p_value_load_imbalance": null,
@@ -319,8 +468,8 @@
             "p_value_throughput_failures": null,
             "sample_size_adaptivity_llm_vs_algorithmic_left": null,
             "sample_size_adaptivity_llm_vs_algorithmic_right": null,
-            "sample_size_latency_dynamic_left": 2.0,
-            "sample_size_latency_dynamic_right": 4.0,
+            "sample_size_latency_dynamic_left": 4.0,
+            "sample_size_latency_dynamic_right": 8.0,
             "sample_size_latency_hybrid_vs_best_baseline_left": null,
             "sample_size_latency_hybrid_vs_best_baseline_right": null,
             "sample_size_latency_left": null,
@@ -342,15 +491,19 @@
             "significant_load_imbalance": null,
             "significant_stability_failures": null,
             "significant_throughput_failures": null,
+            "support_reason": "metric deltas do not satisfy criterion",
+            "support_status": "not-supported",
             "title": "Intelligent Methods (ML/ZNN)"
           },
           {
+            "algorithmic_confirmed": false,
+            "calibration_supported": true,
             "confirmed": false,
             "criterion": "Hybrid method outperforms standalone baselines.",
             "delta_adaptivity_llm_vs_algorithmic": null,
             "delta_latency": null,
             "delta_latency_dynamic": null,
-            "delta_latency_hybrid_vs_best_baseline": 0.0,
+            "delta_latency_hybrid_vs_best_baseline": -0.0018083183,
             "delta_latency_llm_vs_algorithmic": null,
             "delta_load_imbalance": null,
             "delta_stability_failures": null,
@@ -358,7 +511,7 @@
             "effect_size_adaptivity_llm_vs_algorithmic_cliffs_delta": null,
             "effect_size_latency_cliffs_delta": null,
             "effect_size_latency_dynamic_cliffs_delta": null,
-            "effect_size_latency_hybrid_vs_best_baseline_cliffs_delta": 0.0,
+            "effect_size_latency_hybrid_vs_best_baseline_cliffs_delta": -0.25,
             "effect_size_latency_llm_vs_algorithmic_cliffs_delta": null,
             "effect_size_load_imbalance_cliffs_delta": null,
             "effect_size_stability_failures_cliffs_delta": null,
@@ -367,7 +520,7 @@
             "p_value_adaptivity_llm_vs_algorithmic": null,
             "p_value_latency": null,
             "p_value_latency_dynamic": null,
-            "p_value_latency_hybrid_vs_best_baseline": 0.8335832084,
+            "p_value_latency_hybrid_vs_best_baseline": 0.8470764618,
             "p_value_latency_llm_vs_algorithmic": null,
             "p_value_load_imbalance": null,
             "p_value_stability_failures": null,
@@ -397,20 +550,24 @@
             "significant_load_imbalance": null,
             "significant_stability_failures": null,
             "significant_throughput_failures": null,
+            "support_reason": "metric deltas do not satisfy criterion",
+            "support_status": "not-supported",
             "title": "Hybrid vs Single Methods"
           },
           {
+            "algorithmic_confirmed": false,
+            "calibration_supported": true,
             "confirmed": false,
             "criterion": "LLM improves coordination and strategy flexibility.",
-            "delta_adaptivity_llm_vs_algorithmic": -3.2638128025,
+            "delta_adaptivity_llm_vs_algorithmic": -3.2283129099,
             "delta_latency": null,
             "delta_latency_dynamic": null,
             "delta_latency_hybrid_vs_best_baseline": null,
-            "delta_latency_llm_vs_algorithmic": -0.0193018556,
+            "delta_latency_llm_vs_algorithmic": -0.0255515056,
             "delta_load_imbalance": null,
             "delta_stability_failures": null,
             "delta_throughput_failures": null,
-            "effect_size_adaptivity_llm_vs_algorithmic_cliffs_delta": -0.75,
+            "effect_size_adaptivity_llm_vs_algorithmic_cliffs_delta": -0.25,
             "effect_size_latency_cliffs_delta": null,
             "effect_size_latency_dynamic_cliffs_delta": null,
             "effect_size_latency_hybrid_vs_best_baseline_cliffs_delta": null,
@@ -419,23 +576,23 @@
             "effect_size_stability_failures_cliffs_delta": null,
             "effect_size_throughput_failures_cliffs_delta": null,
             "hypothesis": "H5",
-            "p_value_adaptivity_llm_vs_algorithmic": 1.0,
+            "p_value_adaptivity_llm_vs_algorithmic": 0.8495752124,
             "p_value_latency": null,
             "p_value_latency_dynamic": null,
             "p_value_latency_hybrid_vs_best_baseline": null,
-            "p_value_latency_llm_vs_algorithmic": 0.8310844578,
+            "p_value_latency_llm_vs_algorithmic": 0.8135932034,
             "p_value_load_imbalance": null,
             "p_value_stability_failures": null,
             "p_value_throughput_failures": null,
-            "sample_size_adaptivity_llm_vs_algorithmic_left": 2.0,
-            "sample_size_adaptivity_llm_vs_algorithmic_right": 2.0,
+            "sample_size_adaptivity_llm_vs_algorithmic_left": 4.0,
+            "sample_size_adaptivity_llm_vs_algorithmic_right": 4.0,
             "sample_size_latency_dynamic_left": null,
             "sample_size_latency_dynamic_right": null,
             "sample_size_latency_hybrid_vs_best_baseline_left": null,
             "sample_size_latency_hybrid_vs_best_baseline_right": null,
             "sample_size_latency_left": null,
-            "sample_size_latency_llm_vs_algorithmic_left": 2.0,
-            "sample_size_latency_llm_vs_algorithmic_right": 2.0,
+            "sample_size_latency_llm_vs_algorithmic_left": 4.0,
+            "sample_size_latency_llm_vs_algorithmic_right": 4.0,
             "sample_size_latency_right": null,
             "sample_size_load_imbalance_left": null,
             "sample_size_load_imbalance_right": null,
@@ -452,6 +609,8 @@
             "significant_load_imbalance": null,
             "significant_stability_failures": null,
             "significant_throughput_failures": null,
+            "support_reason": "metric deltas do not satisfy criterion",
+            "support_status": "not-supported",
             "title": "LLM Agent"
           }
         ],
@@ -537,188 +696,323 @@
             "throughput_mean": 7.1428571429
           },
           {
-            "avg_latency_mean": 21.1790694685,
-            "load_imbalance_mean": 0.9580480696,
+            "avg_latency_mean": 21.7661817587,
+            "load_imbalance_mean": 0.9756764736,
+            "method": "mas-basic",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 213.5,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 4.8055555556
+          },
+          {
+            "avg_latency_mean": 21.9156906786,
+            "load_imbalance_mean": 0.6988211957,
             "method": "mas-basic",
             "n_runs": 2,
             "scenario": "peak-load",
-            "sla_violations_mean": 203.5,
+            "sla_violations_mean": 216.0,
             "study_id": "E2_adaptivity",
-            "throughput_mean": 4.6203703704
+            "throughput_mean": 4.8518518519
           },
           {
-            "avg_latency_mean": 2.6897368918,
-            "load_imbalance_mean": 0.2195440975,
+            "avg_latency_mean": 2.7601314484,
+            "load_imbalance_mean": 0.2314784284,
+            "method": "mas-hybrid",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 11.7592592593
+          },
+          {
+            "avg_latency_mean": 2.682972142,
+            "load_imbalance_mean": 0.2300437945,
             "method": "mas-hybrid",
             "n_runs": 2,
             "scenario": "peak-load",
             "sla_violations_mean": 0.0,
             "study_id": "E2_adaptivity",
-            "throughput_mean": 12.9259259259
+            "throughput_mean": 16.0648148148
           },
           {
-            "avg_latency_mean": 2.7090387475,
-            "load_imbalance_mean": 0.2195440975,
+            "avg_latency_mean": 2.7869295635,
+            "load_imbalance_mean": 0.2314784284,
+            "method": "mas-llm",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 11.7592592593
+          },
+          {
+            "avg_latency_mean": 2.7037379847,
+            "load_imbalance_mean": 0.3309312099,
             "method": "mas-llm",
             "n_runs": 2,
             "scenario": "peak-load",
             "sla_violations_mean": 0.0,
             "study_id": "E2_adaptivity",
-            "throughput_mean": 12.9259259259
+            "throughput_mean": 16.0648148148
           },
           {
-            "avg_latency_mean": 21.1790694685,
-            "load_imbalance_mean": 0.9580480696,
+            "avg_latency_mean": 21.7661817587,
+            "load_imbalance_mean": 0.9756764736,
+            "method": "mas-ml",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 213.5,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 4.8055555556
+          },
+          {
+            "avg_latency_mean": 21.9156906786,
+            "load_imbalance_mean": 0.6988211957,
             "method": "mas-ml",
             "n_runs": 2,
             "scenario": "peak-load",
-            "sla_violations_mean": 203.5,
+            "sla_violations_mean": 216.0,
             "study_id": "E2_adaptivity",
-            "throughput_mean": 4.6203703704
+            "throughput_mean": 4.8518518519
           },
           {
-            "avg_latency_mean": 21.1790694685,
-            "load_imbalance_mean": 0.9580480696,
+            "avg_latency_mean": 21.7661817587,
+            "load_imbalance_mean": 0.9756764736,
+            "method": "mas-znn",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 213.5,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 4.8055555556
+          },
+          {
+            "avg_latency_mean": 21.9156906786,
+            "load_imbalance_mean": 0.6988211957,
             "method": "mas-znn",
             "n_runs": 2,
             "scenario": "peak-load",
-            "sla_violations_mean": 203.5,
+            "sla_violations_mean": 216.0,
             "study_id": "E2_adaptivity",
-            "throughput_mean": 4.6203703704
+            "throughput_mean": 4.8518518519
           },
           {
-            "avg_latency_mean": 21.1790694685,
-            "load_imbalance_mean": 0.9580480696,
+            "avg_latency_mean": 21.7661817587,
+            "load_imbalance_mean": 0.9756764736,
+            "method": "min-load",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 213.5,
+            "study_id": "E2_adaptivity",
+            "throughput_mean": 4.8055555556
+          },
+          {
+            "avg_latency_mean": 21.9156906786,
+            "load_imbalance_mean": 0.6988211957,
             "method": "min-load",
             "n_runs": 2,
             "scenario": "peak-load",
-            "sla_violations_mean": 203.5,
+            "sla_violations_mean": 216.0,
             "study_id": "E2_adaptivity",
-            "throughput_mean": 4.6203703704
+            "throughput_mean": 4.8518518519
           },
           {
-            "avg_latency_mean": 21.1790694685,
-            "load_imbalance_mean": 0.9580480696,
+            "avg_latency_mean": 21.4043824701,
+            "load_imbalance_mean": 0.9092796847,
             "method": "mas-basic",
             "n_runs": 2,
             "scenario": "node-failures",
-            "sla_violations_mean": 203.5,
+            "sla_violations_mean": 205.5,
             "study_id": "E3_robustness",
-            "throughput_mean": 4.6203703704
+            "throughput_mean": 4.6481481481
           },
           {
-            "avg_latency_mean": 2.7465126753,
-            "load_imbalance_mean": 0.225248248,
+            "avg_latency_mean": 2.7402003077,
+            "load_imbalance_mean": 0.2095006591,
             "method": "mas-hybrid",
             "n_runs": 2,
             "scenario": "node-failures",
             "sla_violations_mean": 0.0,
             "study_id": "E3_robustness",
-            "throughput_mean": 10.5462962963
+            "throughput_mean": 11.1759259259
           },
           {
-            "avg_latency_mean": 21.1790694685,
-            "load_imbalance_mean": 0.9580480696,
+            "avg_latency_mean": 21.4043824701,
+            "load_imbalance_mean": 0.9092796847,
             "method": "min-load",
             "n_runs": 2,
             "scenario": "node-failures",
-            "sla_violations_mean": 203.5,
+            "sla_violations_mean": 205.5,
             "study_id": "E3_robustness",
-            "throughput_mean": 4.6203703704
+            "throughput_mean": 4.6481481481
           },
           {
-            "avg_latency_mean": 2.7465126753,
-            "load_imbalance_mean": 0.225248248,
+            "avg_latency_mean": 2.7402003077,
+            "load_imbalance_mean": 0.2095006591,
             "method": "round-robin",
             "n_runs": 2,
             "scenario": "node-failures",
             "sla_violations_mean": 0.0,
             "study_id": "E3_robustness",
-            "throughput_mean": 10.5462962963
+            "throughput_mean": 11.1759259259
           },
           {
-            "avg_latency_mean": 16.0681383577,
-            "load_imbalance_mean": 0.8396430359,
+            "avg_latency_mean": 13.7346491228,
+            "load_imbalance_mean": 0.6919948239,
             "method": "greedy",
             "n_runs": 2,
             "scenario": "dynamic-load",
-            "sla_violations_mean": 391.5,
+            "sla_violations_mean": 410.5,
             "study_id": "E4_hybrid_vs_classical",
-            "throughput_mean": 9.2407407407
+            "throughput_mean": 10.2777777778
           },
           {
-            "avg_latency_mean": 2.7465126753,
-            "load_imbalance_mean": 0.225248248,
+            "avg_latency_mean": 2.815239047,
+            "load_imbalance_mean": 0.243843084,
             "method": "mas-hybrid",
             "n_runs": 2,
             "scenario": "dynamic-load",
             "sla_violations_mean": 0.0,
             "study_id": "E4_hybrid_vs_classical",
-            "throughput_mean": 10.5462962963
+            "throughput_mean": 10.3981481481
           },
           {
-            "avg_latency_mean": 21.1790694685,
-            "load_imbalance_mean": 0.9580480696,
+            "avg_latency_mean": 21.3545577689,
+            "load_imbalance_mean": 0.9052301958,
             "method": "min-load",
             "n_runs": 2,
             "scenario": "dynamic-load",
-            "sla_violations_mean": 203.5,
+            "sla_violations_mean": 204.0,
             "study_id": "E4_hybrid_vs_classical",
-            "throughput_mean": 4.6203703704
+            "throughput_mean": 4.6388888889
           },
           {
-            "avg_latency_mean": 2.7465126753,
-            "load_imbalance_mean": 0.225248248,
+            "avg_latency_mean": 2.8134307287,
+            "load_imbalance_mean": 0.243843084,
             "method": "round-robin",
             "n_runs": 2,
             "scenario": "dynamic-load",
             "sla_violations_mean": 0.0,
             "study_id": "E4_hybrid_vs_classical",
-            "throughput_mean": 10.5462962963
+            "throughput_mean": 10.3981481481
           },
           {
-            "avg_latency_mean": 2.6897368918,
-            "load_imbalance_mean": 0.2195440975,
+            "avg_latency_mean": 2.7525611566,
+            "load_imbalance_mean": 0.2456970215,
+            "method": "mas-hybrid",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E5_llm_vs_algorithmic",
+            "throughput_mean": 11.3611111111
+          },
+          {
+            "avg_latency_mean": 2.6977548411,
+            "load_imbalance_mean": 0.2295100534,
             "method": "mas-hybrid",
             "n_runs": 2,
             "scenario": "peak-load",
             "sla_violations_mean": 0.0,
             "study_id": "E5_llm_vs_algorithmic",
-            "throughput_mean": 12.9259259259
+            "throughput_mean": 15.2592592593
           },
           {
-            "avg_latency_mean": 2.7090387475,
-            "load_imbalance_mean": 0.2195440975,
+            "avg_latency_mean": 2.779561013,
+            "load_imbalance_mean": 0.2456970215,
+            "method": "mas-llm",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 0.0,
+            "study_id": "E5_llm_vs_algorithmic",
+            "throughput_mean": 11.3611111111
+          },
+          {
+            "avg_latency_mean": 2.721857996,
+            "load_imbalance_mean": 0.3348165757,
             "method": "mas-llm",
             "n_runs": 2,
             "scenario": "peak-load",
             "sla_violations_mean": 0.0,
             "study_id": "E5_llm_vs_algorithmic",
-            "throughput_mean": 12.9259259259
+            "throughput_mean": 15.25
           },
           {
-            "avg_latency_mean": 21.1790694685,
-            "load_imbalance_mean": 0.9580480696,
+            "avg_latency_mean": 21.1174103529,
+            "load_imbalance_mean": 0.9828115394,
+            "method": "min-load",
+            "n_runs": 2,
+            "scenario": "dynamic-load",
+            "sla_violations_mean": 204.0,
+            "study_id": "E5_llm_vs_algorithmic",
+            "throughput_mean": 4.6481481481
+          },
+          {
+            "avg_latency_mean": 20.9888992417,
+            "load_imbalance_mean": 0.9727253864,
             "method": "min-load",
             "n_runs": 2,
             "scenario": "peak-load",
-            "sla_violations_mean": 203.5,
+            "sla_violations_mean": 202.5,
             "study_id": "E5_llm_vs_algorithmic",
             "throughput_mean": 4.6203703704
           }
         ]
-      }
+      },
+      "quality_gate": {
+        "checks": [
+          {
+            "detail": "manifest validation passed",
+            "errors": [],
+            "evidence": [
+              "outputs\\sprint9-publication-ready-s10-smoke\\publication\\publication_manifest.json"
+            ],
+            "gate_id": "publication-manifest-1",
+            "required": true,
+            "state": "pass",
+            "title": "publication manifest validation #1"
+          }
+        ],
+        "counts": {
+          "fail": 0,
+          "pass": 1,
+          "unknown": 0
+        },
+        "generated_at_utc": "2026-05-31T08:18:04.161858+00:00",
+        "mode": "smoke-baseline",
+        "notes": [
+          "Smoke quality-gate checks validate manifests for every case."
+        ],
+        "ok": true,
+        "optional": {
+          "failed": 0,
+          "total": 0
+        },
+        "required": {
+          "failed": 0,
+          "passed": 1,
+          "total": 1
+        },
+        "schema": "adaptive-testbed.quality-gate",
+        "schema_version": "1",
+        "scope": "smoke_case:publication"
+      },
+      "quality_gate_ok": true
     }
   ],
   "config_name": "sprint9-publication-ready",
   "fingerprints": {
     "batch": "1feca3d4d03c227ace13f5d8ff96497b2a37beb931dcd573437d5c367cbf12a7",
     "compare": "0d4c14f452db172b3220313a1a2d431784014470078211e117e50f87330f4ef6",
-    "publication": "ffb1c8383714667736e5a54149e33ec1a80147e6b1bac96e0167580ea858d1c8",
+    "publication": "fa89323e0dbec167972e59e57a13d56a0296d22664329eb1ba5e36ecf2fae257",
     "single": "37171a97757326a382650e257c025168b5a6a0acae63eb1628d09c54d6a1be78"
   },
-  "generated_at_utc": "2026-05-22T10:32:24.159679+00:00",
+  "generated_at_utc": "2026-05-31T08:18:04.164049+00:00",
   "overall_ok": true,
+  "quality_gate": {
+    "failed_cases": [],
+    "ok": true,
+    "passed_case_count": 4,
+    "required_case_count": 4
+  },
   "schema_version": "sprint10-smoke-baseline-v1",
   "smoke_config_name": "sprint9-publication-ready-s10-smoke"
 }
