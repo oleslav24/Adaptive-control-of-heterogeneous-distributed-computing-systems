@@ -176,6 +176,91 @@ def validate_hypotheses_table(hypotheses: pd.DataFrame) -> SummaryValidationResu
     )
 
 
+def validate_scenario_calibration_table(
+    scenario_calibration: pd.DataFrame,
+) -> SummaryValidationResult:
+    """Validate scenario-calibration table for H2-H5 stress-evidence contract."""
+    errors: list[str] = []
+    if scenario_calibration.empty:
+        errors.append("Scenario calibration table is empty.")
+        return SummaryValidationResult(ok=False, errors=errors, row_count=0)
+
+    required_columns = {
+        "hypothesis",
+        "study_id",
+        "required_scenarios",
+        "observed_scenarios",
+        "missing_scenarios",
+        "run_count",
+        "seed_count",
+        "method_count",
+        "generated_tasks_mean",
+        "node_failure_events_mean",
+        "failure_requeued_tasks_mean",
+        "llm_guarded_decisions_mean",
+        "calibration_supported",
+        "calibration_status",
+        "calibration_reason",
+    }
+    missing = sorted(required_columns - set(scenario_calibration.columns))
+    for column in missing:
+        errors.append(f"Missing required column '{column}'.")
+    if missing:
+        return SummaryValidationResult(
+            ok=False,
+            errors=errors,
+            row_count=int(len(scenario_calibration)),
+        )
+
+    expected_hypotheses = {"H2", "H3", "H4", "H5"}
+    seen = [str(value).strip() for value in scenario_calibration["hypothesis"].tolist()]
+    seen_set = set(seen)
+    missing_h = sorted(expected_hypotheses - seen_set)
+    extra_h = sorted(seen_set - expected_hypotheses)
+    if missing_h:
+        errors.append(f"Missing calibration hypotheses rows: {', '.join(missing_h)}.")
+    if extra_h:
+        errors.append(f"Unexpected calibration hypotheses rows: {', '.join(extra_h)}.")
+    if len(seen) != len(seen_set):
+        errors.append("Duplicate calibration hypothesis identifiers are not allowed.")
+
+    numeric_columns = (
+        "run_count",
+        "seed_count",
+        "method_count",
+        "generated_tasks_mean",
+        "node_failure_events_mean",
+        "failure_requeued_tasks_mean",
+        "llm_guarded_decisions_mean",
+    )
+    for idx, row in scenario_calibration.iterrows():
+        for column in numeric_columns:
+            value = _as_float(row.get(column))
+            if value is None:
+                errors.append(f"Row {idx}: metric '{column}' must be finite numeric.")
+                continue
+            if value < 0.0:
+                errors.append(f"Row {idx}: metric '{column}' must be >= 0.")
+        supported = row.get("calibration_supported")
+        if not isinstance(supported, (bool, np.bool_)):
+            errors.append(f"Row {idx}: 'calibration_supported' must be boolean.")
+        status = str(row.get("calibration_status", "")).strip()
+        if status not in {"calibrated", "under-calibrated"}:
+            errors.append(f"Row {idx}: calibration_status must be calibrated/under-calibrated.")
+        reason = str(row.get("calibration_reason", "")).strip()
+        if not reason:
+            errors.append(f"Row {idx}: calibration_reason must be non-empty.")
+        run_count = _as_float(row.get("run_count")) or 0.0
+        if supported is True and run_count <= 0:
+            errors.append(f"Row {idx}: calibrated row must have run_count > 0.")
+
+    return SummaryValidationResult(
+        ok=not errors,
+        errors=errors,
+        row_count=int(len(scenario_calibration)),
+    )
+
+
 def validate_carbon_summary_table(carbon_summary: pd.DataFrame) -> SummaryValidationResult:
     """Validate carbon summary table schema and numeric sanity checks."""
     errors: list[str] = []

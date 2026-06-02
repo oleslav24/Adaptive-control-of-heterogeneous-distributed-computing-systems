@@ -35,6 +35,7 @@ from project.experiments.statistics import mean_difference, significance_payload
 from project.experiments.publication_validation import (
     validate_carbon_summary_table,
     validate_hypotheses_table,
+    validate_scenario_calibration_table,
     validate_summary_statistics,
 )
 from project.experiments.quality_gate import (
@@ -164,7 +165,9 @@ def run_publication_pipeline(
     decision_trace = pd.DataFrame(decision_trace_rows)
     summary = _summarize_runs(raw_runs)
     validation = validate_summary_statistics(summary)
-    hypothesis_df = _evaluate_hypotheses(raw_runs)
+    scenario_calibration = _build_scenario_calibration_table(raw_runs)
+    scenario_calibration_validation = validate_scenario_calibration_table(scenario_calibration)
+    hypothesis_df = _evaluate_hypotheses(raw_runs, scenario_calibration)
     hypothesis_validation = validate_hypotheses_table(hypothesis_df)
     carbon_summary = _build_carbon_summary(summary)
     carbon_validation = validate_carbon_summary_table(carbon_summary)
@@ -174,6 +177,7 @@ def run_publication_pipeline(
         raw_runs=raw_runs,
         summary=summary,
         hypotheses=hypothesis_df,
+        scenario_calibration=scenario_calibration,
         methods_df=methods_df,
         unsupported_df=unsupported_df,
         decision_trace=decision_trace,
@@ -199,6 +203,16 @@ def run_publication_pipeline(
         },
     )
     output_paths["hypotheses_validation_json"] = str(hypothesis_validation_path)
+    scenario_calibration_validation_path = output_dir / "scenario_calibration_validation.json"
+    _write_json(
+        scenario_calibration_validation_path,
+        {
+            "ok": scenario_calibration_validation.ok,
+            "row_count": scenario_calibration_validation.row_count,
+            "errors": scenario_calibration_validation.errors,
+        },
+    )
+    output_paths["scenario_calibration_validation_json"] = str(scenario_calibration_validation_path)
     carbon_validation_path = output_dir / "carbon_summary_validation.json"
     _write_json(
         carbon_validation_path,
@@ -235,6 +249,7 @@ def run_publication_pipeline(
         output_dir=output_dir,
         summary=summary,
         hypotheses=hypothesis_df,
+        scenario_calibration=scenario_calibration,
         methods_df=methods_df,
         seed_count=len(seeds),
         quick_mode=quick,
@@ -316,6 +331,7 @@ def _build_run_config(
         task_count=spec.task_count,
         horizon=suggest_horizon(spec.node_count, spec.task_count),
         failure_node_id=f"node-{max(1, spec.node_count // 2)}",
+        study_id=spec.study_id,
     )
 
     return replace(
@@ -374,6 +390,17 @@ def _derive_metrics(state) -> dict[str, float | int]:
         [float(item.get("throughput", 0.0)) for item in state.history]
     )
     decision_trace = list(getattr(state, "decision_trace", []))
+    scenario_events = list(getattr(state, "scenario_events", []))
+    failure_events = [item for item in scenario_events if str(item.get("kind")) == "node_failed"]
+    recovered_events = [item for item in scenario_events if str(item.get("kind")) == "node_recovered"]
+    failure_requeued_tasks = sum(
+        int(item.get("requeued_tasks", 0))
+        for item in failure_events
+    )
+    max_inactive_nodes = max(
+        (int(item.get("inactive_nodes", 0)) for item in state.history),
+        default=int(len(getattr(state, "inactive_nodes", []))),
+    )
     return {
         "completed_tasks": int(state.completed_tasks),
         "pending_tasks": int(state.pending_tasks),
@@ -391,6 +418,12 @@ def _derive_metrics(state) -> dict[str, float | int]:
         "adaptivity": float(adaptivity),
         "stability_latency_var": float(stability_latency),
         "stability_throughput_var": float(stability_throughput),
+        "generated_tasks": int(state.generated_tasks),
+        "scenario_events_total": len(scenario_events),
+        "node_failure_events": len(failure_events),
+        "node_recovery_events": len(recovered_events),
+        "failure_requeued_tasks": int(failure_requeued_tasks),
+        "max_inactive_nodes": int(max_inactive_nodes),
         "decision_trace_events": len(decision_trace),
         "algorithm_switches": sum(
             1
@@ -508,10 +541,145 @@ def _summarize_runs(raw_runs: pd.DataFrame) -> pd.DataFrame:
     ).reset_index(drop=True)
 
 
-def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
+def _build_scenario_calibration_table(raw_runs: pd.DataFrame) -> pd.DataFrame:
+    """Build scenario-calibration evidence table for hypothesis stress coverage."""
+    if raw_runs.empty:
+        return pd.DataFrame()
+
+    rows = [
+        _build_calibration_row(
+            raw_runs=raw_runs,
+            hypothesis="H2",
+            study_id="E3_robustness",
+            required_scenarios=["node-failures"],
+            min_generated_tasks=1.0,
+            min_failure_events=1.0,
+            require_requeued_tasks=True,
+        ),
+        _build_calibration_row(
+            raw_runs=raw_runs,
+            hypothesis="H3",
+            study_id="E2_adaptivity",
+            required_scenarios=["dynamic-load", "peak-load"],
+            min_generated_tasks=1.0,
+        ),
+        _build_calibration_row(
+            raw_runs=raw_runs,
+            hypothesis="H4",
+            study_id="E4_hybrid_vs_classical",
+            required_scenarios=["dynamic-load"],
+            min_generated_tasks=1.0,
+        ),
+        _build_calibration_row(
+            raw_runs=raw_runs,
+            hypothesis="H5",
+            study_id="E5_llm_vs_algorithmic",
+            required_scenarios=["dynamic-load", "peak-load"],
+            min_generated_tasks=1.0,
+            min_llm_guarded_decisions=1.0,
+        ),
+    ]
+    return pd.DataFrame(rows).sort_values("hypothesis").reset_index(drop=True)
+
+
+def _build_calibration_row(
+    *,
+    raw_runs: pd.DataFrame,
+    hypothesis: str,
+    study_id: str,
+    required_scenarios: list[str],
+    min_generated_tasks: float = 0.0,
+    min_failure_events: float = 0.0,
+    require_requeued_tasks: bool = False,
+    min_llm_guarded_decisions: float = 0.0,
+) -> dict[str, Any]:
+    """Build one scenario-calibration row for a hypothesis."""
+    scoped = raw_runs[raw_runs["study_id"] == study_id].copy()
+    observed = sorted({str(value) for value in scoped.get("scenario", pd.Series(dtype=str)).tolist()})
+    required = sorted({str(value) for value in required_scenarios})
+    missing = [item for item in required if item not in observed]
+
+    def _mean(column: str) -> float:
+        if column not in scoped.columns or scoped.empty:
+            return 0.0
+        return float(scoped[column].astype(float).mean())
+
+    generated_mean = _mean("generated_tasks")
+    failure_events_mean = _mean("node_failure_events")
+    requeued_mean = _mean("failure_requeued_tasks")
+    llm_guarded_mean = _mean("llm_guarded_decisions")
+
+    errors: list[str] = []
+    if scoped.empty:
+        errors.append("no runs for target study")
+    if missing:
+        errors.append(f"missing scenarios: {', '.join(missing)}")
+    if generated_mean < min_generated_tasks:
+        errors.append(
+            f"generated_tasks_mean {generated_mean:.3f} < required {min_generated_tasks:.3f}"
+        )
+    if min_failure_events > 0.0 and failure_events_mean < min_failure_events:
+        errors.append(
+            f"node_failure_events_mean {failure_events_mean:.3f} < required {min_failure_events:.3f}"
+        )
+    if require_requeued_tasks and requeued_mean <= 0.0:
+        errors.append("failure_requeued_tasks_mean must be > 0")
+    if min_llm_guarded_decisions > 0.0 and llm_guarded_mean < min_llm_guarded_decisions:
+        errors.append(
+            "llm_guarded_decisions_mean "
+            f"{llm_guarded_mean:.3f} < required {min_llm_guarded_decisions:.3f}"
+        )
+
+    supported = len(errors) == 0
+    reason = "calibrated stress coverage confirmed" if supported else "; ".join(errors)
+    return {
+        "hypothesis": hypothesis,
+        "study_id": study_id,
+        "required_scenarios": ",".join(required),
+        "observed_scenarios": ",".join(observed),
+        "missing_scenarios": ",".join(missing),
+        "run_count": int(len(scoped)),
+        "seed_count": int(scoped["seed"].nunique()) if "seed" in scoped.columns else 0,
+        "method_count": int(scoped["method"].nunique()) if "method" in scoped.columns else 0,
+        "generated_tasks_mean": float(generated_mean),
+        "node_failure_events_mean": float(failure_events_mean),
+        "failure_requeued_tasks_mean": float(requeued_mean),
+        "llm_guarded_decisions_mean": float(llm_guarded_mean),
+        "calibration_supported": bool(supported),
+        "calibration_status": "calibrated" if supported else "under-calibrated",
+        "calibration_reason": reason,
+    }
+
+
+def _evaluate_hypotheses(
+    raw_runs: pd.DataFrame,
+    scenario_calibration: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     """Evaluate H1-H5 deltas from raw publication runs."""
     if raw_runs.empty:
         return pd.DataFrame()
+
+    calibration_map: dict[str, dict[str, Any]] = {}
+    if scenario_calibration is not None and not scenario_calibration.empty:
+        calibration_map = {
+            str(item.get("hypothesis")): item
+            for item in _records(scenario_calibration)
+            if str(item.get("hypothesis", "")).strip()
+        }
+
+    def _calibration_support(hypothesis: str) -> tuple[bool, str]:
+        record = calibration_map.get(hypothesis)
+        if record is None:
+            return True, "calibration record is not required for this hypothesis"
+        supported = bool(record.get("calibration_supported", False))
+        reason = str(record.get("calibration_reason", "")).strip()
+        if not reason:
+            reason = (
+                "calibrated stress coverage confirmed"
+                if supported
+                else "scenario calibration is not sufficient"
+            )
+        return supported, reason
 
     baseline_methods = ["round-robin", "min-load", "greedy", "max-min"]
     baseline = raw_runs[raw_runs["method"].isin(baseline_methods)]
@@ -534,6 +702,7 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
         alternative="greater",
         seed=1202,
     )
+    h1_algorithmic = bool(h1_latency_delta > 0 and h1_imbalance_delta > 0)
     rows.append(
         {
             "hypothesis": "H1",
@@ -541,7 +710,15 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
             "criterion": "Adaptive methods reduce latency and load imbalance.",
             "delta_latency": float(h1_latency_delta),
             "delta_load_imbalance": float(h1_imbalance_delta),
-            "confirmed": bool(h1_latency_delta > 0 and h1_imbalance_delta > 0),
+            "algorithmic_confirmed": h1_algorithmic,
+            "calibration_supported": True,
+            "confirmed": h1_algorithmic,
+            "support_status": "supported" if h1_algorithmic else "not-supported",
+            "support_reason": (
+                "latency/load deltas satisfy criterion"
+                if h1_algorithmic
+                else "metric deltas do not satisfy criterion"
+            ),
             "significance_supported": bool(
                 h1_latency_stats["statistically_significant"]
                 and h1_imbalance_stats["statistically_significant"]
@@ -573,6 +750,9 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
         alternative="greater",
         seed=2202,
     )
+    h2_algorithmic = bool(h2_throughput_delta > 0 and h2_stability_delta > 0)
+    h2_calibrated, h2_calibration_reason = _calibration_support("H2")
+    h2_confirmed = bool(h2_algorithmic and h2_calibrated)
     rows.append(
         {
             "hypothesis": "H2",
@@ -580,7 +760,17 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
             "criterion": "MAS improves robustness and stability under failures.",
             "delta_throughput_failures": float(h2_throughput_delta),
             "delta_stability_failures": float(h2_stability_delta),
-            "confirmed": bool(h2_throughput_delta > 0 and h2_stability_delta > 0),
+            "algorithmic_confirmed": h2_algorithmic,
+            "calibration_supported": h2_calibrated,
+            "confirmed": h2_confirmed,
+            "support_status": "supported" if h2_confirmed else "not-supported",
+            "support_reason": (
+                "throughput/stability deltas satisfy criterion"
+                if h2_confirmed
+                else (
+                    h2_calibration_reason if not h2_calibrated else "metric deltas do not satisfy criterion"
+                )
+            ),
             "significance_supported": bool(
                 h2_throughput_stats["statistically_significant"]
                 and h2_stability_stats["statistically_significant"]
@@ -603,13 +793,26 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
         alternative="greater",
         seed=3201,
     )
+    h3_algorithmic = bool(h3_latency_delta > 0)
+    h3_calibrated, h3_calibration_reason = _calibration_support("H3")
+    h3_confirmed = bool(h3_algorithmic and h3_calibrated)
     rows.append(
         {
             "hypothesis": "H3",
             "title": "Intelligent Methods (ML/ZNN)",
             "criterion": "ML/ZNN improve decisions under dynamic load.",
             "delta_latency_dynamic": float(h3_latency_delta),
-            "confirmed": bool(h3_latency_delta > 0),
+            "algorithmic_confirmed": h3_algorithmic,
+            "calibration_supported": h3_calibrated,
+            "confirmed": h3_confirmed,
+            "support_status": "supported" if h3_confirmed else "not-supported",
+            "support_reason": (
+                "latency delta satisfies criterion"
+                if h3_confirmed
+                else (
+                    h3_calibration_reason if not h3_calibrated else "metric deltas do not satisfy criterion"
+                )
+            ),
             "significance_supported": bool(h3_latency_stats["statistically_significant"]),
             **_map_significance("latency_dynamic", h3_latency_stats),
         }
@@ -640,13 +843,26 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
         alternative="greater",
         seed=4201,
     )
+    h4_algorithmic = bool(h4_delta > 0)
+    h4_calibrated, h4_calibration_reason = _calibration_support("H4")
+    h4_confirmed = bool(h4_algorithmic and h4_calibrated)
     rows.append(
         {
             "hypothesis": "H4",
             "title": "Hybrid vs Single Methods",
             "criterion": "Hybrid method outperforms standalone baselines.",
             "delta_latency_hybrid_vs_best_baseline": float(h4_delta),
-            "confirmed": bool(h4_delta > 0),
+            "algorithmic_confirmed": h4_algorithmic,
+            "calibration_supported": h4_calibrated,
+            "confirmed": h4_confirmed,
+            "support_status": "supported" if h4_confirmed else "not-supported",
+            "support_reason": (
+                "hybrid vs baseline delta satisfies criterion"
+                if h4_confirmed
+                else (
+                    h4_calibration_reason if not h4_calibrated else "metric deltas do not satisfy criterion"
+                )
+            ),
             "significance_supported": bool(h4_latency_stats["statistically_significant"]),
             **_map_significance("latency_hybrid_vs_best_baseline", h4_latency_stats),
         }
@@ -669,6 +885,9 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
         alternative="greater",
         seed=5202,
     )
+    h5_algorithmic = bool(h5_adaptivity_delta > 0 and h5_latency_delta > 0)
+    h5_calibrated, h5_calibration_reason = _calibration_support("H5")
+    h5_confirmed = bool(h5_algorithmic and h5_calibrated)
     rows.append(
         {
             "hypothesis": "H5",
@@ -676,7 +895,17 @@ def _evaluate_hypotheses(raw_runs: pd.DataFrame) -> pd.DataFrame:
             "criterion": "LLM improves coordination and strategy flexibility.",
             "delta_adaptivity_llm_vs_algorithmic": float(h5_adaptivity_delta),
             "delta_latency_llm_vs_algorithmic": float(h5_latency_delta),
-            "confirmed": bool(h5_adaptivity_delta > 0 or h5_latency_delta > 0),
+            "algorithmic_confirmed": h5_algorithmic,
+            "calibration_supported": h5_calibrated,
+            "confirmed": h5_confirmed,
+            "support_status": "supported" if h5_confirmed else "not-supported",
+            "support_reason": (
+                "adaptivity and latency deltas satisfy criterion"
+                if h5_confirmed
+                else (
+                    h5_calibration_reason if not h5_calibrated else "metric deltas do not satisfy criterion"
+                )
+            ),
             "significance_supported": bool(
                 h5_adaptivity_stats["statistically_significant"]
                 or h5_latency_stats["statistically_significant"]
@@ -695,6 +924,7 @@ def _persist_publication_outputs(
     raw_runs: pd.DataFrame,
     summary: pd.DataFrame,
     hypotheses: pd.DataFrame,
+    scenario_calibration: pd.DataFrame,
     methods_df: pd.DataFrame,
     unsupported_df: pd.DataFrame,
     decision_trace: pd.DataFrame,
@@ -709,12 +939,14 @@ def _persist_publication_outputs(
         "raw_runs_csv": output_dir / "raw_runs.csv",
         "summary_csv": output_dir / "summary.csv",
         "hypotheses_csv": output_dir / "hypotheses.csv",
+        "scenario_calibration_csv": output_dir / "scenario_calibration.csv",
         "methods_catalog_csv": output_dir / "methods_catalog.csv",
         "unsupported_methods_csv": output_dir / "unsupported_methods.csv",
         "decision_trace_csv": output_dir / "decision_trace.csv",
         "raw_runs_json": output_dir / "raw_runs.json",
         "summary_json": output_dir / "summary.json",
         "hypotheses_json": output_dir / "hypotheses.json",
+        "scenario_calibration_json": output_dir / "scenario_calibration.json",
         "methods_catalog_json": output_dir / "methods_catalog.json",
         "decision_trace_json": output_dir / "decision_trace.json",
     }
@@ -724,6 +956,7 @@ def _persist_publication_outputs(
     raw_runs.to_csv(paths["raw_runs_csv"], index=False)
     summary.to_csv(paths["summary_csv"], index=False)
     hypotheses.to_csv(paths["hypotheses_csv"], index=False)
+    scenario_calibration.to_csv(paths["scenario_calibration_csv"], index=False)
     methods_df.to_csv(paths["methods_catalog_csv"], index=False)
     unsupported_df.to_csv(paths["unsupported_methods_csv"], index=False)
     decision_trace_records = _records(decision_trace) if not decision_trace.empty else []
@@ -735,6 +968,7 @@ def _persist_publication_outputs(
     _write_json(paths["raw_runs_json"], _records(raw_runs))
     _write_json(paths["summary_json"], _records(summary))
     _write_json(paths["hypotheses_json"], _records(hypotheses))
+    _write_json(paths["scenario_calibration_json"], _records(scenario_calibration))
     _write_json(paths["methods_catalog_json"], _records(methods_df))
     _write_json(paths["decision_trace_json"], decision_trace_records)
     if not carbon_summary.empty:
@@ -935,6 +1169,7 @@ def _write_publication_report(
     output_dir: Path,
     summary: pd.DataFrame,
     hypotheses: pd.DataFrame,
+    scenario_calibration: pd.DataFrame,
     methods_df: pd.DataFrame,
     seed_count: int,
     quick_mode: bool,
@@ -1052,6 +1287,17 @@ def _write_publication_report(
     if hypotheses.empty:
         lines.append("- No hypothesis evaluation.")
     else:
+        lines.append("### Scenario Calibration (H2-H5)")
+        if scenario_calibration.empty:
+            lines.append("- Scenario calibration evidence is unavailable.")
+        else:
+            lines.append(_render_table(scenario_calibration))
+            for record in _records(scenario_calibration):
+                hypothesis = str(record.get("hypothesis", "")).strip()
+                status = "calibrated" if bool(record.get("calibration_supported", False)) else "under-calibrated"
+                reason = str(record.get("calibration_reason", "")).strip()
+                lines.append(f"- `{hypothesis}` `{status}`: {reason}")
+        lines.append("")
         lines.append("### Hypothesis Support Status")
         lines.extend(render_hypothesis_support(hypotheses))
         lines.append("")
@@ -1232,6 +1478,12 @@ def _build_publication_quality_gate(
             gate_id="hypotheses-validation",
             title="Hypotheses table validation",
             path=output_paths.get("hypotheses_validation_json", ""),
+            required=True,
+        ),
+        check_json_ok_artifact(
+            gate_id="scenario-calibration-validation",
+            title="Scenario calibration validation",
+            path=output_paths.get("scenario_calibration_validation_json", ""),
             required=True,
         ),
         check_json_ok_artifact(

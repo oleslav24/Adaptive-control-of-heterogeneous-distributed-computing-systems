@@ -84,37 +84,90 @@ def build_scenario_config(
     task_count: int,
     horizon: int,
     failure_node_id: str,
+    study_id: str | None = None,
 ) -> ScenarioConfig:
     """Build scenario config object for the requested study scenario."""
+    scenario_id = str(scenario).strip().lower()
+    study = str(study_id or "").strip()
     load_rate = max(0.5, task_count / max(1.0, float(horizon)))
+    amplitude = 0.45
+    period = max(6, horizon // 8)
+    max_new_tasks = max(4, int(node_count * 0.25))
+    peak_start = max(2, horizon // 3)
+    peak_end = max(3, (2 * horizon) // 3)
+    peak_multiplier = 2.8
+    failure_events: list[NodeFailureEventConfig] = []
+
+    if scenario_id == "node-failures":
+        failure_events = [
+            NodeFailureEventConfig(
+                node_id=failure_node_id,
+                time=max(2, horizon // 2),
+                duration=max(2, horizon // 10),
+            )
+        ]
+
+    if study == "E2_adaptivity":
+        load_rate *= 1.12
+        amplitude = 0.70
+        period = max(4, horizon // 10)
+        max_new_tasks = max(max_new_tasks, int(node_count * 0.35))
+        if scenario_id == "peak-load":
+            peak_start = max(2, horizon // 4)
+            peak_end = max(peak_start + 2, (3 * horizon) // 4)
+            peak_multiplier = 3.4
+    elif study == "E3_robustness" and scenario_id == "node-failures":
+        primary_time = max(2, horizon // 3)
+        primary_duration = max(3, horizon // 10)
+        secondary_time = min(max(primary_time + primary_duration + 1, horizon // 2), horizon - 2)
+        secondary_duration = max(2, horizon // 12)
+        alternate_node_id = f"node-{max(1, node_count // 3)}"
+        failure_events = [
+            NodeFailureEventConfig(
+                node_id=failure_node_id,
+                time=primary_time,
+                duration=primary_duration,
+            ),
+            NodeFailureEventConfig(
+                node_id=alternate_node_id,
+                time=secondary_time,
+                duration=secondary_duration,
+            ),
+        ]
+        amplitude = 0.55
+        max_new_tasks = max(max_new_tasks, int(node_count * 0.30))
+    elif study == "E4_hybrid_vs_classical":
+        amplitude = 0.62
+        period = max(4, horizon // 10)
+        max_new_tasks = max(max_new_tasks, int(node_count * 0.33))
+    elif study == "E5_llm_vs_algorithmic":
+        load_rate *= 1.08
+        amplitude = 0.68
+        period = max(4, horizon // 10)
+        max_new_tasks = max(max_new_tasks, int(node_count * 0.36))
+        if scenario_id == "peak-load":
+            peak_start = max(2, horizon // 4)
+            peak_end = max(peak_start + 2, (3 * horizon) // 4)
+            peak_multiplier = 3.1
+
     dynamic = DynamicLoadConfig(
-        enabled=scenario in {"dynamic-load", "peak-load", "node-failures", "heterogeneous-tasks"},
+        enabled=scenario_id in {"dynamic-load", "peak-load", "node-failures", "heterogeneous-tasks"},
         base_rate=load_rate,
-        amplitude=0.45,
-        period=max(6, horizon // 8),
-        max_new_tasks=max(4, int(node_count * 0.25)),
+        amplitude=amplitude,
+        period=period,
+        max_new_tasks=max_new_tasks,
     )
     peak = PeakLoadConfig(
-        enabled=scenario == "peak-load",
-        start=max(2, horizon // 3),
-        end=max(3, (2 * horizon) // 3),
-        multiplier=2.8,
+        enabled=scenario_id == "peak-load",
+        start=peak_start,
+        end=peak_end,
+        multiplier=peak_multiplier,
     )
     failures = NodeFailuresConfig(
-        enabled=scenario == "node-failures",
-        events=(
-            [
-                NodeFailureEventConfig(
-                    node_id=failure_node_id,
-                    time=max(2, horizon // 2),
-                    duration=max(2, horizon // 10),
-                )
-            ]
-            if scenario == "node-failures"
-            else []
-        ),
+        enabled=scenario_id == "node-failures",
+        events=failure_events,
     )
-    heterogeneous = HeterogeneousTasksConfig(enabled=scenario == "heterogeneous-tasks")
+    heterogeneous = HeterogeneousTasksConfig(enabled=scenario_id == "heterogeneous-tasks")
     return ScenarioConfig(
         dynamic_load=dynamic,
         peak_load=peak,

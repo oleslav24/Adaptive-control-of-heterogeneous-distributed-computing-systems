@@ -81,3 +81,31 @@ def test_build_scenario_config_sets_expected_flags() -> None:
     assert failures.node_failures.enabled is True
     assert len(failures.node_failures.events) == 1
     assert failures.node_failures.events[0].node_id == "node-25"
+
+
+def test_build_scenario_config_applies_study_calibration_profile() -> None:
+    """Study-aware calibration should strengthen E3/E5 stress profiles deterministically."""
+    horizon = suggest_horizon(node_count=60, task_count=400)
+
+    e3_failures = build_scenario_config(
+        scenario="node-failures",
+        node_count=60,
+        task_count=400,
+        horizon=horizon,
+        failure_node_id="node-30",
+        study_id="E3_robustness",
+    )
+    assert e3_failures.dynamic_load.amplitude >= 0.55
+    assert len(e3_failures.node_failures.events) == 2
+    assert e3_failures.node_failures.events[0].node_id == "node-30"
+
+    e5_peak = build_scenario_config(
+        scenario="peak-load",
+        node_count=60,
+        task_count=400,
+        horizon=horizon,
+        failure_node_id="node-30",
+        study_id="E5_llm_vs_algorithmic",
+    )
+    assert e5_peak.dynamic_load.amplitude >= 0.68
+    assert e5_peak.peak_load.multiplier >= 3.1

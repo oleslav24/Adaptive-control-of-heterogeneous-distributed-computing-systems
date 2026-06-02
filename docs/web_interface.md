@@ -51,6 +51,7 @@ The UI maps each mode to the existing CLI (`project.experiments.run`) and runs c
   - stop button for running job
   - diagnostics payload includes `control_assessment` (operational quality-gate health)
   - for publication-like modes, required run-quality checks are fail-fast and produce `quality_gate.json`
+  - publication/chapter10 bundles include stress-coverage evidence: `scenario_calibration.csv/json` and `scenario_calibration_validation.json`
   - `control_assessment` follows schema v2:
     - `control_assessment_schema = adaptive-testbed.web.control-assessment`
     - `control_assessment_schema_version = 2`

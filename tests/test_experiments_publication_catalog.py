@@ -17,11 +17,27 @@ def test_build_study_specs_quick_profile_shape() -> None:
     seeds = [42, 43]
     ready = [variant.key for variant in METHOD_CATALOG if variant.ready]
     specs = build_study_specs(seeds=seeds, ready_methods=ready, quick=True)
-    assert len(specs) == 7
+    assert len(specs) == 9
     assert specs[0].study_id == "E1_scalability"
     assert specs[0].node_count in {10, 50}
     assert "max-min" in specs[0].methods
     assert "carbon-aware" in specs[0].methods
+    e2_scenarios = sorted(
+        {
+            spec.scenario
+            for spec in specs
+            if spec.study_id == "E2_adaptivity"
+        }
+    )
+    e5_scenarios = sorted(
+        {
+            spec.scenario
+            for spec in specs
+            if spec.study_id == "E5_llm_vs_algorithmic"
+        }
+    )
+    assert e2_scenarios == ["dynamic-load", "peak-load"]
+    assert e5_scenarios == ["dynamic-load", "peak-load"]
     assert specs[-1].study_id == "E6_carbon_vs_performance"
     assert specs[-1].methods == ["min-load", "greedy", "carbon-aware", "mas-hybrid", "mas-llm"]
     assert specs[-1].seeds == seeds

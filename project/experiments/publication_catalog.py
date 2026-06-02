@@ -220,6 +220,17 @@ def build_study_specs(
         ] + [
             StudyRunSpec(
                 study_id="E2_adaptivity",
+                scenario="dynamic-load",
+                node_count=50,
+                task_count=300,
+                task_type="mixed",
+                network_profile="medium",
+                topology="ring",
+                methods=["min-load", "mas-basic", "mas-hybrid", "mas-ml", "mas-znn", "mas-llm"],
+                seeds=seeds,
+            ),
+            StudyRunSpec(
+                study_id="E2_adaptivity",
                 scenario="peak-load",
                 node_count=50,
                 task_count=300,
@@ -249,6 +260,17 @@ def build_study_specs(
                 network_profile="medium",
                 topology="ring",
                 methods=["round-robin", "min-load", "greedy", "max-min", "mas-hybrid"],
+                seeds=seeds,
+            ),
+            StudyRunSpec(
+                study_id="E5_llm_vs_algorithmic",
+                scenario="dynamic-load",
+                node_count=50,
+                task_count=300,
+                task_type="mixed",
+                network_profile="medium",
+                topology="ring",
+                methods=["min-load", "mas-hybrid", "mas-llm"],
                 seeds=seeds,
             ),
             StudyRunSpec(
@@ -309,6 +331,17 @@ def build_study_specs(
         [
             StudyRunSpec(
                 study_id="E2_adaptivity",
+                scenario="dynamic-load",
+                node_count=100,
+                task_count=1000,
+                task_type="mixed",
+                network_profile="medium",
+                topology="ring",
+                methods=["min-load", "mas-basic", "mas-hybrid", "mas-ml", "mas-znn", "mas-llm"],
+                seeds=seeds,
+            ),
+            StudyRunSpec(
+                study_id="E2_adaptivity",
                 scenario="peak-load",
                 node_count=100,
                 task_count=1000,
@@ -338,6 +371,17 @@ def build_study_specs(
                 network_profile="medium",
                 topology="ring",
                 methods=["round-robin", "min-load", "greedy", "max-min", "mas-hybrid"],
+                seeds=seeds,
+            ),
+            StudyRunSpec(
+                study_id="E5_llm_vs_algorithmic",
+                scenario="dynamic-load",
+                node_count=100,
+                task_count=1000,
+                task_type="mixed",
+                network_profile="medium",
+                topology="ring",
+                methods=["min-load", "mas-hybrid", "mas-llm"],
                 seeds=seeds,
             ),
             StudyRunSpec(
